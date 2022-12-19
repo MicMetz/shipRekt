@@ -37,7 +37,7 @@ class World {
         this.currentStage = 1;
         this.maxStage     = 14;
 
-        this.field     = new YUKA.Vector3(15, 1, 15);
+        this.field     = new YUKA.Vector3(16, 1, 16);
         this.fieldMesh = null;
 
         this.wall        = new YUKA.Vector3(0.5, 1, 0.5);
@@ -351,24 +351,34 @@ class World {
         this.fieldMesh.receiveShadow = true;
         this.scene.add(this.fieldMesh);
 
-        const wallGeometry = new THREE.BoxBufferGeometry(1, 2, 1);
-        const wallMaterial = new THREE.MeshLambertMaterial({color: 0x9da4b0});
-        for (let i = 0; i < this.field.x; i++) {
-                const wallMesh            = new THREE.Mesh(wallGeometry, wallMaterial);
-                wallMesh.matrixAutoUpdate = false;
-                wallMesh.position.set(i, 1, -this.field.z);
-                wallMesh.updateMatrix();
-                wallMesh.receiveShadow = true;
-                this.wallsMeshes.add(wallMesh);
+        const wallGeometry = new THREE.BoxBufferGeometry(1, 1, 1);
+        const wallMaterial = new THREE.MeshLambertMaterial({color: 0x8e8e8e});
+        for (let x = -this.field.x / 2; x <= this.field.x / 2; x++) {
+            if (x === -this.field.x / 2 || x === this.field.x / 2) {
+                for (let z = -this.field.z / 2; z <= this.field.z / 2; z++) {
+                    if (z === -this.field.z / 2 || z === this.field.z / 2) {
+                        for (let i = -this.field.x / 2; i <= this.field.x / 2; i++) {
+                            const wallMesh            = new THREE.Mesh(wallGeometry, wallMaterial);
+                            wallMesh.matrixAutoUpdate = false;
+                            wallMesh.position.set(i, 0.5, z);
+                            wallMesh.updateMatrix();
+                            wallMesh.castShadow    = true;
+                            wallMesh.receiveShadow = true;
+                            this.wallsMeshes.add(wallMesh);
+                        }
+                    } else {
+                        const wallMesh            = new THREE.Mesh(wallGeometry, wallMaterial);
+                        wallMesh.matrixAutoUpdate = false;
+                        wallMesh.position.set(x, 0.5, z);
+                        wallMesh.updateMatrix();
+                        wallMesh.castShadow    = true;
+                        wallMesh.receiveShadow = true;
+                        this.wallsMeshes.add(wallMesh);
+                    }
+                }
+            }
         }
-        for (let i = 0; i < this.field.z; i++) {
-                const wallMesh            = new THREE.Mesh(wallGeometry, wallMaterial);
-                wallMesh.matrixAutoUpdate = false;
-                wallMesh.position.set(-this.field.x, 1, i);
-                wallMesh.updateMatrix();
-                wallMesh.receiveShadow = true;
-                this.wallsMeshes.add(wallMesh);
-        }
+        // this.obstacles.push(this.wallsMeshes);
         this.scene.add(this.wallsMeshes);
 
         // player
@@ -1403,14 +1413,20 @@ class World {
 
 
 
-function sync(entity, renderComponent) {
+function
+
+
+sync(entity, renderComponent) {
 
     renderComponent.matrix.copy(entity.worldMatrix);
 
 }
 
 
-function onRestart() {
+function
+
+
+onRestart() {
 
     this._stopAnimation();
 
@@ -1433,7 +1449,10 @@ function onRestart() {
 }
 
 
-function onContinueButtonClick() {
+function
+
+
+onContinueButtonClick() {
 
     this.controls.connect();
 
@@ -1443,7 +1462,10 @@ function onContinueButtonClick() {
 }
 
 
-function onWindowResize() {
+function
+
+
+onWindowResize() {
 
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
@@ -1453,7 +1475,10 @@ function onWindowResize() {
 }
 
 
-function startAnimation() {
+function
+
+
+startAnimation() {
 
     this._requestID = requestAnimationFrame(this._startAnimation);
 
@@ -1462,11 +1487,17 @@ function startAnimation() {
 }
 
 
-function stopAnimation() {
+function
+
+
+stopAnimation() {
 
     cancelAnimationFrame(this._requestID);
 
 }
 
 
-export default new World();
+export default new
+
+
+World();

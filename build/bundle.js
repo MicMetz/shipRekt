@@ -69446,7 +69446,7 @@
 	        this.currentStage = 1;
 	        this.maxStage     = 14;
 
-	        this.field     = new Vector3(15, 1, 15);
+	        this.field     = new Vector3(16, 1, 16);
 	        this.fieldMesh = null;
 
 	        this.wall        = new Vector3(0.5, 1, 0.5);
@@ -69760,24 +69760,34 @@
 	        this.fieldMesh.receiveShadow = true;
 	        this.scene.add(this.fieldMesh);
 
-	        const wallGeometry = new BoxBufferGeometry(1, 2, 1);
-	        const wallMaterial = new MeshLambertMaterial({color: 0x9da4b0});
-	        for (let i = 0; i < this.field.x; i++) {
-	                const wallMesh            = new Mesh(wallGeometry, wallMaterial);
-	                wallMesh.matrixAutoUpdate = false;
-	                wallMesh.position.set(i, 1, -this.field.z);
-	                wallMesh.updateMatrix();
-	                wallMesh.receiveShadow = true;
-	                this.wallsMeshes.add(wallMesh);
+	        const wallGeometry = new BoxBufferGeometry(1, 1, 1);
+	        const wallMaterial = new MeshLambertMaterial({color: 0x8e8e8e});
+	        for (let x = -this.field.x / 2; x <= this.field.x / 2; x++) {
+	            if (x === -this.field.x / 2 || x === this.field.x / 2) {
+	                for (let z = -this.field.z / 2; z <= this.field.z / 2; z++) {
+	                    if (z === -this.field.z / 2 || z === this.field.z / 2) {
+	                        for (let i = -this.field.x / 2; i <= this.field.x / 2; i++) {
+	                            const wallMesh            = new Mesh(wallGeometry, wallMaterial);
+	                            wallMesh.matrixAutoUpdate = false;
+	                            wallMesh.position.set(i, 0.5, z);
+	                            wallMesh.updateMatrix();
+	                            wallMesh.castShadow    = true;
+	                            wallMesh.receiveShadow = true;
+	                            this.wallsMeshes.add(wallMesh);
+	                        }
+	                    } else {
+	                        const wallMesh            = new Mesh(wallGeometry, wallMaterial);
+	                        wallMesh.matrixAutoUpdate = false;
+	                        wallMesh.position.set(x, 0.5, z);
+	                        wallMesh.updateMatrix();
+	                        wallMesh.castShadow    = true;
+	                        wallMesh.receiveShadow = true;
+	                        this.wallsMeshes.add(wallMesh);
+	                    }
+	                }
+	            }
 	        }
-	        for (let i = 0; i < this.field.z; i++) {
-	                const wallMesh            = new Mesh(wallGeometry, wallMaterial);
-	                wallMesh.matrixAutoUpdate = false;
-	                wallMesh.position.set(-this.field.x, 1, i);
-	                wallMesh.updateMatrix();
-	                wallMesh.receiveShadow = true;
-	                this.wallsMeshes.add(wallMesh);
-	        }
+	        // this.obstacles.push(this.wallsMeshes);
 	        this.scene.add(this.wallsMeshes);
 
 	        // player
@@ -70812,14 +70822,20 @@
 
 
 
-	function sync(entity, renderComponent) {
+	function
+
+
+	sync(entity, renderComponent) {
 
 	    renderComponent.matrix.copy(entity.worldMatrix);
 
 	}
 
 
-	function onRestart() {
+	function
+
+
+	onRestart() {
 
 	    this._stopAnimation();
 
@@ -70842,7 +70858,10 @@
 	}
 
 
-	function onContinueButtonClick() {
+	function
+
+
+	onContinueButtonClick() {
 
 	    this.controls.connect();
 
@@ -70852,7 +70871,10 @@
 	}
 
 
-	function onWindowResize() {
+	function
+
+
+	onWindowResize() {
 
 	    this.camera.aspect = window.innerWidth / window.innerHeight;
 	    this.camera.updateProjectionMatrix();
@@ -70862,7 +70884,10 @@
 	}
 
 
-	function startAnimation() {
+	function
+
+
+	startAnimation() {
 
 	    this._requestID = requestAnimationFrame(this._startAnimation);
 
@@ -70871,14 +70896,20 @@
 	}
 
 
-	function stopAnimation() {
+	function
+
+
+	stopAnimation() {
 
 	    cancelAnimationFrame(this._requestID);
 
 	}
 
 
-	var world = new World();
+	var world = new
+
+
+	World();
 
 	/**
 	 * @author Mugen87 / https://github.com/Mugen87
