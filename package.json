@@ -1,0 +1,38 @@
+{
+  "name": "shiprekt",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "rollup -c \"config/rollup/config.js\"",
+    "dev": "concurrently \"rollup -c \"config/rollup/config.js\" -w\" \"serve\"",
+    "lint": "eslint src --ext .js",
+    "start": "npm run dev"
+  },
+  "eslintConfig": {
+    "extends": "mdcs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MicMetz/shiprecked.git"
+  },
+  "author": "MicMetz",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/MicMetz/shiprecked/issues"
+  },
+  "homepage": "https://github.com/MicMetz/shiprecked#readme",
+  "devDependencies": {
+    "@rollup/plugin-node-resolve": "^11.1.0",
+    "concurrently": "^5.3.0",
+    "eslint": "^7.18.0",
+    "eslint-config-mdcs": "^4.2.3",
+    "rollup": "^2.37.0",
+    "serve": "^11.3.2"
+  },
+  "dependencies": {
+    "rollup-plugin-copy": "^3.4.0",
+    "three": "0.124.0",
+    "yuka": "0.7.0"
+  }
+}
