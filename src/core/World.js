@@ -40,6 +40,9 @@ class World {
         this.field     = new YUKA.Vector3(15, 1, 15);
         this.fieldMesh = null;
 
+        this.wall        = new YUKA.Vector3(0.5, 1, 0.5);
+        this.wallsMeshes = new THREE.Group();
+
         this.camera   = null;
         this.scene    = null;
         this.renderer = null;
@@ -338,7 +341,8 @@ class World {
         // field
 
         const fieldGeometry = new THREE.BoxBufferGeometry(this.field.x, this.field.y, this.field.z);
-        const fieldMaterial = new THREE.MeshLambertMaterial({color: 0xaca181});
+        // const fieldMaterial = new THREE.MeshLambertMaterial({color: 0xaca181});
+        const fieldMaterial = new THREE.MeshLambertMaterial({color: 0x9da4b0});
 
         this.fieldMesh                  = new THREE.Mesh(fieldGeometry, fieldMaterial);
         this.fieldMesh.matrixAutoUpdate = false;
@@ -346,6 +350,26 @@ class World {
         this.fieldMesh.updateMatrix();
         this.fieldMesh.receiveShadow = true;
         this.scene.add(this.fieldMesh);
+
+        const wallGeometry = new THREE.BoxBufferGeometry(1, 2, 1);
+        const wallMaterial = new THREE.MeshLambertMaterial({color: 0x9da4b0});
+        for (let i = 0; i < this.field.x; i++) {
+                const wallMesh            = new THREE.Mesh(wallGeometry, wallMaterial);
+                wallMesh.matrixAutoUpdate = false;
+                wallMesh.position.set(i, 1, -this.field.z);
+                wallMesh.updateMatrix();
+                wallMesh.receiveShadow = true;
+                this.wallsMeshes.add(wallMesh);
+        }
+        for (let i = 0; i < this.field.z; i++) {
+                const wallMesh            = new THREE.Mesh(wallGeometry, wallMaterial);
+                wallMesh.matrixAutoUpdate = false;
+                wallMesh.position.set(-this.field.x, 1, i);
+                wallMesh.updateMatrix();
+                wallMesh.receiveShadow = true;
+                this.wallsMeshes.add(wallMesh);
+        }
+        this.scene.add(this.wallsMeshes);
 
         // player
 
@@ -453,7 +477,6 @@ class World {
         this.guardMesh                  = new THREE.Mesh(guardGeometry, guardMaterial);
         this.guardMesh.matrixAutoUpdate = false;
         this.guardMesh.castShadow       = true;
-
 
         const protectionGeometry             = new THREE.SphereBufferGeometry(0.75, 16, 16);
         const protectionMaterial             = new THREE.ShaderMaterial(ProtectionShader);
