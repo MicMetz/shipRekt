@@ -488,6 +488,8 @@ class World {
         this.guardMesh.matrixAutoUpdate = false;
         this.guardMesh.castShadow       = true;
 
+        // this.guardMesh.add(this.assetManager.cloneModel('guard'));
+
         const protectionGeometry             = new THREE.SphereBufferGeometry(0.75, 16, 16);
         const protectionMaterial             = new THREE.ShaderMaterial(ProtectionShader);
         protectionMaterial.transparent       = true;
@@ -521,29 +523,6 @@ class World {
 
     }
 
-
-    // async _loadGltf(url) {
-    //     const loader = new GLTFLoader();
-    //     console.log('===== start loadGltf async')
-    //     let urlString = url.toString()
-    //     let gltf      = await loader.loadAsync(urlString)
-    //     console.log('========== end loadGltf')
-    //     return gltf
-    // }
-
-    async _loadGltf(url) {
-        const dracoLoader = new DRACOLoader();
-        dracoLoader.setDecoderPath('dracoDecoder/');
-        const gltfLoader = new GLTFLoader();
-        gltfLoader.setDRACOLoader(dracoLoader);
-        return new Promise((resolve, reject) => {
-            gltfLoader.load(
-                url,
-                gltf => resolve(gltf.scene),
-                error => reject(error)
-            );
-        });
-    }
 
 
     _initBackground() {
@@ -671,7 +650,6 @@ class World {
         guard.audios.set('coreShieldDestroyed', coreShieldDestroyed);
 
         return guard;
-
     }
 
 

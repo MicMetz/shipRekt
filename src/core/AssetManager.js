@@ -3,9 +3,11 @@
  * @original Mugen87 / https://github.com/Mugen87
  */
 
-import * as THREE   from 'three';
-import {FBXLoader}  from "three/examples/jsm/loaders/FBXLoader.js";
-import {GLTFLoader} from "three/examples/jsm/loaders/GLTFLoader.js";
+import * as THREE    from 'three';
+import {DRACOLoader} from "three/examples/jsm/loaders/DRACOLoader.js";
+import {FBXLoader}   from "three/examples/jsm/loaders/FBXLoader.js";
+import {GLTFLoader}  from "three/examples/jsm/loaders/GLTFLoader.js";
+import {dumpObject}  from "../etc/utilities.js";
 
 
 
@@ -25,7 +27,7 @@ class AssetManager {
 
         this.gltfLoader = new GLTFLoader(this.loadingManager);
 
-        this.fbxLoader = new FBXLoader(this.loadingManager);
+        // this.fbxLoader = new FBXLoader(this.loadingManager);
 
 
         this.audios = new Map();
@@ -34,9 +36,9 @@ class AssetManager {
 
         this.fonts = new Map();
 
-        this.gltfs = new Map();
+        this.models = new Map();
 
-        this.fbxs = new Map();
+        // this.fbxsModels = new Map();
 
     }
 
@@ -44,6 +46,7 @@ class AssetManager {
     init() {
 
         this._loadAudios();
+        this._loadModels();
 
         const loadingManager = this.loadingManager;
 
@@ -74,6 +77,15 @@ class AssetManager {
         audio.setVolume(source.getVolume());
 
         return audio;
+
+    }
+
+
+    cloneModel(id) {
+
+        const gltf = this.models.get(id);
+
+        return gltf.clone();
 
     }
 
@@ -155,43 +167,132 @@ class AssetManager {
     }
 
 
-    _loadGltfs() {
+    _loadModels() {
 
-        const gltfLoader = this.gltfLoader;
-        const gltfs      = this.gltfs;
+        const gltfLoader    = this.gltfLoader;
+        // const gltfLoader    = new GLTFLoader()/* .setDRACOLoader(new DRACOLoader()); */
+        const textureLoader = this.textureLoader;
+        const models        = this.models;
 
         // Ship model
-        gltfLoader.load('./models/ship.glb', gltf => gltfs.set('ship', gltf));
+        var shipModel = new THREE.Mesh();
+        gltfLoader.load('./models/ship/ship.gltf', (gltf) => {
+            gltf.scene.traverse((child) => {
+                if (child.name === 'Spaceship5') {
+                    shipModel = child;
+                }
+            });
+
+            shipModel.scale.multiplyScalar(0.5);
+            shipModel.castShadow    = true;
+            shipModel.receiveShadow = true;
+            models.set('ship', shipModel);
+
+        });
+
+
         // Swat Officer model
-        gltfLoader.load('./models/swat.glb', gltf => gltfs.set('swat', gltf));
+        var swatOfficerModel = new THREE.Mesh();
+        gltfLoader.load('./models/swat.glb', (gltf) => {
+            gltf.scene.traverse((child) => {
+                if (child.name === 'swat') {
+                    swatOfficerModel = child;
+                }
+            });
+
+            swatOfficerModel.scale.multiplyScalar(0.5);
+            swatOfficerModel.castShadow    = true;
+            swatOfficerModel.receiveShadow = true;
+            models.set('guard', swatOfficerModel);
+        });
+
         // Robot model
-        gltfLoader.load('./models/robot.glb', gltf => gltfs.set('robot', gltf));
+        var robotModel = new THREE.Mesh();
+        gltfLoader.load('./models/robot.glb', (gltf) => {
+            gltf.scene.traverse((child) => {
+                if (child.name === 'robot') {
+                    robotModel = child;
+                }
+            });
+
+            robotModel.scale.multiplyScalar(0.5);
+            robotModel.castShadow    = true;
+            robotModel.receiveShadow = true;
+            models.set('robot', robotModel);
+        });
+
         // Alien model
-        gltfLoader.load('./models/alien.glb', gltf => gltfs.set('alien', gltf));
+        var alienModel = new THREE.Mesh();
+        gltfLoader.load('./models/alien.glb', (gltf) => {
+            gltf.scene.traverse((child) => {
+                if (child.name === 'alien') {
+                    alienModel.scale.multiplyScalar(0.5);
+                    alienModel.castShadow    = true;
+                    alienModel.receiveShadow = true;
+                    models.set('alien', alienModel);
+                }
+            });
+        });
+
         // Core model
-        gltfLoader.load('./models/core.glb', gltf => gltfs.set('core', gltf));
+        // gltfLoader.load('./models/core.glb', gltf => models.set('core', gltf.scene));
+
         // Astronaut model
-        gltfLoader.load('./models/astronaut.glb', gltf => gltfs.set('astronaut', gltf));
+        var astronautModel = new THREE.Mesh();
+        gltfLoader.load('./models/astronaut.glb', (gltf) => {
+            gltf.scene.traverse((child) => {
+                if (child.name === 'astronaut') {
+                    astronautModel = child;
+                }
+            });
+
+            astronautModel.scale.multiplyScalar(0.5);
+            astronautModel.castShadow    = true;
+            astronautModel.receiveShadow = true;
+            models.set('astronaut', astronautModel);
+        });
+
         // Wanderer model
-        gltfLoader.load('./models/wanderer.glb', gltf => gltfs.set('wanderer', gltf));
+        var wandererModel = new THREE.Mesh();
+        gltfLoader.load('./models/wanderer.glb', (gltf) => {
+            gltf.scene.traverse((child) => {
+                if (child.name === 'wanderer') {
+                    wandererModel = child;
+                }
+            });
+
+            wandererModel.scale.multiplyScalar(0.5);
+            wandererModel.castShadow    = true;
+            wandererModel.receiveShadow = true;
+            models.set('wanderer', wandererModel);
+        });
+
         // Drone model
-        gltfLoader.load('./models/drone.glb', gltf => gltfs.set('drone', gltf));
+        // var droneModel = new THREE.Mesh();
+        // gltfLoader.load('./models/drone.glb', gltf => models.set('drone', gltf.scene));
+
         // Droid model
-        gltfLoader.load('./models/droid.glb', gltf => gltfs.set('droid', gltf));
+        var droidModel = new THREE.Mesh();
+        gltfLoader.load('./models/droid.glb', (gltf) => {
+            gltf.scene.traverse((child) => {
+                if (child.name === 'droid') {
+                    droidModel = child;
+                }
+            });
+
+            droidModel.scale.multiplyScalar(0.5);
+            droidModel.castShadow    = true;
+            droidModel.receiveShadow = true;
+            models.set('droid', droidModel);
+        });
+
         // Asteroid model
-        gltfLoader.load('./models/asteroid.glb', gltf => gltfs.set('asteroid', gltf));
+        // var asteroidModel = new THREE.Mesh();
+        // gltfLoader.load('./models/asteroid.glb', gltf => models.set('asteroid', gltf.scene));
 
     }
 
 
-    _loadFbxs() {
-
-        const fbxLoader = this.fbxLoader;
-        const fbxs      = this.fbxs;
-
-
-
-    }
 
 }
 

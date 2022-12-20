@@ -14,6 +14,7 @@ const currentGamepadValues = {
 	rightStickY: 0,
 };
 
+
 class VehicleControls extends EventDispatcher {
 
 	constructor( owner = null, camera = null ) {
