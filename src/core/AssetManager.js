@@ -3,11 +3,9 @@
  * @original Mugen87 / https://github.com/Mugen87
  */
 
-import * as THREE    from 'three';
-import {DRACOLoader} from "three/examples/jsm/loaders/DRACOLoader.js";
-import {FBXLoader}   from "three/examples/jsm/loaders/FBXLoader.js";
-import {GLTFLoader}  from "three/examples/jsm/loaders/GLTFLoader.js";
-import {dumpObject}  from "../etc/utilities.js";
+import * as THREE   from 'three';
+import {GLTFLoader} from "three/examples/jsm/loaders/GLTFLoader.js";
+import {dumpObject} from "../etc/utilities.js";
 
 
 
@@ -21,13 +19,9 @@ class AssetManager {
 
         this.fontLoader = new THREE.FontLoader(this.loadingManager);
 
-        this.textureLoader = new THREE.TextureLoader(this.loadingManager);
-
-        this.listener = new THREE.AudioListener();
-
         this.gltfLoader = new GLTFLoader(this.loadingManager);
 
-        // this.fbxLoader = new FBXLoader(this.loadingManager);
+        this.listener = new THREE.AudioListener();
 
 
         this.audios = new Map();
@@ -38,7 +32,30 @@ class AssetManager {
 
         this.models = new Map();
 
-        // this.fbxsModels = new Map();
+
+        this.loadingManager.onProgress = (url, itemsLoaded, itemsTotal) => {
+
+            console.log(`Loading file: ${url}. ${itemsLoaded} of ${itemsTotal} files loaded.`);
+
+        }
+
+        this.loadingManager.onError = (url) => {
+
+                console.log(`There was an error loading ${url}`);
+
+        }
+
+        this.loadingManager.onLoad = () => {
+
+                console.log('Loading complete!');
+
+        }
+
+        this.loadingManager.onStart = (url, itemsLoaded, itemsTotal) => {
+
+            console.log(`Loading file: ${url}. ${itemsLoaded} of ${itemsTotal} files loaded.`);
+
+        }
 
     }
 
@@ -86,12 +103,8 @@ class AssetManager {
         const source = this.models.get(id);
 
         console.log(source);
-        // const model = new THREE.Mesh(source);
-        // model.copy(source);
-        // console.log(model);
 
         return source;
-        // return new THREE.Mesh(gltf.geometry, gltf.material);
 
     }
 
@@ -152,16 +165,6 @@ class AssetManager {
     }
 
 
-    _loadTextures() {
-
-        const textureLoader = this.textureLoader;
-        const textures      = this.textures;
-
-
-
-    }
-
-
     _loadFonts() {
 
         const fontLoader = this.fontLoader;
@@ -175,9 +178,8 @@ class AssetManager {
 
     _loadModels() {
 
-        const gltfLoader    = this.gltfLoader;
-        const textureLoader = this.textureLoader;
-        const models        = this.models;
+        const gltfLoader = this.gltfLoader;
+        const models     = this.models;
 
 
         // Ship model
@@ -199,6 +201,7 @@ class AssetManager {
             ship.rotation.set(0, Math.PI, 0);
             ship.castShadow    = true;
             ship.receiveShadow = true;
+            ship.doubleSided   = true;
             ship.name          = 'ship';
 
             models.set('ship', ship);
@@ -206,28 +209,22 @@ class AssetManager {
 
 
         // Swat Officer model
-        gltfLoader.load('./models/swat.glb', (gltf) => {
+        gltfLoader.load('./models/swat.gltf', (gltf) => {
             var geometry = new THREE.BufferGeometry();
-            var material = new THREE.MeshPhongMaterial();
             gltf.scene.traverse((child) => {
-                if (child instanceof THREE.Mesh) {
+                if (child.isMesh) {
                     geometry.merge(child.geometry, child.matrix);
-                }
-                if (child instanceof THREE.MeshPhongMaterial) {
-                    material = child;
-                }
-                if (child instanceof THREE.AnimationClip) {
-                    console.log(child);
                 }
             });
 
-            const swat = new THREE.Mesh(geometry, material);
+            const swat = new THREE.Mesh(geometry);
             swat.scale.set(0.5, 0.5, 0.5);
             swat.position.set(0, 0, 0);
             swat.rotation.set(0, Math.PI, 0);
             swat.castShadow       = true;
             swat.receiveShadow    = true;
             swat.matrixAutoUpdate = false;
+            swat.doubleSided      = true;
             swat.name             = 'guard';
 
             models.set('guard', swat);
@@ -253,6 +250,7 @@ class AssetManager {
             robot.rotation.set(0, Math.PI, 0);
             robot.castShadow    = true;
             robot.receiveShadow = true;
+            robot.doubleSided   = true;
             robot.name          = 'robot';
 
             models.set('robot', robot);
@@ -278,6 +276,7 @@ class AssetManager {
             alien.rotation.set(0, Math.PI, 0);
             alien.castShadow    = true;
             alien.receiveShadow = true;
+            alien.doubleSided   = true;
             alien.name          = 'alien';
 
             models.set('alien', alien);
@@ -304,6 +303,7 @@ class AssetManager {
             astronaut.rotation.set(0, Math.PI, 0);
             astronaut.castShadow    = true;
             astronaut.receiveShadow = true;
+            astronaut.doubleSided   = true;
             astronaut.name          = 'astronaut';
 
             models.set('astronaut', astronaut);
@@ -329,6 +329,7 @@ class AssetManager {
             wanderer.rotation.set(0, Math.PI, 0);
             wanderer.castShadow    = true;
             wanderer.receiveShadow = true;
+            wanderer.doubleSided   = true;
             wanderer.name          = 'wanderer';
 
             models.set('wanderer', wanderer);
@@ -354,6 +355,7 @@ class AssetManager {
             droid.rotation.set(0, Math.PI, 0);
             droid.castShadow    = true;
             droid.receiveShadow = true;
+            droid.doubleSided   = true;
             droid.name          = 'droid';
 
             models.set('droid', droid);

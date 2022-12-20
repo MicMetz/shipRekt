@@ -1,5 +1,5 @@
-import resolve from '@rollup/plugin-node-resolve';
-// import copy    from "rollup-plugin-copy";
+import resolve from '@rollup/plugin-node-resolve'; // locate and bundle dependencies in node_modules (mandatory)
+import babel   from 'rollup-plugin-babel';
 
 
 
@@ -14,12 +14,8 @@ export default {
     ],
     plugins: [
         resolve(),
-        /* copy({
-            targets : [
-                {src: 'src/models/!**', dest: 'build/assets'},
-            ],
-            verbose : true,
-            copyOnce: true,
-        }) */
+        babel({
+            exclude: 'node_modules/**'
+        }),
     ]
 };

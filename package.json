@@ -23,15 +23,16 @@
   },
   "homepage": "https://github.com/MicMetz/shiprecked#readme",
   "devDependencies": {
+    "@babel/preset-env": "^7.20.2",
     "@rollup/plugin-node-resolve": "^11.1.0",
     "concurrently": "^5.3.0",
     "eslint": "^7.18.0",
     "eslint-config-mdcs": "^4.2.3",
     "rollup": "^2.37.0",
+    "rollup-plugin-babel": "^4.4.0",
     "serve": "^11.3.2"
   },
   "dependencies": {
-    "rollup-plugin-copy": "^3.4.0",
     "three": "0.124.0",
     "yuka": "0.7.0"
   }
