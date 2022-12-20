@@ -106,6 +106,7 @@ class SceneManager {
 
         const guard = world._createGuard();
         console.log(dumpObject(guard));
+        console.log(guard);
         guard.position.set(0, 0.5, -4);
         guard.setCombatPattern(new DefaultCombatPattern());
         guard.setMovementPattern(new LeftRightMovementPattern());

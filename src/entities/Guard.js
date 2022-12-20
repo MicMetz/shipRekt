@@ -27,6 +27,8 @@ class Guard extends Vehicle {
 
 		this.audios = new Map();
 
+        this.bodyMesh = null;
+
 		this.protectionMesh = null;
 		this.protected = false;
 

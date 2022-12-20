@@ -617,16 +617,22 @@ class World {
 
     _createGuard() {
 
-        const guard             = new Guard(this);
-        const guardMesh         = this.guardMesh.clone();
+        const guard     = new Guard(this);
+        // const guardMesh         = new THREE.Group();
+        const guardMesh = this.assetManager.cloneModel('guard');
+        console.log(guardMesh);
+
+
         const protectionMesh    = this.protectionMesh.clone();
         protectionMesh.material = this.protectionMesh.material.clone(); // cloning a mesh does not clone its material (but we need unique uniforms!)
         const hitMesh           = this.hitMesh.clone();
         hitMesh.material        = this.hitMesh.material.clone();
 
+        // guardMesh.add();
         guardMesh.add(protectionMesh);
         guardMesh.add(hitMesh);
         guard.setRenderComponent(guardMesh, sync);
+        guard.bodyMesh       = guardMesh;
         guard.protectionMesh = protectionMesh;
         guard.hitMesh        = hitMesh;
         console.log('guard', guard)

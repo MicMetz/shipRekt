@@ -67028,9 +67028,15 @@
 
 	    cloneModel(id) {
 
-	        const gltf = this.models.get(id);
+	        const source = this.models.get(id);
 
-	        return gltf.clone();
+	        console.log(source);
+	        // const model = new THREE.Mesh(source);
+	        // model.copy(source);
+	        // console.log(model);
+
+	        return source;
+	        // return new THREE.Mesh(gltf.geometry, gltf.material);
 
 	    }
 
@@ -67115,128 +67121,191 @@
 	    _loadModels() {
 
 	        const gltfLoader    = this.gltfLoader;
-	        // const gltfLoader    = new GLTFLoader()/* .setDRACOLoader(new DRACOLoader()); */
 	        this.textureLoader;
 	        const models        = this.models;
 
+
 	        // Ship model
-	        var shipModel = new Mesh();
-	        gltfLoader.load('./models/ship/ship.gltf', (gltf) => {
+	        gltfLoader.load('./models/ship.glb', (gltf) => {
+	            var geometry = new BufferGeometry();
+	            var material = new MeshPhongMaterial();
 	            gltf.scene.traverse((child) => {
-	                if (child.name === 'Spaceship5') {
-	                    shipModel = child;
+	                if (child instanceof Mesh) {
+	                    geometry.merge(child.geometry, child.matrix);
+	                }
+	                if (child instanceof MeshPhongMaterial) {
+	                    material = child;
 	                }
 	            });
 
-	            shipModel.scale.multiplyScalar(0.5);
-	            shipModel.castShadow    = true;
-	            shipModel.receiveShadow = true;
-	            models.set('ship', shipModel);
+	            const ship = new Mesh(geometry, material);
+	            ship.scale.set(0.5, 0.5, 0.5);
+	            ship.position.set(0, 0, 0);
+	            ship.rotation.set(0, Math.PI, 0);
+	            ship.castShadow    = true;
+	            ship.receiveShadow = true;
+	            ship.name          = 'ship';
 
+	            models.set('ship', ship);
 	        });
 
 
 	        // Swat Officer model
-	        var swatOfficerModel = new Mesh();
 	        gltfLoader.load('./models/swat.glb', (gltf) => {
+	            var geometry = new BufferGeometry();
+	            var material = new MeshPhongMaterial();
 	            gltf.scene.traverse((child) => {
-	                if (child.name === 'swat') {
-	                    swatOfficerModel = child;
+	                if (child instanceof Mesh) {
+	                    geometry.merge(child.geometry, child.matrix);
+	                }
+	                if (child instanceof MeshPhongMaterial) {
+	                    material = child;
+	                }
+	                if (child instanceof AnimationClip) {
+	                    console.log(child);
 	                }
 	            });
 
-	            swatOfficerModel.scale.multiplyScalar(0.5);
-	            swatOfficerModel.castShadow    = true;
-	            swatOfficerModel.receiveShadow = true;
-	            models.set('guard', swatOfficerModel);
+	            const swat = new Mesh(geometry, material);
+	            swat.scale.set(0.5, 0.5, 0.5);
+	            swat.position.set(0, 0, 0);
+	            swat.rotation.set(0, Math.PI, 0);
+	            swat.castShadow       = true;
+	            swat.receiveShadow    = true;
+	            swat.matrixAutoUpdate = false;
+	            swat.name             = 'guard';
+
+	            models.set('guard', swat);
 	        });
+
 
 	        // Robot model
-	        var robotModel = new Mesh();
 	        gltfLoader.load('./models/robot.glb', (gltf) => {
+	            var geometry = new BufferGeometry();
+	            var material = new MeshPhongMaterial();
 	            gltf.scene.traverse((child) => {
-	                if (child.name === 'robot') {
-	                    robotModel = child;
+	                if (child instanceof Mesh) {
+	                    geometry.merge(child.geometry, child.matrix);
+	                }
+	                if (child instanceof MeshPhongMaterial) {
+	                    material = child;
 	                }
 	            });
 
-	            robotModel.scale.multiplyScalar(0.5);
-	            robotModel.castShadow    = true;
-	            robotModel.receiveShadow = true;
-	            models.set('robot', robotModel);
+	            const robot = new Mesh(geometry, material);
+	            robot.scale.set(0.5, 0.5, 0.5);
+	            robot.position.set(0, 0, 0);
+	            robot.rotation.set(0, Math.PI, 0);
+	            robot.castShadow    = true;
+	            robot.receiveShadow = true;
+	            robot.name          = 'robot';
+
+	            models.set('robot', robot);
 	        });
+
 
 	        // Alien model
-	        var alienModel = new Mesh();
 	        gltfLoader.load('./models/alien.glb', (gltf) => {
+	            var geometry = new BufferGeometry();
+	            var material = new MeshPhongMaterial();
 	            gltf.scene.traverse((child) => {
-	                if (child.name === 'alien') {
-	                    alienModel.scale.multiplyScalar(0.5);
-	                    alienModel.castShadow    = true;
-	                    alienModel.receiveShadow = true;
-	                    models.set('alien', alienModel);
+	                if (child instanceof Mesh) {
+	                    geometry.merge(child.geometry, child.matrix);
+	                }
+	                if (child instanceof MeshPhongMaterial) {
+	                    material = child;
 	                }
 	            });
+
+	            const alien = new Mesh(geometry, material);
+	            alien.scale.set(0.5, 0.5, 0.5);
+	            alien.position.set(0, 0, 0);
+	            alien.rotation.set(0, Math.PI, 0);
+	            alien.castShadow    = true;
+	            alien.receiveShadow = true;
+	            alien.name          = 'alien';
+
+	            models.set('alien', alien);
 	        });
 
-	        // Core model
-	        // gltfLoader.load('./models/core.glb', gltf => models.set('core', gltf.scene));
+
 
 	        // Astronaut model
-	        var astronautModel = new Mesh();
 	        gltfLoader.load('./models/astronaut.glb', (gltf) => {
+	            var geometry = new BufferGeometry();
+	            var material = new MeshPhongMaterial();
 	            gltf.scene.traverse((child) => {
-	                if (child.name === 'astronaut') {
-	                    astronautModel = child;
+	                if (child instanceof Mesh) {
+	                    geometry.merge(child.geometry, child.matrix);
+	                }
+	                if (child instanceof MeshPhongMaterial) {
+	                    material = child;
 	                }
 	            });
 
-	            astronautModel.scale.multiplyScalar(0.5);
-	            astronautModel.castShadow    = true;
-	            astronautModel.receiveShadow = true;
-	            models.set('astronaut', astronautModel);
+	            const astronaut = new Mesh(geometry, material);
+	            astronaut.scale.set(0.5, 0.5, 0.5);
+	            astronaut.position.set(0, 0, 0);
+	            astronaut.rotation.set(0, Math.PI, 0);
+	            astronaut.castShadow    = true;
+	            astronaut.receiveShadow = true;
+	            astronaut.name          = 'astronaut';
+
+	            models.set('astronaut', astronaut);
 	        });
+
 
 	        // Wanderer model
-	        var wandererModel = new Mesh();
 	        gltfLoader.load('./models/wanderer.glb', (gltf) => {
+	            var geometry = new BufferGeometry();
+	            var material = new MeshPhongMaterial();
 	            gltf.scene.traverse((child) => {
-	                if (child.name === 'wanderer') {
-	                    wandererModel = child;
+	                if (child instanceof Mesh) {
+	                    geometry.merge(child.geometry, child.matrix);
+	                }
+	                if (child instanceof MeshPhongMaterial) {
+	                    material = child;
 	                }
 	            });
 
-	            wandererModel.scale.multiplyScalar(0.5);
-	            wandererModel.castShadow    = true;
-	            wandererModel.receiveShadow = true;
-	            models.set('wanderer', wandererModel);
+	            const wanderer = new Mesh(geometry, material);
+	            wanderer.scale.set(0.5, 0.5, 0.5);
+	            wanderer.position.set(0, 0, 0);
+	            wanderer.rotation.set(0, Math.PI, 0);
+	            wanderer.castShadow    = true;
+	            wanderer.receiveShadow = true;
+	            wanderer.name          = 'wanderer';
+
+	            models.set('wanderer', wanderer);
 	        });
 
-	        // Drone model
-	        // var droneModel = new THREE.Mesh();
-	        // gltfLoader.load('./models/drone.glb', gltf => models.set('drone', gltf.scene));
 
 	        // Droid model
-	        var droidModel = new Mesh();
 	        gltfLoader.load('./models/droid.glb', (gltf) => {
+	            var geometry = new BufferGeometry();
+	            var material = new MeshPhongMaterial();
 	            gltf.scene.traverse((child) => {
-	                if (child.name === 'droid') {
-	                    droidModel = child;
+	                if (child instanceof Mesh) {
+	                    geometry.merge(child.geometry, child.matrix);
+	                }
+	                if (child instanceof MeshPhongMaterial) {
+	                    material = child;
 	                }
 	            });
 
-	            droidModel.scale.multiplyScalar(0.5);
-	            droidModel.castShadow    = true;
-	            droidModel.receiveShadow = true;
-	            models.set('droid', droidModel);
+	            const droid = new Mesh(geometry, material);
+	            droid.scale.set(0.5, 0.5, 0.5);
+	            droid.position.set(0, 0, 0);
+	            droid.rotation.set(0, Math.PI, 0);
+	            droid.castShadow    = true;
+	            droid.receiveShadow = true;
+	            droid.name          = 'droid';
+
+	            models.set('droid', droid);
 	        });
 
-	        // Asteroid model
-	        // var asteroidModel = new THREE.Mesh();
-	        // gltfLoader.load('./models/asteroid.glb', gltf => models.set('asteroid', gltf.scene));
 
 	    }
-
 
 
 	}
@@ -68260,6 +68329,8 @@
 
 			this.audios = new Map();
 
+	        this.bodyMesh = null;
+
 			this.protectionMesh = null;
 			this.protected = false;
 
@@ -69226,6 +69297,7 @@
 
 	        const guard = world._createGuard();
 	        console.log(dumpObject(guard));
+	        console.log(guard);
 	        guard.position.set(0, 0.5, -4);
 	        guard.setCombatPattern(new DefaultCombatPattern());
 	        guard.setMovementPattern(new LeftRightMovementPattern());
@@ -70758,16 +70830,22 @@
 
 	    _createGuard() {
 
-	        const guard             = new Guard(this);
-	        const guardMesh         = this.guardMesh.clone();
+	        const guard     = new Guard(this);
+	        // const guardMesh         = new THREE.Group();
+	        const guardMesh = this.assetManager.cloneModel('guard');
+	        console.log(guardMesh);
+
+
 	        const protectionMesh    = this.protectionMesh.clone();
 	        protectionMesh.material = this.protectionMesh.material.clone(); // cloning a mesh does not clone its material (but we need unique uniforms!)
 	        const hitMesh           = this.hitMesh.clone();
 	        hitMesh.material        = this.hitMesh.material.clone();
 
+	        // guardMesh.add();
 	        guardMesh.add(protectionMesh);
 	        guardMesh.add(hitMesh);
 	        guard.setRenderComponent(guardMesh, sync);
+	        guard.bodyMesh       = guardMesh;
 	        guard.protectionMesh = protectionMesh;
 	        guard.hitMesh        = hitMesh;
 	        console.log('guard', guard);
