@@ -41,13 +41,15 @@ class AssetManager {
 
         this.loadingManager.onError = (url) => {
 
-                console.log(`There was an error loading ${url}`);
+            console.log(`There was an error loading ${url}`);
 
         }
 
         this.loadingManager.onLoad = () => {
 
-                console.log('Loading complete!');
+            console.log('Loading complete!');
+            this.ItemsLoaded();
+
 
         }
 
@@ -82,6 +84,15 @@ class AssetManager {
         });
 
     }
+
+
+    ItemsLoaded() {
+
+        console.log("Items Loaded");
+        document.getElementById("loading").style.display = "none";
+
+    }
+
 
 
     cloneAudio(id) {
@@ -212,7 +223,7 @@ class AssetManager {
         gltfLoader.load('./models/swat.gltf', (gltf) => {
             var geometry = new THREE.BufferGeometry();
             gltf.scene.traverse((child) => {
-                if (child.isMesh) {
+                if (child instanceof THREE.Mesh) {
                     geometry.merge(child.geometry, child.matrix);
                 }
             });

@@ -19,6 +19,15 @@ import {dumpObject}                  from '../etc/utilities.js';
 
 
 
+export function start() {
+
+    const game = new World();
+    game.init();
+
+}
+
+
+
 const toVector     = new YUKA.Vector3();
 const displacement = new YUKA.Vector3();
 
@@ -100,7 +109,7 @@ class World {
             gameComplete         : document.getElementById('game-complete'),
             gameOver             : document.getElementById('game-over'),
             stagesCleared        : document.getElementById('stages-cleared'),
-            startScreen          : document.getElementById('start-screen'),
+            startScreen          : document.getElementById('splash-screen'),
         };
 
     }
@@ -1397,20 +1406,14 @@ class World {
 
 
 
-function
-
-
-sync(entity, renderComponent) {
+function sync(entity, renderComponent) {
 
     renderComponent.matrix.copy(entity.worldMatrix);
 
 }
 
 
-function
-
-
-onRestart() {
+function onRestart() {
 
     this._stopAnimation();
 
@@ -1433,10 +1436,7 @@ onRestart() {
 }
 
 
-function
-
-
-onContinueButtonClick() {
+function onContinueButtonClick() {
 
     this.controls.connect();
 
@@ -1446,10 +1446,7 @@ onContinueButtonClick() {
 }
 
 
-function
-
-
-onWindowResize() {
+function onWindowResize() {
 
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
@@ -1459,10 +1456,7 @@ onWindowResize() {
 }
 
 
-function
-
-
-startAnimation() {
+function startAnimation() {
 
     this._requestID = requestAnimationFrame(this._startAnimation);
 
@@ -1471,17 +1465,11 @@ startAnimation() {
 }
 
 
-function
-
-
-stopAnimation() {
+function stopAnimation() {
 
     cancelAnimationFrame(this._requestID);
 
 }
 
 
-export default new
-
-
-World();
+// export default new World();

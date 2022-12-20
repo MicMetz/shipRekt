@@ -10,6 +10,7 @@ export default {
             format: 'umd',
             name  : 'ShipRekt',
             file  : 'build/bundle.js',
+            inlineDynamicImports: true,
         }
     ],
     plugins: [

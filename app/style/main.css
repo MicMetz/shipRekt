@@ -94,7 +94,7 @@ button:focus {
 	opacity: 0;
 }
 
-#start-screen {
+#splash-screen {
 	align-items: center;
 	justify-content: center;
 	z-index: 3;
@@ -102,4 +102,48 @@ button:focus {
 
 #stage-counter {
 	text-align: right;
+}
+
+
+#loading-screen {
+    font-size: 10vw;
+    text-align: center;
+    color: #ffdba5;
+    animation: pulse 2s infinite;
+    font-family: monospace;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+.loading #loading-screen {
+    display: block
+}
+
+.ready #loading-screen {
+    animation: none;
+    color: #134461;
+    background-color: #ffdba5;
+    width: fit-content;
+    padding: 0vw 3vw;
+}
+
+.playing #loading-screen {
+    display: none;
+}
+
+#loading-indicator {
+    position: absolute;
+    width: 100%;
+    text-align: center;
+    top: 30vh;
+    font-size: 3vh;
+    color: wheat;
+    font-family: monospace;
 }
