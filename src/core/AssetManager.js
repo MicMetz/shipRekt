@@ -46,8 +46,6 @@ class AssetManager {
         this.loadingManager.onLoad = () => {
 
             console.log('Loading complete!');
-            this.ItemsLoaded();
-
 
         }
 
@@ -62,6 +60,8 @@ class AssetManager {
 
     init() {
 
+        this._itemsLoading();
+
         this._loadAudios();
         this._loadModels();
 
@@ -70,6 +70,7 @@ class AssetManager {
         return new Promise((resolve) => {
 
             loadingManager.onLoad = () => {
+                this._itemsLoaded();
 
                 setTimeout(() => {
 
@@ -84,13 +85,22 @@ class AssetManager {
     }
 
 
-    ItemsLoaded() {
+    _itemsLoading() {
 
-        console.log("Items Loaded");
-        document.getElementById("loading").style.display = "none";
+            console.log("Items Loading");
+            document.getElementById("loading-screen").classList.remove("loaded");
+            document.getElementById("loading-screen").classList.add("loading");
 
     }
 
+
+    _itemsLoaded() {
+
+        console.log("Items Loaded");
+        document.getElementById("loading-screen").classList.remove("loading");
+        document.getElementById("loading-screen").classList.add("loaded");
+
+    }
 
 
     cloneAudio(id) {
