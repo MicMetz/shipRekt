@@ -3,9 +3,9 @@
  * @original Mugen87 / https://github.com/Mugen87
  */
 
-import {Vector3}                                                                                              from 'yuka';
-import {dumpObject}                                                                                           from "../etc/utilities.js";
-import {DefaultCombatPattern, SpreadCombatPattern, FocusCombatPattern, RandomCombatPattern}                   from '../patterns/CombatPatterns';
+import {Vector3}                                                                            from 'yuka';
+import {dumpObject}                                                                         from "../etc/Utilities.js";
+import {DefaultCombatPattern, SpreadCombatPattern, FocusCombatPattern, RandomCombatPattern} from '../patterns/CombatPatterns';
 import {LeftRightMovementPattern, WavyMovementPattern, CircleMovementPattern, PursuitBehaviorMovementPattern} from '../patterns/MovementPatterns';
 import {Obstacle}                                                                                             from '../entities/Obstacle';
 import {PropertyAnimation}                                                                                    from './AnimationSystem';

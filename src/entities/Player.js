@@ -2,10 +2,10 @@
  * @author Mugen87 / https://github.com/Mugen87
  */
 
-import {AABB, MovingEntity, MathUtils, OBB, Ray, Vector3} from 'yuka';
+import { AABB, MovingEntity, MathUtils, OBB, Ray, Vector3 } from 'yuka';
 
-import {Particle, ParticleSystem} from '../core/ParticleSystem.js';
-import {PlayerProjectile}         from './PlayerProjectile.js';
+import { Particle, ParticleSystem } from '../core/ParticleSystem.js';
+import { PlayerProjectile }         from './PlayerProjectile.js';
 
 
 
@@ -19,234 +19,240 @@ const offset             = new Vector3();
 
 
 
+
+
 class Player extends MovingEntity {
 
-    constructor(world) {
+  constructor(world) {
+    super();
 
-        super();
+    console.log(process.env.NODE_ENV);
+    this. _GOD_MODE_ = process.env.NODE_ENV === 'development' ? true : false;
 
-        this.world = world;
+    this.world             = world;
+    this.maxSpeed          = 6;
+    this.updateOrientation = false;
 
-        this.maxSpeed          = 6;
-        this.updateOrientation = false;
+    this.MAX_HEALTH_POINTS = 3;
+    this.healthPoints      = this.MAX_HEALTH_POINTS;
 
-        this.MAX_HEALTH_POINTS = 3;
-        this.healthPoints      = this.MAX_HEALTH_POINTS;
+    this.boundingRadius = 0.5;
 
-        this.boundingRadius = 0.5;
+    this.shotsPerSecond = 10;
+    this.lastShotTime   = 0;
 
-        this.shotsPerSecond = 10;
-        this.lastShotTime   = 0;
+    this.obb = new OBB();
+    this.obb.halfSizes.set(0.1, 0.1, 0.5);
 
-        this.obb = new OBB();
-        this.obb.halfSizes.set(0.1, 0.1, 0.5);
+    this.audios = new Map();
 
-        this.audios = new Map();
+    // particles
 
-        // particles
+    this.maxParticles   = 20;
+    this.particleSystem = new ParticleSystem();
+    this.particleSystem.init(this.maxParticles);
+    this.particlesPerSecond = 6; // number of particles per second with maxSpeed
 
-        this.maxParticles   = 20;
-        this.particleSystem = new ParticleSystem();
-        this.particleSystem.init(this.maxParticles);
-        this.particlesPerSecond = 6; // number of particles per second with maxSpeed
+    this._particlesNextEmissionTime = 0;
+    this._particlesElapsedTime      = 0;
 
-        this._particlesNextEmissionTime = 0;
-        this._particlesElapsedTime      = 0;
+  }
+
+
+  shoot() {
+
+    const world       = this.world;
+    const elapsedTime = world.time.getElapsed();
+
+    if (elapsedTime - this.lastShotTime > (1 / this.shotsPerSecond)) {
+
+      this.lastShotTime = elapsedTime;
+
+      this.getDirection(direction);
+
+      const projectile = new PlayerProjectile(this, direction);
+
+      world.addProjectile(projectile);
+
+      const audio = this.audios.get('playerShot');
+      world.playAudio(audio);
 
     }
 
+    return this;
 
-    shoot() {
+  }
 
-        const world       = this.world;
-        const elapsedTime = world.time.getElapsed();
 
-        if (elapsedTime - this.lastShotTime > (1 / this.shotsPerSecond)) {
+  heal() {
 
-            this.lastShotTime = elapsedTime;
+    this.healthPoints = this.MAX_HEALTH_POINTS;
 
-            this.getDirection(direction);
+    return this;
 
-            const projectile = new PlayerProjectile(this, direction);
+  }
 
-            world.addProjectile(projectile);
 
-            const audio = this.audios.get('playerShot');
+  update(delta) {
+
+    this.obb.center.copy(this.position);
+    this.obb.rotation.fromQuaternion(this.rotation);
+
+    this._restrictMovement();
+
+    super.update(delta);
+
+    this.updateParticles(delta);
+
+    return this;
+
+  }
+
+
+  updateParticles(delta) {
+
+    // check emission of new particles
+
+    const timeScale      = this.getSpeed() / this.maxSpeed; // [0,1]
+    const effectiveDelta = delta * timeScale;
+
+    this._particlesElapsedTime += effectiveDelta;
+
+    if (this._particlesElapsedTime > this._particlesNextEmissionTime) {
+
+      const t = 1 / this.particlesPerSecond;
+
+      this._particlesNextEmissionTime = this._particlesElapsedTime + (t / 2) + (t / 2 * Math.random());
+
+      // emit new particle
+
+      const particle = new Particle();
+      offset.x       = Math.random() * 0.3;
+      offset.y       = Math.random() * 0.3;
+      offset.z       = Math.random() * 0.3;
+      particle.position.copy(this.position).add(offset);
+      particle.lifetime = Math.random() * 0.7 + 0.3;
+      particle.opacity  = Math.random() * 0.5 + 0.5;
+      particle.size     = Math.floor(Math.random() * 10) + 10;
+      particle.angle    = Math.round(Math.random()) * Math.PI * Math.random();
+
+      this.particleSystem.add(particle);
+
+    }
+
+    // update the system itself
+
+    this.particleSystem.update(delta);
+
+  }
+
+
+  handleMessage(telegram) {
+
+    switch (telegram.message) {
+
+      case 'hit':
+
+        if (this._GOD_MODE_ === false) {
+          console.log('player hit');
+
+          const world = this.world;
+
+          const audio = this.audios.get('playerHit');
+          world.playAudio(audio);
+
+          this.healthPoints--;
+
+          if (this.healthPoints === 0) {
+
+            const audio = this.audios.get('playerExplode');
             world.playAudio(audio);
 
+          }
         }
+        break;
 
-        return this;
+      default:
 
-    }
-
-
-    heal() {
-
-        this.healthPoints = this.MAX_HEALTH_POINTS;
-
-        return this;
+        console.error('Unknown message type:', telegram.message);
 
     }
 
+    return true;
 
-    update(delta) {
-
-        this.obb.center.copy(this.position);
-        this.obb.rotation.fromQuaternion(this.rotation);
-
-        this._restrictMovement();
-
-        super.update(delta);
-
-        this.updateParticles(delta);
-
-        return this;
-
-    }
+  }
 
 
-    updateParticles(delta) {
+  _restrictMovement() {
 
-        // check emission of new particles
+    if (this.velocity.squaredLength() === 0) return;
 
-        const timeScale      = this.getSpeed() / this.maxSpeed; // [0,1]
-        const effectiveDelta = delta * timeScale;
+    // check obstacles
 
-        this._particlesElapsedTime += effectiveDelta;
+    const world     = this.world;
+    const obstacles = world.obstacles;
 
-        if (this._particlesElapsedTime > this._particlesNextEmissionTime) {
+    for (let i = 0, l = obstacles.length; i < l; i++) {
 
-            const t = 1 / this.particlesPerSecond;
+      const obstacle = obstacles[i];
 
-            this._particlesNextEmissionTime = this._particlesElapsedTime + (t / 2) + (t / 2 * Math.random());
+      // enhance the AABB
 
-            // emit new particle
+      aabb.copy(obstacle.aabb);
+      aabb.max.addScalar(this.boundingRadius * 0.5);
+      aabb.min.subScalar(this.boundingRadius * 0.5);
 
-            const particle = new Particle();
-            offset.x       = Math.random() * 0.3;
-            offset.y       = Math.random() * 0.3;
-            offset.z       = Math.random() * 0.3;
-            particle.position.copy(this.position).add(offset);
-            particle.lifetime = Math.random() * 0.7 + 0.3;
-            particle.opacity  = Math.random() * 0.5 + 0.5;
-            particle.size     = Math.floor(Math.random() * 10) + 10;
-            particle.angle    = Math.round(Math.random()) * Math.PI * Math.random();
+      // setup ray
 
-            this.particleSystem.add(particle);
+      ray.origin.copy(this.position);
+      ray.direction.copy(this.velocity).normalize();
 
-        }
+      // perform ray/AABB intersection test
 
-        // update the system itself
+      if (ray.intersectAABB(aabb, intersectionPoint) !== null) {
 
-        this.particleSystem.update(delta);
+        const squaredDistance = this.position.squaredDistanceTo(intersectionPoint);
 
-    }
+        if (squaredDistance <= (this.boundingRadius * this.boundingRadius)) {
 
+          // derive normal vector
 
-    handleMessage(telegram) {
+          aabb.getNormalFromSurfacePoint(intersectionPoint, intersectionNormal);
 
-        switch (telegram.message) {
+          // compute reflection vector
 
-            case 'hit':
+          reflectionVector.copy(ray.direction).reflect(intersectionNormal);
 
-                const world = this.world;
+          // compute new velocity vector
 
-                const audio = this.audios.get('playerHit');
-                world.playAudio(audio);
+          const speed = this.getSpeed();
 
-                this.healthPoints--;
+          this.velocity.addVectors(ray.direction, reflectionVector).normalize();
 
-                if (this.healthPoints === 0) {
+          const f = 1 - Math.abs(intersectionNormal.dot(ray.direction));
 
-                    const audio = this.audios.get('playerExplode');
-                    world.playAudio(audio);
-
-                }
-
-                break;
-
-            default:
-
-                console.error('Unknown message type:', telegram.message);
+          this.velocity.multiplyScalar(speed * f);
 
         }
 
-        return true;
+      }
 
     }
 
+    // ensure player does not leave the game area
 
-    _restrictMovement() {
+    const fieldXHalfSize = world.field.x / 2;
+    const fieldZHalfSize = world.field.z / 2;
 
-        if (this.velocity.squaredLength() === 0) return;
+    this.position.x = MathUtils.clamp(this.position.x, -(fieldXHalfSize - this.boundingRadius), (fieldXHalfSize - this.boundingRadius));
+    this.position.z = MathUtils.clamp(this.position.z, -(fieldZHalfSize - this.boundingRadius), (fieldZHalfSize - this.boundingRadius));
 
-        // check obstacles
+    return this;
 
-        const world     = this.world;
-        const obstacles = world.obstacles;
-
-        for (let i = 0, l = obstacles.length; i < l; i++) {
-
-            const obstacle = obstacles[i];
-
-            // enhance the AABB
-
-            aabb.copy(obstacle.aabb);
-            aabb.max.addScalar(this.boundingRadius * 0.5);
-            aabb.min.subScalar(this.boundingRadius * 0.5);
-
-            // setup ray
-
-            ray.origin.copy(this.position);
-            ray.direction.copy(this.velocity).normalize();
-
-            // perform ray/AABB intersection test
-
-            if (ray.intersectAABB(aabb, intersectionPoint) !== null) {
-
-                const squaredDistance = this.position.squaredDistanceTo(intersectionPoint);
-
-                if (squaredDistance <= (this.boundingRadius * this.boundingRadius)) {
-
-                    // derive normal vector
-
-                    aabb.getNormalFromSurfacePoint(intersectionPoint, intersectionNormal);
-
-                    // compute reflection vector
-
-                    reflectionVector.copy(ray.direction).reflect(intersectionNormal);
-
-                    // compute new velocity vector
-
-                    const speed = this.getSpeed();
-
-                    this.velocity.addVectors(ray.direction, reflectionVector).normalize();
-
-                    const f = 1 - Math.abs(intersectionNormal.dot(ray.direction));
-
-                    this.velocity.multiplyScalar(speed * f);
-
-                }
-
-            }
-
-        }
-
-        // ensure player does not leave the game area
-
-        const fieldXHalfSize = world.field.x / 2;
-        const fieldZHalfSize = world.field.z / 2;
-
-        this.position.x = MathUtils.clamp(this.position.x, -(fieldXHalfSize - this.boundingRadius), (fieldXHalfSize - this.boundingRadius));
-        this.position.z = MathUtils.clamp(this.position.z, -(fieldZHalfSize - this.boundingRadius), (fieldZHalfSize - this.boundingRadius));
-
-        return this;
-
-    }
+  }
 
 }
 
 
 
-export {Player};
+export { Player };

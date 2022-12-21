@@ -1,7 +1,14 @@
 import resolve from '@rollup/plugin-node-resolve'; // locate and bundle dependencies in node_modules (mandatory)
 import babel   from 'rollup-plugin-babel';
+import injectProcessEnv from 'rollup-plugin-inject-process-env';
 
 
+
+
+const getBabelOptions = ({ useESModules }) => ({
+  exclude       : '**/node_modules/**',
+  runtimeHelpers: true,
+});
 
 export default {
     input  : 'src/main.js',
@@ -15,8 +22,9 @@ export default {
     ],
     plugins: [
         resolve(),
-        babel({
-            exclude: 'node_modules/**'
+        babel(getBabelOptions({ useESModules: true })),
+        injectProcessEnv({
+          NODE_ENV: process.env.NODE_ENV,
         }),
     ]
 };

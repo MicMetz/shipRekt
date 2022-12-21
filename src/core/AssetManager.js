@@ -5,8 +5,8 @@
 
 import * as THREE            from 'three';
 import {BufferGeometryUtils} from "three/examples/jsm/utils/BufferGeometryUtils.js";
-import {GLTFLoader}          from "three/examples/jsm/loaders/GLTFLoader.js";
-import {dumpObject}          from "../etc/utilities.js";
+import {GLTFLoader} from "three/examples/jsm/loaders/GLTFLoader.js";
+import {dumpObject} from "../etc/Utilities.js";
 
 
 
@@ -20,49 +20,29 @@ class AssetManager {
         this.fontLoader    = new THREE.FontLoader(this.loadingManager);
         this.textureLoader = new THREE.TextureLoader(this.loadingManager);
         this.gltfLoader    = new GLTFLoader(this.loadingManager);
+        this.listener      = new THREE.AudioListener();
 
-        this.listener = new THREE.AudioListener();
-
-        this.audios = new Map();
-
-        this.textures = new Map();
-
-        this.fonts = new Map();
-
-        this.models = new Map();
+        this.animations = new Map();
+        this.audios     = new Map();
+        this.textures   = new Map();
+        this.fonts      = new Map();
+        this.models     = new Map();
 
 
-        this.loadingManager.onProgress = (url, itemsLoaded, itemsTotal) => {
+        this.loadingManager.onProgress = (url, itemsLoaded, itemsTotal) => { console.log(`Loading file: ${url}. ${itemsLoaded} of ${itemsTotal} files loaded.`); }
 
-            console.log(`Loading file: ${url}. ${itemsLoaded} of ${itemsTotal} files loaded.`);
+        this.loadingManager.onError = (url) => { console.log(`There was an error loading ${url}`); }
 
-        }
+        this.loadingManager.onLoad = () => { console.log('Loading complete!'); }
 
-        this.loadingManager.onError = (url) => {
-
-            console.log(`There was an error loading ${url}`);
-
-        }
-
-        this.loadingManager.onLoad = () => {
-
-            console.log('Loading complete!');
-
-        }
-
-        this.loadingManager.onStart = (url, itemsLoaded, itemsTotal) => {
-
-            console.log(`Loading file: ${url}. ${itemsLoaded} of ${itemsTotal} files loaded.`);
-
-        }
+        this.loadingManager.onStart = (url, itemsLoaded, itemsTotal) => { console.log(`Loading file: ${url}. ${itemsLoaded} of ${itemsTotal} files loaded.`); }
 
     }
 
 
     init() {
 
-        this._itemsLoading();
-
+        // this._itemsLoading();
         this._loadAudios();
         this._loadModels();
 
@@ -71,7 +51,7 @@ class AssetManager {
         return new Promise((resolve) => {
 
             loadingManager.onLoad = () => {
-                this._itemsLoaded();
+                // this._itemsLoaded();
 
                 setTimeout(() => {
 
@@ -221,11 +201,11 @@ class AssetManager {
 
         // Swat Officer model
         gltfLoader.load('./models/swat.glb', (gltf) => {
-            const model   = gltf.scene;
-            var geometry  = new THREE.Mesh();
-            let geoms     = []
-            let meshes    = []
-            let mats = []
+            const model  = gltf.scene;
+            var geometry = new THREE.Mesh();
+            let geoms    = []
+            let meshes   = []
+            let mats     = []
 
 
             model.updateMatrixWorld()
@@ -348,7 +328,7 @@ class AssetManager {
             const wandererMesh = new THREE.Mesh(wanderer, new THREE.MeshStandardMaterial({color: 0x000000}));
             wandererMesh.name  = 'Wanderer';
 
-            models.set('wanderer', wandererMesh);
+            models.set('Wanderer', wandererMesh);
         });
 
 
@@ -379,18 +359,32 @@ class AssetManager {
     }
 
 
+    _loadAnimations() {
+
+        const animations = this.animations;
+
+        // manually create some keyframes for testing
+
+        let positionKeyframes, rotationKeyframes;
+        let q0, q1, q2;
+
+
+    }
+
+
 }
 
 
+
 function MergeSkinnedGeometry(geo1, geo2) {
-    var attributes = ["normal", "position", "skinIndex", "skinWeight"];
+    var attributes  = ["normal", "position", "skinIndex", "skinWeight"];
     var dataLengths = [3, 3, 4, 4];
-    var geo = new THREE.BufferGeometry();
+    var geo         = new THREE.BufferGeometry();
     for (var attIndex = 0; attIndex < attributes.length; attIndex++) {
         var currentAttribute = attributes[attIndex];
-        var geo1Att = geo1.getAttribute(currentAttribute);
-        var geo2Att = geo2.getAttribute(currentAttribute);
-        var currentArray = null;
+        var geo1Att          = geo1.getAttribute(currentAttribute);
+        var geo2Att          = geo2.getAttribute(currentAttribute);
+        var currentArray     = null;
         if (currentAttribute === "skinIndex") currentArray = new Uint16Array(geo1Att.array.length + geo2Att.array.length)
         else currentArray = new Float32Array(geo1Att.array.length + geo2Att.array.length)
         var innerCount = 0;
