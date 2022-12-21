@@ -3,9 +3,10 @@
  * @original Mugen87 / https://github.com/Mugen87
  */
 
-import * as THREE   from 'three';
-import {GLTFLoader} from "three/examples/jsm/loaders/GLTFLoader.js";
-import {dumpObject} from "../etc/utilities.js";
+import * as THREE            from 'three';
+import {BufferGeometryUtils} from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import {GLTFLoader}          from "three/examples/jsm/loaders/GLTFLoader.js";
+import {dumpObject}          from "../etc/utilities.js";
 
 
 
@@ -87,9 +88,9 @@ class AssetManager {
 
     _itemsLoading() {
 
-            console.log("Items Loading");
-            document.getElementById("loading-screen").classList.remove("loaded");
-            document.getElementById("loading-screen").classList.add("loading");
+        console.log("Items Loading");
+        document.getElementById("loading-screen").classList.remove("loaded");
+        document.getElementById("loading-screen").classList.add("loading");
 
     }
 
@@ -202,52 +203,40 @@ class AssetManager {
         const models        = this.models;
 
 
+        // Pickup Health
+        gltfLoader.load('./models/PickupHealth.glb', (gltf) => {
+            const model = gltf.scene.getObjectByName('Pickup_Health').children[0];
+            model.matrixAutoUpdate = false;
+            models.set('pickupHealth', model);
+        });
+
+
         // Ship model
         gltfLoader.load('./models/ship.glb', (gltf) => {
-            var geometry = new THREE.BufferGeometry();
-            var material = new THREE.MeshPhongMaterial();
-            gltf.scene.traverse((child) => {
-                if (child instanceof THREE.Mesh) {
-                    geometry.merge(child.geometry, child.matrix);
-                }
-                if (child instanceof THREE.MeshPhongMaterial) {
-                    material = child;
-                }
-            });
-
-            const ship = new THREE.Mesh(geometry, material);
-            ship.scale.set(0.5, 0.5, 0.5);
-            ship.position.set(0, 0, 0);
-            ship.rotation.set(0, Math.PI, 0);
-            ship.castShadow    = true;
-            ship.receiveShadow = true;
-            ship.doubleSided   = true;
-            ship.name          = 'ship';
-
-            models.set('ship', ship);
+            const model = gltf.scene.getObjectByName('Spaceship5').children[0];
+            model.name  = 'Spaceship';
+            models.set('Spaceship', model);
         });
 
 
         // Swat Officer model
-        gltfLoader.load('./models/swat.gltf', (gltf) => {
-            var geometry = new THREE.BufferGeometry();
-            gltf.scene.traverse((child) => {
-                if (child instanceof THREE.Mesh) {
-                    geometry.merge(child.geometry, child.matrix);
-                }
-            });
+        gltfLoader.load('./models/swat.glb', (gltf) => {
+            const model  = gltf.scene;
+            var geometry = new THREE.Mesh();
+            let geoms    = []
+            let meshes   = []
 
-            const swat = new THREE.Mesh(geometry);
-            swat.scale.set(0.5, 0.5, 0.5);
-            swat.position.set(0, 0, 0);
-            swat.rotation.set(0, Math.PI, 0);
-            swat.castShadow       = true;
-            swat.receiveShadow    = true;
-            swat.matrixAutoUpdate = false;
-            swat.doubleSided      = true;
-            swat.name             = 'guard';
+            model.updateMatrixWorld()
+            model.traverse(e => e.isMesh && meshes.push(e) && (geoms.push((e.geometry.index) ? e.geometry.toNonIndexed() : e.geometry().clone())))
+            geoms.forEach((g, i) => g.applyMatrix4(meshes[i].matrixWorld));
 
-            models.set('guard', swat);
+            let swat = BufferGeometryUtils.mergeBufferGeometries(geoms);
+            swat.computeVertexNormals();
+            swat.applyMatrix4(model.matrix.clone().invert());
+            swat.userData.materials = meshes.map(m => m.material)
+            const swatmesh = new THREE.Mesh(swat, new THREE.MeshStandardMaterial({color: 0x000000}));
+            swatmesh.name = 'Swat';
+            models.set('guard', swatmesh);
         });
 
 
