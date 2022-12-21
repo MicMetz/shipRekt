@@ -321,28 +321,35 @@ class AssetManager {
 
 
         // Wanderer model
-        // gltfLoader.load('./models/wanderer.glb', (gltf) => {
-        //     const model   = gltf.scene;
-        //     var geometry  = new THREE.Mesh();
-        //     let geoms     = []
-        //     let meshes    = []
-        //     let materials = []
-        //
-        //
-        //     model.updateMatrixWorld()
-        //     model.traverse(e => e.isMesh && meshes.push(e) && (geoms.push((e.geometry.index) ? e.geometry.toNonIndexed() : e.geometry().clone())))
-        //     geoms.forEach((g, i) => g.applyMatrix4(meshes[i].matrixWorld));
-        //
-        //     let wanderer = BufferGeometryUtils.mergeBufferGeometries(geoms);
-        //     wanderer.computeVertexNormals();
-        //     wanderer.applyMatrix4(model.matrix.clone().invert());
-        //     wanderer.userData.materials = meshes.map(m => m.material)
-        //
-        //     const wandererMesh = new THREE.Mesh(wanderer, new THREE.MeshStandardMaterial({color: 0x000000}));
-        //     wandererMesh.name  = 'Wanderer';
-        //
-        //     models.set('wanderer', wandererMesh);
-        // });
+        gltfLoader.load('./models/wanderer.glb', (gltf) => {
+            const model   = gltf.scene;
+            var geometry  = new THREE.Mesh();
+            let geoms     = []
+            let meshes    = []
+            let materials = []
+
+
+            model.updateMatrixWorld()
+            model.traverse(e => e.isMesh && meshes.push(e) && (geoms.push((e.geometry.index) ? e.geometry.toNonIndexed() : e.geometry().clone())))
+            geoms.forEach((g, i) => g.applyMatrix4(meshes[i].matrixWorld));
+
+            var wanderer = geoms[0];
+            for (var i = 1; i < geoms.length; i++) {
+                // if (geoms[i] !== undefined) {
+                //     MergeSkinnedGeometry(wanderer, geoms[i]);
+                // }
+                wanderer.merge(geoms[i]);
+            }
+            // let wanderer = BufferGeometryUtils.mergeBufferGeometries(geoms);
+            wanderer.computeVertexNormals();
+            wanderer.applyMatrix4(model.matrix.clone().invert());
+            wanderer.userData.materials = meshes.map(m => m.material)
+
+            const wandererMesh = new THREE.Mesh(wanderer, new THREE.MeshStandardMaterial({color: 0x000000}));
+            wandererMesh.name  = 'Wanderer';
+
+            models.set('wanderer', wandererMesh);
+        });
 
 
         // Droid model
@@ -372,6 +379,34 @@ class AssetManager {
     }
 
 
+}
+
+
+function MergeSkinnedGeometry(geo1, geo2) {
+    var attributes = ["normal", "position", "skinIndex", "skinWeight"];
+    var dataLengths = [3, 3, 4, 4];
+    var geo = new THREE.BufferGeometry();
+    for (var attIndex = 0; attIndex < attributes.length; attIndex++) {
+        var currentAttribute = attributes[attIndex];
+        var geo1Att = geo1.getAttribute(currentAttribute);
+        var geo2Att = geo2.getAttribute(currentAttribute);
+        var currentArray = null;
+        if (currentAttribute === "skinIndex") currentArray = new Uint16Array(geo1Att.array.length + geo2Att.array.length)
+        else currentArray = new Float32Array(geo1Att.array.length + geo2Att.array.length)
+        var innerCount = 0;
+        geo1Att.array.map((item) => {
+            currentArray[innerCount] = item;
+            innerCount++;
+        });
+        geo2Att.array.map((item) => {
+            currentArray[innerCount] = item;
+            innerCount++;
+        });
+        geo1Att.array = currentArray;
+        geo1Att.count = currentArray.length / dataLengths[attIndex];
+        geo.setAttribute(currentAttribute, geo1Att);
+    }
+    return geo;
 }
 
 
