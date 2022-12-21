@@ -225,12 +225,13 @@ class AssetManager {
             var geometry  = new THREE.Mesh();
             let geoms     = []
             let meshes    = []
-            let materials = []
+            let mats = []
 
 
             model.updateMatrixWorld()
             model.traverse(e => e.isMesh && meshes.push(e) && (geoms.push((e.geometry.index) ? e.geometry.toNonIndexed() : e.geometry().clone())))
             geoms.forEach((g, i) => g.applyMatrix4(meshes[i].matrixWorld));
+
 
             let swat = BufferGeometryUtils.mergeBufferGeometries(geoms);
             swat.computeVertexNormals();
@@ -245,28 +246,28 @@ class AssetManager {
 
 
         // Robot model
-        gltfLoader.load('./models/robot.glb', (gltf) => {
-            const model   = gltf.scene;
-            var geometry  = new THREE.Mesh();
-            let geoms     = []
-            let meshes    = []
-            let materials = []
-
-
-            model.updateMatrixWorld()
-            model.traverse(e => e.isMesh && meshes.push(e) && (geoms.push((e.geometry.index) ? e.geometry.toNonIndexed() : e.geometry().clone())))
-            geoms.forEach((g, i) => g.applyMatrix4(meshes[i].matrixWorld));
-
-            let robot = BufferGeometryUtils.mergeBufferGeometries(geoms);
-            robot.computeVertexNormals();
-            robot.applyMatrix4(model.matrix.clone().invert());
-            robot.userData.materials = meshes.map(m => m.material)
-
-            const robotMesh = new THREE.Mesh(robot, new THREE.MeshStandardMaterial({color: 0x000000}));
-            robotMesh.name  = 'Boom Bot';
-
-            models.set('BoomBot', robotMesh);
-        });
+        // gltfLoader.load('./models/robot.glb', (gltf) => {
+        //     const model   = gltf.scene;
+        //     var geometry  = new THREE.Mesh();
+        //     let geoms     = []
+        //     let meshes    = []
+        //     let materials = []
+        //
+        //
+        //     model.updateMatrixWorld()
+        //     model.traverse(e => e.isMesh && meshes.push(e) && (geoms.push((e.geometry.index) ? e.geometry.toNonIndexed() : e.geometry().clone())))
+        //     geoms.forEach((g, i) => g.applyMatrix4(meshes[i].matrixWorld));
+        //
+        //     let robot = BufferGeometryUtils.mergeBufferGeometries(geoms);
+        //     robot.computeVertexNormals();
+        //     robot.applyMatrix4(model.matrix.clone().invert());
+        //     robot.userData.materials = meshes.map(m => m.material)
+        //
+        //     const robotMesh = new THREE.Mesh(robot, new THREE.MeshStandardMaterial({color: 0x000000}));
+        //     robotMesh.name  = 'Boom Bot';
+        //
+        //     models.set('BoomBot', robotMesh);
+        // });
 
 
         // Alien model
@@ -320,28 +321,28 @@ class AssetManager {
 
 
         // Wanderer model
-        gltfLoader.load('./models/wanderer.glb', (gltf) => {
-            const model   = gltf.scene;
-            var geometry  = new THREE.Mesh();
-            let geoms     = []
-            let meshes    = []
-            let materials = []
-
-
-            model.updateMatrixWorld()
-            model.traverse(e => e.isMesh && meshes.push(e) && (geoms.push((e.geometry.index) ? e.geometry.toNonIndexed() : e.geometry().clone())))
-            geoms.forEach((g, i) => g.applyMatrix4(meshes[i].matrixWorld));
-
-            let wanderer = BufferGeometryUtils.mergeBufferGeometries(geoms);
-            wanderer.computeVertexNormals();
-            wanderer.applyMatrix4(model.matrix.clone().invert());
-            wanderer.userData.materials = meshes.map(m => m.material)
-
-            const wandererMesh = new THREE.Mesh(wanderer, new THREE.MeshStandardMaterial({color: 0x000000}));
-            wandererMesh.name  = 'Wanderer';
-
-            models.set('wanderer', wandererMesh);
-        });
+        // gltfLoader.load('./models/wanderer.glb', (gltf) => {
+        //     const model   = gltf.scene;
+        //     var geometry  = new THREE.Mesh();
+        //     let geoms     = []
+        //     let meshes    = []
+        //     let materials = []
+        //
+        //
+        //     model.updateMatrixWorld()
+        //     model.traverse(e => e.isMesh && meshes.push(e) && (geoms.push((e.geometry.index) ? e.geometry.toNonIndexed() : e.geometry().clone())))
+        //     geoms.forEach((g, i) => g.applyMatrix4(meshes[i].matrixWorld));
+        //
+        //     let wanderer = BufferGeometryUtils.mergeBufferGeometries(geoms);
+        //     wanderer.computeVertexNormals();
+        //     wanderer.applyMatrix4(model.matrix.clone().invert());
+        //     wanderer.userData.materials = meshes.map(m => m.material)
+        //
+        //     const wandererMesh = new THREE.Mesh(wanderer, new THREE.MeshStandardMaterial({color: 0x000000}));
+        //     wandererMesh.name  = 'Wanderer';
+        //
+        //     models.set('wanderer', wandererMesh);
+        // });
 
 
         // Droid model
