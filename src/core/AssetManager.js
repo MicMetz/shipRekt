@@ -205,26 +205,28 @@ class AssetManager {
 
         // Pickup Health
         gltfLoader.load('./models/PickupHealth.glb', (gltf) => {
-            const model = gltf.scene.getObjectByName('Pickup_Health').children[0];
-            model.matrixAutoUpdate = false;
-            models.set('pickupHealth', model);
+            const healthpackMesh            = gltf.scene.getObjectByName('Pickup_Health').children[0];
+            healthpackMesh.matrixAutoUpdate = false;
+            models.set('pickupHealth', healthpackMesh);
         });
 
 
         // Ship model
         gltfLoader.load('./models/ship.glb', (gltf) => {
-            const model = gltf.scene.getObjectByName('Spaceship5').children[0];
-            model.name  = 'Spaceship';
-            models.set('Spaceship', model);
+            const shipMesh = gltf.scene.getObjectByName('Spaceship5').children[0];
+            shipMesh.name  = 'Spaceship';
+            models.set('Spaceship', shipMesh);
         });
 
 
         // Swat Officer model
         gltfLoader.load('./models/swat.glb', (gltf) => {
-            const model  = gltf.scene;
-            var geometry = new THREE.Mesh();
-            let geoms    = []
-            let meshes   = []
+            const model   = gltf.scene;
+            var geometry  = new THREE.Mesh();
+            let geoms     = []
+            let meshes    = []
+            let materials = []
+
 
             model.updateMatrixWorld()
             model.traverse(e => e.isMesh && meshes.push(e) && (geoms.push((e.geometry.index) ? e.geometry.toNonIndexed() : e.geometry().clone())))
@@ -234,140 +236,135 @@ class AssetManager {
             swat.computeVertexNormals();
             swat.applyMatrix4(model.matrix.clone().invert());
             swat.userData.materials = meshes.map(m => m.material)
-            const swatmesh = new THREE.Mesh(swat, new THREE.MeshStandardMaterial({color: 0x000000}));
-            swatmesh.name = 'Swat';
-            models.set('guard', swatmesh);
+
+            const swatMesh = new THREE.Mesh(swat, new THREE.MeshStandardMaterial({color: 0x000000}));
+            swatMesh.name  = 'Swat Officer';
+
+            models.set('guard', swatMesh);
         });
 
 
         // Robot model
         gltfLoader.load('./models/robot.glb', (gltf) => {
-            var geometry = new THREE.BufferGeometry();
-            var material = new THREE.MeshPhongMaterial();
-            gltf.scene.traverse((child) => {
-                if (child instanceof THREE.Mesh) {
-                    geometry.merge(child.geometry, child.matrix);
-                }
-                if (child instanceof THREE.MeshPhongMaterial) {
-                    material = child;
-                }
-            });
+            const model   = gltf.scene;
+            var geometry  = new THREE.Mesh();
+            let geoms     = []
+            let meshes    = []
+            let materials = []
 
-            const robot = new THREE.Mesh(geometry, material);
-            robot.scale.set(0.5, 0.5, 0.5);
-            robot.position.set(0, 0, 0);
-            robot.rotation.set(0, Math.PI, 0);
-            robot.castShadow    = true;
-            robot.receiveShadow = true;
-            robot.doubleSided   = true;
-            robot.name          = 'robot';
 
-            models.set('robot', robot);
+            model.updateMatrixWorld()
+            model.traverse(e => e.isMesh && meshes.push(e) && (geoms.push((e.geometry.index) ? e.geometry.toNonIndexed() : e.geometry().clone())))
+            geoms.forEach((g, i) => g.applyMatrix4(meshes[i].matrixWorld));
+
+            let robot = BufferGeometryUtils.mergeBufferGeometries(geoms);
+            robot.computeVertexNormals();
+            robot.applyMatrix4(model.matrix.clone().invert());
+            robot.userData.materials = meshes.map(m => m.material)
+
+            const robotMesh = new THREE.Mesh(robot, new THREE.MeshStandardMaterial({color: 0x000000}));
+            robotMesh.name  = 'Boom Bot';
+
+            models.set('BoomBot', robotMesh);
         });
 
 
         // Alien model
         gltfLoader.load('./models/alien.glb', (gltf) => {
-            var geometry = new THREE.BufferGeometry();
-            var material = new THREE.MeshPhongMaterial();
-            gltf.scene.traverse((child) => {
-                if (child instanceof THREE.Mesh) {
-                    geometry.merge(child.geometry, child.matrix);
-                }
-                if (child instanceof THREE.MeshPhongMaterial) {
-                    material = child;
-                }
-            });
+            const model   = gltf.scene;
+            var geometry  = new THREE.Mesh();
+            let geoms     = []
+            let meshes    = []
+            let materials = []
 
-            const alien = new THREE.Mesh(geometry, material);
-            alien.scale.set(0.5, 0.5, 0.5);
-            alien.position.set(0, 0, 0);
-            alien.rotation.set(0, Math.PI, 0);
-            alien.castShadow    = true;
-            alien.receiveShadow = true;
-            alien.doubleSided   = true;
-            alien.name          = 'alien';
 
-            models.set('alien', alien);
+            model.updateMatrixWorld()
+            model.traverse(e => e.isMesh && meshes.push(e) && (geoms.push((e.geometry.index) ? e.geometry.toNonIndexed() : e.geometry().clone())))
+            geoms.forEach((g, i) => g.applyMatrix4(meshes[i].matrixWorld));
+
+            let alien = BufferGeometryUtils.mergeBufferGeometries(geoms);
+            alien.computeVertexNormals();
+            alien.applyMatrix4(model.matrix.clone().invert());
+            alien.userData.materials = meshes.map(m => m.material)
+
+            const alienMesh = new THREE.Mesh(alien, new THREE.MeshStandardMaterial({color: 0x000000}));
+            alienMesh.name  = 'Blub Alien';
+
+            models.set('BlubAlien', alienMesh);
         });
-
 
 
         // Astronaut model
         gltfLoader.load('./models/astronaut.glb', (gltf) => {
-            var geometry = new THREE.BufferGeometry();
-            var material = new THREE.MeshPhongMaterial();
-            gltf.scene.traverse((child) => {
-                if (child instanceof THREE.Mesh) {
-                    geometry.merge(child.geometry, child.matrix);
-                }
-                if (child instanceof THREE.MeshPhongMaterial) {
-                    material = child;
-                }
-            });
+            const model   = gltf.scene;
+            var geometry  = new THREE.Mesh();
+            let geoms     = []
+            let meshes    = []
+            let materials = []
 
-            const astronaut = new THREE.Mesh(geometry, material);
-            astronaut.scale.set(0.5, 0.5, 0.5);
-            astronaut.position.set(0, 0, 0);
-            astronaut.rotation.set(0, Math.PI, 0);
-            astronaut.castShadow    = true;
-            astronaut.receiveShadow = true;
-            astronaut.doubleSided   = true;
-            astronaut.name          = 'astronaut';
 
-            models.set('astronaut', astronaut);
+            model.updateMatrixWorld()
+            model.traverse(e => e.isMesh && meshes.push(e) && (geoms.push((e.geometry.index) ? e.geometry.toNonIndexed() : e.geometry().clone())))
+            geoms.forEach((g, i) => g.applyMatrix4(meshes[i].matrixWorld));
+
+            let astronaut = BufferGeometryUtils.mergeBufferGeometries(geoms);
+            astronaut.computeVertexNormals();
+            astronaut.applyMatrix4(model.matrix.clone().invert());
+            astronaut.userData.materials = meshes.map(m => m.material)
+
+            const astronautMesh = new THREE.Mesh(astronaut, new THREE.MeshStandardMaterial({color: 0x000000}));
+            astronautMesh.name  = 'Red Fighter Pilot';
+
+            models.set('FighterPilot_Red', astronautMesh);
         });
 
 
         // Wanderer model
         gltfLoader.load('./models/wanderer.glb', (gltf) => {
-            var geometry = new THREE.BufferGeometry();
-            var material = new THREE.MeshPhongMaterial();
-            gltf.scene.traverse((child) => {
-                if (child instanceof THREE.Mesh) {
-                    geometry.merge(child.geometry, child.matrix);
-                }
-                if (child instanceof THREE.MeshPhongMaterial) {
-                    material = child;
-                }
-            });
+            const model   = gltf.scene;
+            var geometry  = new THREE.Mesh();
+            let geoms     = []
+            let meshes    = []
+            let materials = []
 
-            const wanderer = new THREE.Mesh(geometry, material);
-            wanderer.scale.set(0.5, 0.5, 0.5);
-            wanderer.position.set(0, 0, 0);
-            wanderer.rotation.set(0, Math.PI, 0);
-            wanderer.castShadow    = true;
-            wanderer.receiveShadow = true;
-            wanderer.doubleSided   = true;
-            wanderer.name          = 'wanderer';
 
-            models.set('wanderer', wanderer);
+            model.updateMatrixWorld()
+            model.traverse(e => e.isMesh && meshes.push(e) && (geoms.push((e.geometry.index) ? e.geometry.toNonIndexed() : e.geometry().clone())))
+            geoms.forEach((g, i) => g.applyMatrix4(meshes[i].matrixWorld));
+
+            let wanderer = BufferGeometryUtils.mergeBufferGeometries(geoms);
+            wanderer.computeVertexNormals();
+            wanderer.applyMatrix4(model.matrix.clone().invert());
+            wanderer.userData.materials = meshes.map(m => m.material)
+
+            const wandererMesh = new THREE.Mesh(wanderer, new THREE.MeshStandardMaterial({color: 0x000000}));
+            wandererMesh.name  = 'Wanderer';
+
+            models.set('wanderer', wandererMesh);
         });
 
 
         // Droid model
         gltfLoader.load('./models/droid.glb', (gltf) => {
-            var geometry = new THREE.BufferGeometry();
-            var material = new THREE.MeshPhongMaterial();
-            gltf.scene.traverse((child) => {
-                if (child instanceof THREE.Mesh) {
-                    geometry.merge(child.geometry, child.matrix);
-                }
-                if (child instanceof THREE.MeshPhongMaterial) {
-                    material = child;
-                }
-            });
+            const model   = gltf.scene;
+            var geometry  = new THREE.Mesh();
+            let geoms     = []
+            let meshes    = []
+            let materials = []
 
-            const droid = new THREE.Mesh(geometry, material);
-            droid.scale.set(0.5, 0.5, 0.5);
-            droid.position.set(0, 0, 0);
-            droid.rotation.set(0, Math.PI, 0);
-            droid.castShadow    = true;
-            droid.receiveShadow = true;
-            droid.doubleSided   = true;
-            droid.name          = 'droid';
+            model.updateMatrixWorld()
+            model.traverse(e => e.isMesh && meshes.push(e) && (geoms.push((e.geometry.index) ? e.geometry.toNonIndexed() : e.geometry().clone())))
+            geoms.forEach((g, i) => g.applyMatrix4(meshes[i].matrixWorld));
 
-            models.set('droid', droid);
+            let droid = BufferGeometryUtils.mergeBufferGeometries(geoms);
+            droid.computeVertexNormals();
+            droid.applyMatrix4(model.matrix.clone().invert());
+            droid.userData.materials = meshes.map(m => m.material)
+
+            const droidMesh = new THREE.Mesh(droid, new THREE.MeshStandardMaterial({color: 0x000000}));
+            droidMesh.name  = 'Boom Droid';
+
+            models.set('droid', droidMesh);
         });
 
 
