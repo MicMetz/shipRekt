@@ -110,6 +110,7 @@ class World {
             gameOver             : document.getElementById('game-over'),
             stagesCleared        : document.getElementById('stages-cleared'),
             startScreen          : document.getElementById('splash-screen'),
+            loadingScreen        : document.getElementById('loading-screen')
         };
 
     }
@@ -124,8 +125,8 @@ class World {
             this._initBackground();
             this._initPlayer();
             this._initControls();
-
             this._loadStage(this.currentStage);
+            // this._initUI();
 
             this.ui.startScreen.remove();
 
@@ -308,6 +309,16 @@ class World {
 
         if (audio.isPlaying === true) audio.stop();
         audio.play();
+
+    }
+
+
+    _initUI() {
+
+        const loadingScreen = this.ui.loadingScreen;
+
+        loadingScreen.classList.add( 'fade-out' );
+        loadingScreen.addEventListener( 'transitionend', onTransitionEnd );
 
     }
 
@@ -628,7 +639,7 @@ class World {
 
         const guard     = new Guard(this);
         // const guardMesh         = new THREE.Group();
-        const guardMesh = this.assetManager.cloneModel('guard');
+        const guardMesh = this.assetManager.models.get('guard');
         console.log(guardMesh);
 
 
@@ -1413,6 +1424,17 @@ function sync(entity, renderComponent) {
 }
 
 
+// function onIntroClick() {
+//
+//     this.controls.connect();
+//
+//     const context = THREE.AudioContext.getContext();
+//
+//     if ( context.state === 'suspended' ) context.resume();
+//
+// }
+
+
 function onRestart() {
 
     this._stopAnimation();
@@ -1446,6 +1468,13 @@ function onContinueButtonClick() {
 }
 
 
+function onTransitionEnd( event ) {
+
+    event.target.remove();
+
+}
+
+
 function onWindowResize() {
 
     this.camera.aspect = window.innerWidth / window.innerHeight;
@@ -1472,4 +1501,4 @@ function stopAnimation() {
 }
 
 
-// export default new World();
+export default new World();

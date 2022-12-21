@@ -15,14 +15,12 @@ class AssetManager {
 
         this.loadingManager = new THREE.LoadingManager();
 
-        this.audioLoader = new THREE.AudioLoader(this.loadingManager);
-
-        this.fontLoader = new THREE.FontLoader(this.loadingManager);
-
-        this.gltfLoader = new GLTFLoader(this.loadingManager);
+        this.audioLoader   = new THREE.AudioLoader(this.loadingManager);
+        this.fontLoader    = new THREE.FontLoader(this.loadingManager);
+        this.textureLoader = new THREE.TextureLoader(this.loadingManager);
+        this.gltfLoader    = new GLTFLoader(this.loadingManager);
 
         this.listener = new THREE.AudioListener();
-
 
         this.audios = new Map();
 
@@ -189,8 +187,9 @@ class AssetManager {
 
     _loadModels() {
 
-        const gltfLoader = this.gltfLoader;
-        const models     = this.models;
+        const gltfLoader    = this.gltfLoader;
+        const textureLoader = this.textureLoader;
+        const models        = this.models;
 
 
         // Ship model
