@@ -3,7 +3,8 @@
  * @original Mugen87 / https://github.com/Mugen87
  */
 
-import { BoundingSphere, Vehicle, StateMachine, Quaternion } from 'yuka';
+import {AnimationMixer}                                    from "three";
+import {BoundingSphere, Vehicle, StateMachine, Quaternion} from 'yuka';
 
 
 
@@ -13,12 +14,12 @@ const q = new Quaternion();
 
 const GuardType = [{
 
-  default: 'default',
-  sniper : 'sniper',
-  heavy  : 'heavy',
-  medic  : 'medic',
-  swat   : 'swat',
-  riot   : 'riot'
+   default: 'default',
+   sniper : 'sniper',
+   heavy  : 'heavy',
+   medic  : 'medic',
+   swat   : 'swat',
+   riot   : 'riot'
 
 }];
 
@@ -26,198 +27,198 @@ const GuardType = [{
 
 class Guard extends Vehicle {
 
-  constructor(world, type = GuardType.default) {
+   constructor(world, type = GuardType.default, body = null) {
+      super();
 
-    super();
+      this.world = world;
 
-    this.world = world;
+      this.boundingRadius = 0.5;
 
-    this.boundingRadius = 0.5;
+      this.MAX_HEALTH_POINTS = 8;
+      this.healthPoints      = this.MAX_HEALTH_POINTS;
 
-    this.MAX_HEALTH_POINTS = 8;
-    this.healthPoints      = this.MAX_HEALTH_POINTS;
+      this.boundingSphere        = new BoundingSphere();
+      this.boundingSphere.radius = this.boundingRadius;
 
-    this.boundingSphere        = new BoundingSphere();
-    this.boundingSphere.radius = this.boundingRadius;
+      this.stateMachineMovement = new StateMachine(this);
+      this.stateMachineCombat   = new StateMachine(this);
 
-    this.stateMachineMovement = new StateMachine(this);
-    this.stateMachineCombat   = new StateMachine(this);
+      this.audios = new Map();
 
-    this.audios = new Map();
+      this.bodyMesh   = body;
+      this.animations = new AnimationMixer(this.bodyMesh);
+      this.guardType  = type;
 
-    this.bodyMesh  = null;
-    this.guardType = type;
+      this.protectionMesh = null;
+      this.protected      = false;
 
-    this.protectionMesh = null;
-    this.protected      = false;
+      this.hitMesh = null;
+      this.hitted  = false;
 
-    this.hitMesh = null;
-    this.hitted  = false;
+      this.hitEffectDuration    = 0.25;
+      this.hitEffectMinDuration = 0.15;
+      this._hideHitEffectTime   = -Infinity;
 
-    this.hitEffectDuration    = 0.25;
-    this.hitEffectMinDuration = 0.15;
-    this._hideHitEffectTime   = -Infinity;
-
-  }
-
-
-  enableProtection() {
-
-    this.protected              = true;
-    this.protectionMesh.visible = true;
-
-    return this;
-
-  }
+   }
 
 
-  disableProtection() {
+   enableProtection() {
 
-    this.protected              = false;
-    this.protectionMesh.visible = false;
+      this.protected              = true;
+      this.protectionMesh.visible = true;
 
-    const audio = this.audios.get('coreShieldDestroyed');
-    this.world.playAudio(audio);
+      return this;
 
-    return this;
-
-  }
+   }
 
 
-  setCombatPattern(pattern) {
+   disableProtection() {
 
-    this.stateMachineCombat.currentState = pattern;
-    this.stateMachineCombat.currentState.enter(this);
+      this.protected              = false;
+      this.protectionMesh.visible = false;
 
-    return this;
+      const audio = this.audios.get('coreShieldDestroyed');
+      this.world.playAudio(audio);
 
-  }
+      return this;
 
-
-  setMovementPattern(pattern) {
-
-    this.stateMachineMovement.currentState = pattern;
-    this.stateMachineMovement.currentState.enter(this);
-
-    return this;
-
-  }
+   }
 
 
-  update(delta) {
+   setCombatPattern(pattern) {
 
-    const world = this.world;
+      this.stateMachineCombat.currentState = pattern;
+      this.stateMachineCombat.currentState.enter(this);
 
-    this.boundingSphere.center.copy(this.position);
-    this.bodyMesh.position.copy(this.position);
+      return this;
+
+   }
 
 
-    this.stateMachineMovement.update();
-    this.stateMachineCombat.update();
+   setMovementPattern(pattern) {
 
-    super.update(delta);
+      this.stateMachineMovement.currentState = pattern;
+      this.stateMachineMovement.currentState.enter(this);
 
-    // rendering related stuff
+      return this;
 
-    if (this.protected === true) {
+   }
 
-      this.protectionMesh.material.uniforms.time.value = world.time.getElapsed();
 
-    }
+   update(delta) {
 
-    if (this.hitted === true) {
+      const world = this.world;
 
-      q.copy(this.rotation).inverse(); // undo rotation of parent
-      this.hitMesh.quaternion.copy(q).multiply(world.camera.quaternion);
+      this.boundingSphere.center.copy(this.position);
+      this.bodyMesh.position.copy(this.position);
 
-      this.hitMesh.updateMatrix();
 
-      this.hitMesh.material.uniforms.time.value += delta;
+      this.stateMachineMovement.update();
+      this.stateMachineCombat.update();
 
-      if (world.time.getElapsed() > this._hideHitEffectTime) {
+      super.update(delta);
 
-        this.hitMesh.visible = false;
-        this.hitted          = false;
+      // rendering related stuff
+
+      if (this.protected === true) {
+
+         this.protectionMesh.material.uniforms.time.value = world.time.getElapsed();
 
       }
 
-    }
+      if (this.hitted === true) {
 
-    return this;
+         q.copy(this.rotation).inverse(); // undo rotation of parent
+         this.hitMesh.quaternion.copy(q).multiply(world.camera.quaternion);
 
-  }
+         this.hitMesh.updateMatrix();
+
+         this.hitMesh.material.uniforms.time.value += delta;
+
+         if (world.time.getElapsed() > this._hideHitEffectTime) {
+
+            this.hitMesh.visible = false;
+            this.hitted          = false;
+
+         }
+
+      }
+
+      return this;
+
+   }
 
 
-  handleMessage(telegram) {
+   handleMessage(telegram) {
 
-    const world = this.world;
+      const world = this.world;
 
-    switch (telegram.message) {
+      switch (telegram.message) {
 
-      case 'hit':
+         case 'hit':
 
-        if (this.protected === false) {
+            if (this.protected === false) {
 
-          this.healthPoints--;
+               this.healthPoints--;
 
-          if (this.hitted === true) {
+               if (this.hitted === true) {
 
-            if (this.hitMesh.material.uniforms.time.value > this.hitEffectMinDuration) {
+                  if (this.hitMesh.material.uniforms.time.value > this.hitEffectMinDuration) {
 
-              this.hitMesh.material.uniforms.time.value = 0;
-              this._hideHitEffectTime                   = world.time.getElapsed() + this.hitEffectDuration;
+                     this.hitMesh.material.uniforms.time.value = 0;
+                     this._hideHitEffectTime                   = world.time.getElapsed() + this.hitEffectDuration;
+
+                  }
+
+               } else {
+
+                  this.hitted = true;
+
+                  this.hitMesh.material.uniforms.time.value = 0;
+                  this.hitMesh.visible                      = true;
+
+                  this._hideHitEffectTime = world.time.getElapsed() + this.hitEffectDuration;
+
+               }
+
+               const audio = this.audios.get('enemyHit');
+               world.playAudio(audio);
+
+               if (this.healthPoints === 0) {
+
+                  const audio = this.audios.get('coreExplode');
+                  world.playAudio(audio);
+
+                  world.removeGuard(this);
+
+                  // clear states
+
+                  this.stateMachineCombat.currentState.exit(this);
+                  this.stateMachineMovement.currentState.exit(this);
+
+               }
+
+            } else {
+
+               const audio = this.audios.get('coreShieldHit');
+               world.playAudio(audio);
 
             }
 
-          } else {
+            break;
 
-            this.hitted = true;
+         default:
 
-            this.hitMesh.material.uniforms.time.value = 0;
-            this.hitMesh.visible                      = true;
+            console.error('Unknown message type:', telegram.message);
 
-            this._hideHitEffectTime = world.time.getElapsed() + this.hitEffectDuration;
+      }
 
-          }
+      return true;
 
-          const audio = this.audios.get('enemyHit');
-          world.playAudio(audio);
-
-          if (this.healthPoints === 0) {
-
-            const audio = this.audios.get('coreExplode');
-            world.playAudio(audio);
-
-            world.removeGuard(this);
-
-            // clear states
-
-            this.stateMachineCombat.currentState.exit(this);
-            this.stateMachineMovement.currentState.exit(this);
-
-          }
-
-        } else {
-
-          const audio = this.audios.get('coreShieldHit');
-          world.playAudio(audio);
-
-        }
-
-        break;
-
-      default:
-
-        console.error('Unknown message type:', telegram.message);
-
-    }
-
-    return true;
-
-  }
+   }
 
 }
 
 
 
-export { Guard };
+export {Guard};

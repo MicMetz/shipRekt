@@ -94,19 +94,16 @@ class SceneManager {
         const world = this.world;
 
         // field
-
         world.updateField(15, 1, 15);
 
         // controls
-
         world.controls.setPosition(0, 0.5, 5);
         world.controls.resetRotation();
 
         // enemies
-
-        const guard = world._createGuard();
+        const guard = world._createGuard('SwatOfficer');
         console.log(dumpObject(guard));
-        console.log(guard);
+        // console.log(guard);
         guard.position.set(0, 0.5, -4);
         guard.setCombatPattern(new DefaultCombatPattern());
         guard.setMovementPattern(new LeftRightMovementPattern());

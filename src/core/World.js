@@ -1,28 +1,28 @@
 /**
  * @author MicMetzger /
  */
-import * as THREE                      from 'three';
-import * as YUKA                       from 'yuka';
-import { GLTFLoader }                  from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { AssetManager }                from './AssetManager.js';
-import { VehicleControls }             from './VehicleControls.js';
-import { Player }                      from '../entities/Player.js';
-import { Guard }                       from '../entities/Guard.js';
-import { Pursuer }                     from '../entities/Pursuer.js';
-import { BufferGeometryUtils }         from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { ProtectionShader, HitShader } from '../etc/Shaders.js';
-import { PursuerGeometry }             from '../etc/PursuerGeometry.js';
-import { AnimationSystem }             from './AnimationSystem.js';
-import { SceneManager }                from './SceneManager.js';
-import { Tower }                       from '../entities/Tower.js';
-import { dumpObject }                  from '../etc/Utilities.js';
+import * as THREE                    from 'three';
+import * as YUKA                     from 'yuka';
+import {GLTFLoader}                  from 'three/examples/jsm/loaders/GLTFLoader.js';
+import {AssetManager}                from './AssetManager.js';
+import {VehicleControls}             from './VehicleControls.js';
+import {Player}                      from '../entities/Player.js';
+import {Guard}                       from '../entities/Guard.js';
+import {Pursuer}                     from '../entities/Pursuer.js';
+import {BufferGeometryUtils}         from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import {ProtectionShader, HitShader} from '../etc/Shaders.js';
+import {PursuerGeometry}             from '../etc/PursuerGeometry.js';
+import {AnimationSystem}             from './AnimationSystem.js';
+import {SceneManager}                from './SceneManager.js';
+import {Tower}                       from '../entities/Tower.js';
+import {dumpObject}                  from '../etc/Utilities.js';
 
 
 
 export function start() {
 
-  const game = new World();
-  game.init();
+   const game = new World();
+   game.init();
 
 }
 
@@ -35,1378 +35,1350 @@ const displacement = new YUKA.Vector3();
 
 class World {
 
-  constructor() {
+   constructor() {
 
-    this.active   = false;
-    this.gameOver = false;
+      this.active   = false;
+      this.gameOver = false;
 
-    this.entityManager = new YUKA.EntityManager();
-    this.time          = new YUKA.Time();
+      this.entityManager = new YUKA.EntityManager();
+      this.time          = new YUKA.Time();
 
-    this.currentStage = 1;
-    this.maxStage     = 14;
+      this.currentStage = 1;
+      this.maxStage     = 14;
 
-    this.field     = new YUKA.Vector3(16, 1, 16);
-    this.fieldMesh = null;
+      this.stargeometry = new THREE.Geometry();
+      this.stars        = new THREE.Points();
+      ;
 
-    this.wall        = new YUKA.Vector3(0.5, 1, 0.5);
-    this.wallsMeshes = new THREE.Group();
+      this.field     = new YUKA.Vector3(16, 1, 16);
+      this.fieldMesh = null;
 
-    this.camera   = null;
-    this.scene    = null;
-    this.renderer = null;
+      this.wall        = new YUKA.Vector3(0.5, 1, 0.5);
+      this.wallsMeshes = new THREE.Group();
 
-    this.player   = null;
-    this.controls = null;
+      this.camera   = null;
+      this.scene    = null;
+      this.renderer = null;
 
-    this.playerMesh           = null;
-    this.playerProjectiles    = [];
-    this.playerProjectileMesh = null;
-    this.maxPlayerProjectiles = 100;
+      this.player   = null;
+      this.controls = null;
 
-    this.enemyProjectiles                = [];
-    this.enemyProjectileMesh             = null;
-    this.enemyDestructibleProjectiles    = [];
-    this.enemyDestructibleProjectileMesh = null;
-    this.maxEnemyProjectiles             = 200;
-    this.maxEnemyDestructibleProjectiles = 200;
+      this.playerMesh           = null;
+      this.playerProjectiles    = [];
+      this.playerProjectileMesh = null;
+      this.maxPlayerProjectiles = 100;
 
-    this.obstacles    = [];
-    this.obstacleMesh = null;
-    this.maxObstacles = 50;
+      this.enemyProjectiles                = [];
+      this.enemyProjectileMesh             = null;
+      this.enemyDestructibleProjectiles    = [];
+      this.enemyDestructibleProjectileMesh = null;
+      this.maxEnemyProjectiles             = 200;
+      this.maxEnemyDestructibleProjectiles = 200;
 
-    this.pursuers    = [];
-    this.pursuerMesh = null;
+      this.obstacles    = [];
+      this.obstacleMesh = null;
+      this.maxObstacles = 50;
 
-    this.towers    = [];
-    this.towerMesh = null;
+      this.pursuers    = [];
+      this.pursuerMesh = null;
 
-    this.guards          = [];
-    this.guardMesh       = null;
-    this.protectionMesh  = null;
-    this.hitMesh         = null;
-    this.guardsProtected = false;
+      this.towers    = [];
+      this.towerMesh = null;
 
-    this.assetManager    = null;
-    this.animationSystem = new AnimationSystem();
-    this.sceneManager    = new SceneManager(this);
+      this.guards          = [];
+      this.guardMesh       = null;
+      this.protectionMesh  = null;
+      this.hitMesh         = null;
+      this.guardsProtected = false;
 
-    this._requestID = null;
+      this.assetManager    = null;
+      this.animationSystem = new AnimationSystem();
+      this.sceneManager    = new SceneManager(this);
 
-    this._startAnimation        = startAnimation.bind(this);
-    this._stopAnimation         = stopAnimation.bind(this);
-    this._onContinueButtonClick = onContinueButtonClick.bind(this);
-    this._onWindowResize        = onWindowResize.bind(this);
-    this._onRestart             = onRestart.bind(this);
+      this._requestID = null;
 
-    this.ui = {
-      continueButton       : document.getElementById('menu-continue'),
-      restartButtonMenu    : document.getElementById('menu-restart'),
-      restartButtonComplete: document.getElementById('complete-restart'),
-      restartButtonGameOver: document.getElementById('gameover-restart'),
-      menu                 : document.getElementById('menu'),
-      levelComplete        : document.getElementById('level-complete'),
-      gameComplete         : document.getElementById('game-complete'),
-      gameOver             : document.getElementById('game-over'),
-      stagesCleared        : document.getElementById('stages-cleared'),
-      startScreen          : document.getElementById('splash-screen'),
-      loadingScreen        : document.getElementById('loading-screen')
-    };
+      this._startAnimation        = startAnimation.bind(this);
+      this._stopAnimation         = stopAnimation.bind(this);
+      this._onContinueButtonClick = onContinueButtonClick.bind(this);
+      this._onWindowResize        = onWindowResize.bind(this);
+      this._onRestart             = onRestart.bind(this);
 
-  }
+      this.ui = {
+         continueButton       : document.getElementById('menu-continue'),
+         restartButtonMenu    : document.getElementById('menu-restart'),
+         restartButtonComplete: document.getElementById('complete-restart'),
+         restartButtonGameOver: document.getElementById('gameover-restart'),
+         menu                 : document.getElementById('menu'),
+         levelComplete        : document.getElementById('level-complete'),
+         gameComplete         : document.getElementById('game-complete'),
+         gameOver             : document.getElementById('game-over'),
+         stagesCleared        : document.getElementById('stages-cleared'),
+         startScreen          : document.getElementById('splash-screen'),
+         loadingScreen        : document.getElementById('loading-screen')
+      };
 
+   }
 
-  init() {
 
-    this.assetManager = new AssetManager();
-    this.assetManager.init().then(() => {
+   init() {
 
-      this._initScene();
-      this._initBackground();
-      this._initPlayer();
-      this._initControls();
-      this._loadStage(this.currentStage);
-      // this._initUI();
+      this.assetManager = new AssetManager();
+      this.assetManager.init().then(() => {
 
-      this.ui.startScreen.remove();
+         this._initScene();
+         this._initBackground();
+         this._initPlayer();
+         this._initControls();
+         this._loadStage(this.currentStage);
+         // this._initUI();
 
-    });
+         this.ui.startScreen.remove();
 
-  }
+      });
 
+   }
 
-  update() {
 
-    const delta = this.time.update().getDelta();
+   update() {
 
-    if (this.active) {
-      this.animationSystem.update(delta);
-      this.controls.update(delta);
-      this.entityManager.update(delta);
+      const delta = this.time.update().getDelta();
 
-      this._enforceNonPenetrationConstraint();
-      this._checkPlayerCollision();
-      this._checkPlayerProjectileCollisions();
-      this._checkEnemyProjectileCollisions();
-      this._checkGameStatus();
+      if (this.active) {
+         this.animationSystem.update(delta);
+         this.controls.update(delta);
+         this.entityManager.update(delta);
 
-      this._updateObstaclesMeshes();
-      this._updateProjectileMeshes();
+         this._enforceNonPenetrationConstraint();
+         this._checkPlayerCollision();
+         this._checkPlayerProjectileCollisions();
+         this._checkEnemyProjectileCollisions();
+         this._checkGameStatus();
 
-      this.renderer.render(this.scene, this.camera);
+         this._updateObstaclesMeshes();
+         this._updateProjectileMeshes();
+         this._updateBackground(delta);
 
-    }
+         this.stars.rotation.y += 0.01;
 
-  }
-
-
-  addGuard(guard) {
-
-    this.guards.push(guard);
-    this.entityManager.add(guard);
-
-    this.scene.add(guard._renderComponent);
-
-  }
-
-
-  removeGuard(guard) {
-
-    const index = this.guards.indexOf(guard);
-    this.guards.splice(index, 1);
-
-    this.entityManager.remove(guard);
-    this.scene.remove(guard._renderComponent);
-
-  }
-
-
-  addPursuer(pursuer) {
-
-    this.pursuers.push(pursuer);
-    this.entityManager.add(pursuer);
-
-    this.scene.add(pursuer._renderComponent);
-
-  }
-
-
-  removePursuer(pursuer) {
-
-    const index = this.pursuers.indexOf(pursuer);
-    this.pursuers.splice(index, 1);
-
-    this.entityManager.remove(pursuer);
-    this.scene.remove(pursuer._renderComponent);
-
-  }
-
-
-  addTower(tower) {
-
-    this.towers.push(tower);
-    this.entityManager.add(tower);
-
-    this.scene.add(tower._renderComponent);
-
-  }
-
-
-  removeTower(tower) {
-
-    const index = this.towers.indexOf(tower);
-    this.towers.splice(index, 1);
-
-    this.entityManager.remove(tower);
-    this.scene.remove(tower._renderComponent);
-
-  }
-
-
-  updateField(x, y, z) {
-
-    this.field.set(x, y, z);
-
-    this.fieldMesh.geometry.dispose();
-    this.fieldMesh.geometry = new THREE.BoxBufferGeometry(x, y, z);
-
-  }
-
-
-  addProjectile(projectile) {
-
-    if (projectile.isPlayerProjectile) {
-
-      this.playerProjectiles.push(projectile);
-
-    } else {
-
-      if (projectile.isDestructible) {
-
-        this.enemyDestructibleProjectiles.push(projectile);
-
-
-      } else {
-
-        this.enemyProjectiles.push(projectile);
+         this.renderer.render(this.scene, this.camera);
 
       }
 
-    }
-
-    this.entityManager.add(projectile);
-
-  }
+   }
 
 
-  removeProjectile(projectile) {
+   addGuard(guard) {
 
-    if (projectile.isPlayerProjectile) {
+      this.guards.push(guard);
+      this.entityManager.add(guard);
 
-      const index = this.playerProjectiles.indexOf(projectile);
-      this.playerProjectiles.splice(index, 1);
+      this.scene.add(guard._renderComponent);
 
-    } else {
+   }
 
-      if (projectile.isDestructible) {
 
-        const index = this.enemyDestructibleProjectiles.indexOf(projectile);
-        this.enemyDestructibleProjectiles.splice(index, 1);
+   removeGuard(guard) {
+
+      const index = this.guards.indexOf(guard);
+      this.guards.splice(index, 1);
+
+      this.entityManager.remove(guard);
+      this.scene.remove(guard._renderComponent);
+
+   }
+
+
+   addPursuer(pursuer) {
+
+      this.pursuers.push(pursuer);
+      this.entityManager.add(pursuer);
+
+      this.scene.add(pursuer._renderComponent);
+
+   }
+
+
+   removePursuer(pursuer) {
+
+      const index = this.pursuers.indexOf(pursuer);
+      this.pursuers.splice(index, 1);
+
+      this.entityManager.remove(pursuer);
+      this.scene.remove(pursuer._renderComponent);
+
+   }
+
+
+   addTower(tower) {
+
+      this.towers.push(tower);
+      this.entityManager.add(tower);
+
+      this.scene.add(tower._renderComponent);
+
+   }
+
+
+   removeTower(tower) {
+
+      const index = this.towers.indexOf(tower);
+      this.towers.splice(index, 1);
+
+      this.entityManager.remove(tower);
+      this.scene.remove(tower._renderComponent);
+
+   }
+
+
+   updateField(x, y, z) {
+
+      this.field.set(x, y, z);
+
+      this.fieldMesh.geometry.dispose();
+      this.fieldMesh.geometry = new THREE.BoxBufferGeometry(x, y, z);
+
+   }
+
+
+   addProjectile(projectile) {
+
+      if (projectile.isPlayerProjectile) {
+
+         this.playerProjectiles.push(projectile);
 
       } else {
 
-        const index = this.enemyProjectiles.indexOf(projectile);
-        this.enemyProjectiles.splice(index, 1);
+         if (projectile.isDestructible) {
+
+            this.enemyDestructibleProjectiles.push(projectile);
+
+
+         } else {
+
+            this.enemyProjectiles.push(projectile);
+
+         }
 
       }
 
-    }
+      this.entityManager.add(projectile);
 
-    this.entityManager.remove(projectile);
-
-  }
+   }
 
 
-  addObstacle(obstacle) {
+   removeProjectile(projectile) {
 
-    this.obstacles.push(obstacle);
-    this.entityManager.add(obstacle);
+      if (projectile.isPlayerProjectile) {
 
-  }
+         const index = this.playerProjectiles.indexOf(projectile);
+         this.playerProjectiles.splice(index, 1);
 
+      } else {
 
-  removeObstacle(obstacle) {
+         if (projectile.isDestructible) {
 
-    const index = this.obstacles.indexOf(obstacle);
-    this.obstacles.splice(index, 1);
+            const index = this.enemyDestructibleProjectiles.indexOf(projectile);
+            this.enemyDestructibleProjectiles.splice(index, 1);
 
-    this.entityManager.remove(obstacle);
+         } else {
 
-  }
+            const index = this.enemyProjectiles.indexOf(projectile);
+            this.enemyProjectiles.splice(index, 1);
 
+         }
 
-  playAudio(audio) {
+      }
 
-    if (audio.isPlaying === true) audio.stop();
-    audio.play();
+      this.entityManager.remove(projectile);
 
-  }
-
-
-  _initUI() {
-
-    const loadingScreen = this.ui.loadingScreen;
-
-    loadingScreen.classList.add('fade-out');
-    loadingScreen.addEventListener('transitionend', onTransitionEnd);
-
-  }
+   }
 
 
-  _initScene(callback) {
+   addObstacle(obstacle) {
 
-    // camera
-    this.camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 200);
-    this.camera.add(this.assetManager.listener);
+      this.obstacles.push(obstacle);
+      this.entityManager.add(obstacle);
 
-    // scene
-    this.scene = new THREE.Scene();
+   }
 
-    // lights
-    const ambientLight            = new THREE.AmbientLight(0xcccccc, 0.4);
-    ambientLight.matrixAutoUpdate = false;
-    this.scene.add(ambientLight);
 
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
-    dirLight.position.set(1, 10, -1);
-    dirLight.matrixAutoUpdate = false;
-    dirLight.updateMatrix();
-    dirLight.castShadow           = true;
-    dirLight.shadow.camera.top    = 15;
-    dirLight.shadow.camera.bottom = -15;
-    dirLight.shadow.camera.left   = -15;
-    dirLight.shadow.camera.right  = 15;
-    dirLight.shadow.camera.near   = 1;
-    dirLight.shadow.camera.far    = 20;
-    dirLight.shadow.mapSize.x     = 2048;
-    dirLight.shadow.mapSize.y     = 2048;
-    dirLight.shadow.bias          = 0.01;
-    this.scene.add(dirLight);
+   removeObstacle(obstacle) {
 
-    /* TODO: DEBUG */
-    this.scene.add(new THREE.CameraHelper(dirLight.shadow.camera));
+      const index = this.obstacles.indexOf(obstacle);
+      this.obstacles.splice(index, 1);
 
-    // field
-    const fieldGeometry = new THREE.BoxBufferGeometry(this.field.x, this.field.y, this.field.z);
-    // const fieldMaterial = new THREE.MeshLambertMaterial({color: 0xaca181});
-    const fieldMaterial = new THREE.MeshLambertMaterial({ color: 0x9da4b0 });
+      this.entityManager.remove(obstacle);
 
-    this.fieldMesh                  = new THREE.Mesh(fieldGeometry, fieldMaterial);
-    this.fieldMesh.matrixAutoUpdate = false;
-    this.fieldMesh.position.set(0, -0.5, 0);
-    this.fieldMesh.updateMatrix();
-    this.fieldMesh.receiveShadow = true;
-    this.scene.add(this.fieldMesh);
+   }
 
-    const wallGeometry = new THREE.BoxBufferGeometry(1, 1, 1);
-    const wallMaterial = new THREE.MeshLambertMaterial({ color: 0x8e8e8e });
-    for (let x = -this.field.x / 2; x <= this.field.x / 2; x++) {
-      if (x === -this.field.x / 2 || x === this.field.x / 2) {
-        for (let z = -this.field.z / 2; z <= this.field.z / 2; z++) {
-          if (z === -this.field.z / 2 || z === this.field.z / 2) {
-            for (let i = -this.field.x / 2; i <= this.field.x / 2; i++) {
-              const wallMesh            = new THREE.Mesh(wallGeometry, wallMaterial);
-              wallMesh.matrixAutoUpdate = false;
-              wallMesh.position.set(i, 0.5, z);
-              wallMesh.updateMatrix();
-              wallMesh.castShadow    = true;
-              wallMesh.receiveShadow = true;
-              this.wallsMeshes.add(wallMesh);
+
+   playAudio(audio) {
+
+      if (audio.isPlaying === true) audio.stop();
+      audio.play();
+
+   }
+
+
+   _initUI() {
+
+      const loadingScreen = this.ui.loadingScreen;
+
+      loadingScreen.classList.add('fade-out');
+      loadingScreen.addEventListener('transitionend', onTransitionEnd);
+
+   }
+
+
+   _initScene(callback) {
+
+      // camera
+      this.camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 200);
+      this.camera.add(this.assetManager.listener);
+
+      // scene
+      this.scene = new THREE.Scene();
+
+      // lights
+      const ambientLight            = new THREE.AmbientLight(0xcccccc, 0.4);
+      ambientLight.matrixAutoUpdate = false;
+      this.scene.add(ambientLight);
+
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+      dirLight.position.set(1, 10, -1);
+      dirLight.matrixAutoUpdate = false;
+      dirLight.updateMatrix();
+      dirLight.castShadow           = true;
+      dirLight.shadow.camera.top    = 15;
+      dirLight.shadow.camera.bottom = -15;
+      dirLight.shadow.camera.left   = -15;
+      dirLight.shadow.camera.right  = 15;
+      dirLight.shadow.camera.near   = 1;
+      dirLight.shadow.camera.far    = 20;
+      dirLight.shadow.mapSize.x     = 2048;
+      dirLight.shadow.mapSize.y     = 2048;
+      dirLight.shadow.bias          = 0.01;
+      this.scene.add(dirLight);
+
+      /* TODO: DEBUG */
+      this.scene.add(new THREE.CameraHelper(dirLight.shadow.camera));
+
+      // field
+      const fieldGeometry = new THREE.BoxBufferGeometry(this.field.x, this.field.y, this.field.z);
+      // const fieldMaterial = new THREE.MeshLambertMaterial({color: 0xaca181});
+      const fieldMaterial = new THREE.MeshLambertMaterial({color: 0x9da4b0});
+
+      this.fieldMesh                  = new THREE.Mesh(fieldGeometry, fieldMaterial);
+      this.fieldMesh.matrixAutoUpdate = false;
+      this.fieldMesh.position.set(0, -0.5, 0);
+      this.fieldMesh.updateMatrix();
+      this.fieldMesh.receiveShadow = true;
+      this.scene.add(this.fieldMesh);
+
+      const wallGeometry = new THREE.BoxBufferGeometry(1, 1, 1);
+      const wallMaterial = new THREE.MeshLambertMaterial({color: 0x8e8e8e});
+      for (let x = -this.field.x / 2; x <= this.field.x / 2; x++) {
+         if (x === -this.field.x / 2 || x === this.field.x / 2) {
+            for (let z = -this.field.z / 2; z <= this.field.z / 2; z++) {
+               if (z === -this.field.z / 2 || z === this.field.z / 2) {
+                  for (let i = -this.field.x / 2; i <= this.field.x / 2; i++) {
+                     const wallMesh            = new THREE.Mesh(wallGeometry, wallMaterial);
+                     wallMesh.matrixAutoUpdate = false;
+                     wallMesh.position.set(i, 0.5, z);
+                     wallMesh.updateMatrix();
+                     wallMesh.castShadow    = true;
+                     wallMesh.receiveShadow = true;
+                     this.wallsMeshes.add(wallMesh);
+                  }
+               } else {
+                  const wallMesh            = new THREE.Mesh(wallGeometry, wallMaterial);
+                  wallMesh.matrixAutoUpdate = false;
+                  wallMesh.position.set(x, 0.5, z);
+                  wallMesh.updateMatrix();
+                  wallMesh.castShadow    = true;
+                  wallMesh.receiveShadow = true;
+                  this.wallsMeshes.add(wallMesh);
+               }
             }
-          } else {
-            const wallMesh            = new THREE.Mesh(wallGeometry, wallMaterial);
-            wallMesh.matrixAutoUpdate = false;
-            wallMesh.position.set(x, 0.5, z);
-            wallMesh.updateMatrix();
-            wallMesh.castShadow    = true;
-            wallMesh.receiveShadow = true;
-            this.wallsMeshes.add(wallMesh);
-          }
-        }
+         }
       }
-    }
-    // this.obstacles.push(this.wallsMeshes);
-    this.scene.add(this.wallsMeshes);
-
-    // player
-    const playerGeometry = new THREE.ConeBufferGeometry(0.2, 1, 8);
-    playerGeometry.rotateX(Math.PI * 0.5);
-    const playerMaterial             = new THREE.MeshLambertMaterial({ color: 0xdedad3 });
-    // this.playerMesh                  = this.assetManager.models.get('Wanderer');
-    this.playerMesh                  = new THREE.Mesh(playerGeometry, playerMaterial);
-    this.playerMesh.matrixAutoUpdate = false;
-    this.playerMesh.castShadow       = true;
-    this.scene.add(this.playerMesh);
-
-
-
-    // player projectile
-
-    const playerProjectileGeometry = new THREE.PlaneBufferGeometry(0.2, 1);
-    playerProjectileGeometry.rotateX(Math.PI * -0.5);
-    const playerProjectileMaterial = new THREE.MeshBasicMaterial({ color: 0xfff9c2 });
-
-    this.playerProjectileMesh = new THREE.InstancedMesh(playerProjectileGeometry, playerProjectileMaterial, this.maxPlayerProjectiles);
-    this.playerProjectileMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-    this.playerProjectileMesh.frustumCulled = false;
-    this.scene.add(this.playerProjectileMesh);
-
-    // enemy projectile
-
-    const enemyProjectileGeometry = new THREE.SphereBufferGeometry(0.4, 16, 16);
-    enemyProjectileGeometry.rotateX(Math.PI * -0.5);
-    const enemyProjectileMaterial = new THREE.MeshLambertMaterial({ color: 0x43254d });
-
-    this.enemyProjectileMesh = new THREE.InstancedMesh(enemyProjectileGeometry, enemyProjectileMaterial, this.maxEnemyProjectiles);
-    this.enemyProjectileMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-    this.enemyProjectileMesh.frustumCulled = false;
-    this.scene.add(this.enemyProjectileMesh);
-
-    // enemy destructible projectile
-
-    const enemyDestructibleProjectileGeometry = new THREE.SphereBufferGeometry(0.4, 16, 16);
-    enemyDestructibleProjectileGeometry.rotateX(Math.PI * -0.5);
-    const enemyDestructibleProjectileMaterial = new THREE.MeshLambertMaterial({ color: 0xf34d08 });
-
-    this.enemyDestructibleProjectileMesh = new THREE.InstancedMesh(enemyDestructibleProjectileGeometry, enemyDestructibleProjectileMaterial, this.maxEnemyProjectiles);
-    this.enemyDestructibleProjectileMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-    this.enemyDestructibleProjectileMesh.frustumCulled = false;
-    this.scene.add(this.enemyDestructibleProjectileMesh);
-
-    // obstacle
-
-    const obtacleGeometry = new THREE.BoxBufferGeometry(1, 1, 1);
-    const obtacleMaterial = new THREE.MeshLambertMaterial({ color: 0xdedad3 });
-
-    this.obstacleMesh               = new THREE.InstancedMesh(obtacleGeometry, obtacleMaterial, this.maxObstacles);
-    this.obstacleMesh.frustumCulled = false;
-    this.obstacleMesh.castShadow    = true;
-    this.scene.add(this.obstacleMesh);
-
-    // pursuer enemy
+      // this.obstacles.push(this.wallsMeshes);
+      this.scene.add(this.wallsMeshes);
 
-    const pursuerGeometry = new PursuerGeometry();
-    const pursuerMaterial = new THREE.MeshLambertMaterial({ color: 0x333132 });
+      // player
+      const playerGeometry = new THREE.ConeBufferGeometry(0.2, 1, 8);
+      playerGeometry.rotateX(Math.PI * 0.5);
+      const playerMaterial             = new THREE.MeshLambertMaterial({color: 0xdedad3});
+      // this.playerMesh                  = this.assetManager.models.get('Wanderer');
+      this.playerMesh                  = new THREE.Mesh(playerGeometry, playerMaterial);
+      this.playerMesh.matrixAutoUpdate = false;
+      this.playerMesh.castShadow       = true;
+      this.scene.add(this.playerMesh);
 
-    this.pursuerMesh                  = new THREE.Mesh(pursuerGeometry, pursuerMaterial);
-    this.pursuerMesh.matrixAutoUpdate = false;
-    this.pursuerMesh.castShadow       = true;
 
-    // tower enemy
 
-    const towerGeometry = new THREE.CylinderBufferGeometry(0.5, 0.5, 1, 16);
-    const towerMaterial = new THREE.MeshLambertMaterial({ color: 0x333132 });
+      // player projectile
 
-    this.towerMesh                  = new THREE.Mesh(towerGeometry, towerMaterial);
-    this.towerMesh.matrixAutoUpdate = false;
-    this.towerMesh.castShadow       = true;
+      const playerProjectileGeometry = new THREE.PlaneBufferGeometry(0.2, 1);
+      playerProjectileGeometry.rotateX(Math.PI * -0.5);
+      const playerProjectileMaterial = new THREE.MeshBasicMaterial({color: 0xfff9c2});
 
-    // guard enemy
-    // var modelMeshes     = [];
-    // var modelMaterials  = [];
-    // var modelGeometries = [];
-    // // var modelMeshes = this.assetManager.models.guard.meshes;
-    // const gltfLoader    = new GLTFLoader();
-    // gltfLoader.load('assets/swat.gltf', (gltf) => {
-    //     // gltfLoader.load('assets/swat.glb', (gltf) => {
-    //     gltf.scene.traverse((child) => {
-    //         if (child instanceof THREE.Mesh) {
-    //             const geometryClone = child.geometry.clone().applyMatrix4(child.matrixWorld);
-    //             const materialClone = child.material.clone();
-    //             modelGeometries.push(geometryClone);
-    //             modelMaterials.push(materialClone);
-    //         }
-    //     });
-    //     var mergedGeom = new THREE.BufferGeometry();
-    //     mergedGeom     = BufferGeometryUtils.mergeBufferGeometries(modelGeometries);
-    //     var mergedMesh = new THREE.Mesh(mergedGeom, modelMaterials);
-    //     this.guardMesh = mergedMesh;
-    //     this.guardMesh.scale.set(1, 1, 1);
-    //     this.guardMesh.name = 'guard_mesh';
-    //     this.guardMesh.matrixAutoUpdate = false;
-    //     this.guardMesh.castShadow       = true;
-    // });
-    // console.log(dumpObject(this.guardMesh));
+      this.playerProjectileMesh = new THREE.InstancedMesh(playerProjectileGeometry, playerProjectileMaterial, this.maxPlayerProjectiles);
+      this.playerProjectileMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      this.playerProjectileMesh.frustumCulled = false;
+      this.scene.add(this.playerProjectileMesh);
 
-    const guardGeometry             = new THREE.SphereBufferGeometry(0.5, 16, 16);
-    const guardMaterial             = new THREE.MeshLambertMaterial({ color: 0x333132 });
-    this.guardMesh                  = new THREE.Mesh(guardGeometry, guardMaterial);
-    this.guardMesh.matrixAutoUpdate = false;
-    this.guardMesh.castShadow       = true;
+      // enemy projectile
 
-    // this.guardMesh.add(this.assetManager.cloneModel('guard'));
+      const enemyProjectileGeometry = new THREE.SphereBufferGeometry(0.4, 16, 16);
+      enemyProjectileGeometry.rotateX(Math.PI * -0.5);
+      const enemyProjectileMaterial = new THREE.MeshLambertMaterial({color: 0x43254d});
 
-    const protectionGeometry             = new THREE.SphereBufferGeometry(0.75, 16, 16);
-    const protectionMaterial             = new THREE.ShaderMaterial(ProtectionShader);
-    protectionMaterial.transparent       = true;
-    this.protectionMesh                  = new THREE.Mesh(protectionGeometry, protectionMaterial);
-    this.protectionMesh.matrixAutoUpdate = false;
-    this.protectionMesh.visible          = false;
+      this.enemyProjectileMesh = new THREE.InstancedMesh(enemyProjectileGeometry, enemyProjectileMaterial, this.maxEnemyProjectiles);
+      this.enemyProjectileMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      this.enemyProjectileMesh.frustumCulled = false;
+      this.scene.add(this.enemyProjectileMesh);
 
-    const hitGeometry             = new THREE.PlaneBufferGeometry(2.5, 2.5);
-    const hitMaterial             = new THREE.ShaderMaterial(HitShader);
-    hitMaterial.transparent       = true;
-    this.hitMesh                  = new THREE.Mesh(hitGeometry, hitMaterial);
-    this.hitMesh.matrixAutoUpdate = false;
-    this.hitMesh.visible          = false;
+      // enemy destructible projectile
 
-    // renderer
+      const enemyDestructibleProjectileGeometry = new THREE.SphereBufferGeometry(0.4, 16, 16);
+      enemyDestructibleProjectileGeometry.rotateX(Math.PI * -0.5);
+      const enemyDestructibleProjectileMaterial = new THREE.MeshLambertMaterial({color: 0xf34d08});
 
-    this.renderer = new THREE.WebGLRenderer({ antialias: true });
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.outputEncoding    = THREE.sRGBEncoding;
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type    = THREE.PCFSoftShadowMap;
-    document.body.appendChild(this.renderer.domElement);
+      this.enemyDestructibleProjectileMesh = new THREE.InstancedMesh(enemyDestructibleProjectileGeometry, enemyDestructibleProjectileMaterial, this.maxEnemyProjectiles);
+      this.enemyDestructibleProjectileMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      this.enemyDestructibleProjectileMesh.frustumCulled = false;
+      this.scene.add(this.enemyDestructibleProjectileMesh);
 
-    // listeners
+      // obstacle
 
-    window.addEventListener('resize', this._onWindowResize, false);
-    this.ui.continueButton.addEventListener('click', this._onContinueButtonClick, false);
-    this.ui.restartButtonMenu.addEventListener('click', this._onRestart, false);
-    this.ui.restartButtonComplete.addEventListener('click', this._onRestart, false);
-    this.ui.restartButtonGameOver.addEventListener('click', this._onRestart, false);
+      const obtacleGeometry = new THREE.BoxBufferGeometry(1, 1, 1);
+      const obtacleMaterial = new THREE.MeshLambertMaterial({color: 0xdedad3});
 
-  }
+      this.obstacleMesh               = new THREE.InstancedMesh(obtacleGeometry, obtacleMaterial, this.maxObstacles);
+      this.obstacleMesh.frustumCulled = false;
+      this.obstacleMesh.castShadow    = true;
+      this.scene.add(this.obstacleMesh);
 
+      // pursuer enemy
 
+      const pursuerGeometry = new PursuerGeometry();
+      const pursuerMaterial = new THREE.MeshLambertMaterial({color: 0x333132});
 
-  _initBackground() {
+      this.pursuerMesh                  = new THREE.Mesh(pursuerGeometry, pursuerMaterial);
+      this.pursuerMesh.matrixAutoUpdate = false;
+      this.pursuerMesh.castShadow       = true;
 
-    this.scene.background = new THREE.Color(0x6d685d);
+      // tower enemy
 
-    const count = 25;
+      const towerGeometry = new THREE.CylinderBufferGeometry(0.5, 0.5, 1, 16);
+      const towerMaterial = new THREE.MeshLambertMaterial({color: 0x333132});
 
-    const geometry = new THREE.BoxBufferGeometry(0.5, 0.5, 0.5);
-    const material = new THREE.MeshBasicMaterial({ color: 0xaca181 });
+      this.towerMesh                  = new THREE.Mesh(towerGeometry, towerMaterial);
+      this.towerMesh.matrixAutoUpdate = false;
+      this.towerMesh.castShadow       = true;
 
-    const backgroundObjects = new THREE.InstancedMesh(geometry, material, count);
 
-    const dummy = new THREE.Object3D();
+      const guardGeometry             = new THREE.SphereBufferGeometry(0.5, 16, 16);
+      const guardMaterial             = new THREE.MeshLambertMaterial({color: 0x333132});
+      this.guardMesh                  = new THREE.Mesh(guardGeometry, guardMaterial);
+      this.guardMesh.matrixAutoUpdate = false;
+      this.guardMesh.castShadow       = true;
 
-    for (let i = 0; i < count; i++) {
+      // this.guardMesh.add(this.assetManager.cloneModel('guard'));
 
-      dummy.position.x = THREE.Math.randFloat(-75, 75);
-      dummy.position.y = THREE.Math.randFloat(-75, -50);
-      dummy.position.z = THREE.Math.randFloat(-75, 75);
+      const protectionGeometry             = new THREE.SphereBufferGeometry(0.75, 16, 16);
+      const protectionMaterial             = new THREE.ShaderMaterial(ProtectionShader);
+      protectionMaterial.transparent       = true;
+      this.protectionMesh                  = new THREE.Mesh(protectionGeometry, protectionMaterial);
+      this.protectionMesh.matrixAutoUpdate = false;
+      this.protectionMesh.visible          = false;
 
-      dummy.scale.set(1, 1, 1).multiplyScalar(Math.random());
+      const hitGeometry             = new THREE.PlaneBufferGeometry(2.5, 2.5);
+      const hitMaterial             = new THREE.ShaderMaterial(HitShader);
+      hitMaterial.transparent       = true;
+      this.hitMesh                  = new THREE.Mesh(hitGeometry, hitMaterial);
+      this.hitMesh.matrixAutoUpdate = false;
+      this.hitMesh.visible          = false;
 
-      dummy.updateMatrix();
+      // renderer
 
-      backgroundObjects.setMatrixAt(i, dummy.matrix);
+      this.renderer = new THREE.WebGLRenderer({antialias: true});
+      this.renderer.setSize(window.innerWidth, window.innerHeight);
+      this.renderer.outputEncoding    = THREE.sRGBEncoding;
+      this.renderer.shadowMap.enabled = true;
+      this.renderer.shadowMap.type    = THREE.PCFSoftShadowMap;
+      document.body.appendChild(this.renderer.domElement);
 
-    }
+      // listeners
 
-    this.scene.add(backgroundObjects);
+      window.addEventListener('resize', this._onWindowResize, false);
+      this.ui.continueButton.addEventListener('click', this._onContinueButtonClick, false);
+      this.ui.restartButtonMenu.addEventListener('click', this._onRestart, false);
+      this.ui.restartButtonComplete.addEventListener('click', this._onRestart, false);
+      this.ui.restartButtonGameOver.addEventListener('click', this._onRestart, false);
 
-  }
+   }
 
 
-  _initPlayer() {
 
-    this.player = new Player(this);
-    this.player.setRenderComponent(this.playerMesh, sync);
+   _initBackground() {
 
-    // particle system
-    this.scene.add(this.player.particleSystem._points);
+      this.scene.background = new THREE.Color(0x030303);
 
-    // audio
-    const playerShot    = this.assetManager.audios.get('playerShot');
-    const playerHit     = this.assetManager.audios.get('playerHit');
-    const playerExplode = this.assetManager.audios.get('playerExplode');
+      for (var i = 0; i < 8000; i++) {
+         var star = new THREE.Object3D();
+         star.x   = THREE.Math.randFloat(-75, 75);
+         star.y   = THREE.Math.randFloat(-75, -50);
+         star.z   = THREE.Math.randFloat(-75, 75);
 
-    this.playerMesh.add(playerShot, playerHit, playerExplode);
+         star.scale.set(1, 1, 1).multiplyScalar(Math.random());
+         // star.updateMatrix();
+         star.updateMatrixWorld();
 
-    this.player.audios.set('playerShot', playerShot);
-    this.player.audios.set('playerHit', playerHit);
-    this.player.audios.set('playerExplode', playerExplode);
-
-    //
-    this.entityManager.add(this.player);
-
-  }
-
-
-  _initControls() {
-
-    this.controls = new VehicleControls(this.player, this.camera);
-    this.controls.setPosition(new YUKA.Vector3(0, 0, 0));
-
-    this.controls.addEventListener('lock', () => {
-
-      this.ui.menu.classList.add('hidden');
-
-      this.time.reset();
-
-      this._startAnimation();
-
-    });
-
-    this.controls.addEventListener('unlock', () => {
-
-      if (this.gameOver === false) {
-
-        this.ui.menu.classList.remove('hidden');
-
-        this._stopAnimation();
-
+         star.velocity     = 0;
+         star.acceleration = 0.002;
+         this.stargeometry.vertices.push(star);
       }
 
-    });
+      let sprite       = this.assetManager.textures.get('star');
+      let starMaterial = new THREE.PointsMaterial({
+         color: 0xaaaaaa,
+         size : 0.7,
+         map  : sprite,
+      });
+      this.stars       = new THREE.Points(this.stargeometry, starMaterial);
 
-  }
+      this.scene.add(this.stars);
 
-
-  _createGuard(type) {
-
-    const guard     = new Guard(this);
-    const guardMesh = this.assetManager.models.get('guard');
-    console.log(guardMesh);
-
-
-    const protectionMesh    = this.protectionMesh.clone();
-    protectionMesh.material = this.protectionMesh.material.clone(); // cloning a mesh does not clone its material (but we need unique uniforms!)
-    const hitMesh           = this.hitMesh.clone();
-    hitMesh.material        = this.hitMesh.material.clone();
-
-    guardMesh.add(protectionMesh);
-    guardMesh.add(hitMesh);
-
-    guard.setRenderComponent(guardMesh, sync);
-    guard.bodyMesh       = guardMesh;
-    guard.protectionMesh = protectionMesh;
-    guard.hitMesh        = hitMesh;
-    console.log('guard', guard);
-
-    const enemyShot           = this.assetManager.cloneAudio('enemyShot');
-    const enemyHit            = this.assetManager.cloneAudio('enemyHit');
-    const coreExplode         = this.assetManager.cloneAudio('coreExplode');
-    const coreShieldHit       = this.assetManager.cloneAudio('coreShieldHit');
-    const coreShieldDestroyed = this.assetManager.cloneAudio('coreShieldDestroyed');
-
-    guardMesh.add(enemyShot);
-    guardMesh.add(enemyHit);
-    guardMesh.add(coreExplode);
-    guardMesh.add(coreShieldHit);
-    guardMesh.add(coreShieldDestroyed);
-
-    guard.audios.set('enemyShot', enemyShot);
-    guard.audios.set('enemyHit', enemyHit);
-    guard.audios.set('coreExplode', coreExplode);
-    guard.audios.set('coreShieldHit', coreShieldHit);
-    guard.audios.set('coreShieldDestroyed', coreShieldDestroyed);
-
-    return guard;
-  }
+   }
 
 
-  _createPursuer() {
+   _initPlayer() {
 
-    const pursuer     = new Pursuer(this);
-    const pursuerMesh = this.pursuerMesh.clone();
-    pursuer.setRenderComponent(pursuerMesh, sync);
+      this.player = new Player(this);
+      this.player.setRenderComponent(this.playerMesh, sync);
 
-    const enemyShot    = this.assetManager.cloneAudio('enemyShot');
-    const enemyExplode = this.assetManager.cloneAudio('enemyExplode');
+      // particle system
+      this.scene.add(this.player.particleSystem._points);
 
-    pursuer.audios.set('enemyShot', enemyShot);
-    pursuer.audios.set('enemyExplode', enemyExplode);
+      // audio
+      const playerShot    = this.assetManager.audios.get('playerShot');
+      const playerHit     = this.assetManager.audios.get('playerHit');
+      const playerExplode = this.assetManager.audios.get('playerExplode');
 
-    pursuerMesh.add(enemyShot);
-    pursuerMesh.add(enemyExplode);
+      this.playerMesh.add(playerShot, playerHit, playerExplode);
 
-    return pursuer;
+      this.player.audios.set('playerShot', playerShot);
+      this.player.audios.set('playerHit', playerHit);
+      this.player.audios.set('playerExplode', playerExplode);
 
-  }
+      //
+      this.entityManager.add(this.player);
 
-
-  _createTower() {
-
-    const tower     = new Tower(this);
-    const towerMesh = this.towerMesh.clone();
-    tower.setRenderComponent(towerMesh, sync);
-
-    const enemyShot    = this.assetManager.cloneAudio('enemyShot');
-    const enemyExplode = this.assetManager.cloneAudio('enemyExplode');
-    const enemyHit     = this.assetManager.cloneAudio('enemyHit');
-
-    tower.audios.set('enemyShot', enemyShot);
-    tower.audios.set('enemyExplode', enemyExplode);
-    tower.audios.set('enemyHit', enemyHit);
-
-    towerMesh.add(enemyShot);
-    towerMesh.add(enemyExplode);
-    towerMesh.add(enemyHit);
-
-    return tower;
-
-  }
+   }
 
 
-  _checkPlayerCollision() {
+   _initControls() {
 
-    const player   = this.player;
-    const guards   = this.guards;
-    const pursuers = this.pursuers;
-    const towers   = this.towers;
+      this.controls = new VehicleControls(this.player, this.camera);
+      this.controls.setPosition(new YUKA.Vector3(0, 0, 0));
 
-    // perform intersection test with guards
-    for (let i = 0, l = guards.length; i < l; i++) {
+      this.controls.addEventListener('lock', () => {
 
-      const guard = guards[i];
+         this.ui.menu.classList.add('hidden');
 
-      const squaredDistance = player.position.squaredDistanceTo(guard.position);
-      const range           = player.boundingRadius + guard.boundingRadius;
+         this.time.reset();
+
+         this._startAnimation();
+
+      });
+
+      this.controls.addEventListener('unlock', () => {
+
+         if (this.gameOver === false) {
+
+            this.ui.menu.classList.remove('hidden');
+
+            this._stopAnimation();
+
+         }
+
+      });
+
+   }
+
+
+   _createGuard(type) {
+
+      const guardMesh = this.assetManager.models.get(type);
+      const mixer     = this.assetManager.animations.get(type);
+      const guard     = new Guard(this, type, guardMesh);
+      console.log(guardMesh);
+
+
+      const protectionMesh    = this.protectionMesh.clone();
+      protectionMesh.material = this.protectionMesh.material.clone(); // cloning a mesh does not clone its material (but we need unique uniforms!)
+      const hitMesh           = this.hitMesh.clone();
+      hitMesh.material        = this.hitMesh.material.clone();
+
+      guardMesh.add(protectionMesh);
+      guardMesh.add(hitMesh);
+
+      guard.setRenderComponent(guardMesh, sync);
+      guard.bodyMesh       = guardMesh;
+      guard.protectionMesh = protectionMesh;
+      guard.hitMesh        = hitMesh;
+      console.log('guard', guard);
+
+      const enemyShot           = this.assetManager.cloneAudio('enemyShot');
+      const enemyHit            = this.assetManager.cloneAudio('enemyHit');
+      const coreExplode         = this.assetManager.cloneAudio('coreExplode');
+      const coreShieldHit       = this.assetManager.cloneAudio('coreShieldHit');
+      const coreShieldDestroyed = this.assetManager.cloneAudio('coreShieldDestroyed');
+
+      guardMesh.add(enemyShot);
+      guardMesh.add(enemyHit);
+      guardMesh.add(coreExplode);
+      guardMesh.add(coreShieldHit);
+      guardMesh.add(coreShieldDestroyed);
+
+      guard.audios.set('enemyShot', enemyShot);
+      guard.audios.set('enemyHit', enemyHit);
+      guard.audios.set('coreExplode', coreExplode);
+      guard.audios.set('coreShieldHit', coreShieldHit);
+      guard.audios.set('coreShieldDestroyed', coreShieldDestroyed);
+
+      return guard;
+   }
+
+
+   _createPursuer() {
+
+      const pursuer     = new Pursuer(this);
+      const pursuerMesh = this.pursuerMesh.clone();
+      pursuer.setRenderComponent(pursuerMesh, sync);
+
+      const enemyShot    = this.assetManager.cloneAudio('enemyShot');
+      const enemyExplode = this.assetManager.cloneAudio('enemyExplode');
+
+      pursuer.audios.set('enemyShot', enemyShot);
+      pursuer.audios.set('enemyExplode', enemyExplode);
+
+      pursuerMesh.add(enemyShot);
+      pursuerMesh.add(enemyExplode);
+
+      return pursuer;
+
+   }
+
+
+   _createTower() {
+
+      const tower     = new Tower(this);
+      const towerMesh = this.towerMesh.clone();
+      tower.setRenderComponent(towerMesh, sync);
+
+      const enemyShot    = this.assetManager.cloneAudio('enemyShot');
+      const enemyExplode = this.assetManager.cloneAudio('enemyExplode');
+      const enemyHit     = this.assetManager.cloneAudio('enemyHit');
+
+      tower.audios.set('enemyShot', enemyShot);
+      tower.audios.set('enemyExplode', enemyExplode);
+      tower.audios.set('enemyHit', enemyHit);
+
+      towerMesh.add(enemyShot);
+      towerMesh.add(enemyExplode);
+      towerMesh.add(enemyHit);
+
+      return tower;
+
+   }
+
+
+   _checkPlayerCollision() {
+
+      const player   = this.player;
+      const guards   = this.guards;
+      const pursuers = this.pursuers;
+      const towers   = this.towers;
+
+      // perform intersection test with guards
+      for (let i = 0, l = guards.length; i < l; i++) {
+
+         const guard = guards[i];
+
+         const squaredDistance = player.position.squaredDistanceTo(guard.position);
+         const range           = player.boundingRadius + guard.boundingRadius;
+
+         if (squaredDistance <= (range * range)) {
+
+            if (player.obb.intersectsBoundingSphere(guard.boundingSphere) === true) {
+
+               // dead
+               if (player._GOD_MODE_ === false) {
+
+                  player.healthPoints--;
+                  const audio = player.audios.get('playerHit');
+                  this.playAudio(audio);
+
+               }
+
+
+               return;
+
+            }
+
+         }
+
+      }
+
+      // perform intersection test with pursuers
+      for (let i = 0, l = pursuers.length; i < l; i++) {
+
+         const pursuer = pursuers[i];
+
+         const squaredDistance = player.position.squaredDistanceTo(pursuer.position);
+         const range           = player.boundingRadius + pursuer.boundingRadius;
+
+         if (squaredDistance <= (range * range)) {
+
+            if (player.obb.intersectsBoundingSphere(pursuer.boundingSphere) === true) {
+
+               // dead
+
+               player.healthPoints = 0;
+
+               const audio = player.audios.get('playerExplode');
+               this.playAudio(audio);
+               return;
+
+            }
+
+         }
+
+      }
+
+      // perform intersection test with towers
+      for (let i = 0, l = towers.length; i < l; i++) {
+
+         const tower = towers[i];
+
+         const squaredDistance = player.position.squaredDistanceTo(tower.position);
+         const range           = player.boundingRadius + tower.boundingRadius;
+
+         if (squaredDistance <= (range * range)) {
+
+            if (player.obb.intersectsBoundingSphere(tower.boundingSphere) === true) {
+
+               // dead
+
+               player.healthPoints = 0;
+
+               const audio = player.audios.get('playerExplode');
+               this.playAudio(audio);
+               return;
+
+            }
+
+         }
+
+      }
+
+   }
+
+
+   _checkPlayerProjectileCollisions() {
+
+      const playerProjectiles = this.playerProjectiles;
+
+      // perform intersection test of player projectiles
+      for (let i = (playerProjectiles.length - 1); i >= 0; i--) {
+
+         this._checkPlayerProjectileCollision(playerProjectiles[i]);
+
+      }
+
+   }
+
+
+   _checkEnemyProjectileCollisions() {
+
+      const enemyProjectiles             = this.enemyProjectiles;
+      const enemyDestructibleProjectiles = this.enemyDestructibleProjectiles;
+
+      // perform intersection test of enemy projectiles
+      for (let i = (enemyProjectiles.length - 1); i >= 0; i--) {
+
+         this._checkEnemyProjectileCollision(enemyProjectiles[i]);
+
+      }
+
+      for (let i = (enemyDestructibleProjectiles.length - 1); i >= 0; i--) {
+
+         this._checkEnemyProjectileCollision(enemyDestructibleProjectiles[i]);
+
+      }
+
+   }
+
+
+   _checkEnemyProjectileCollision(projectile) {
+
+      const obstacles         = this.obstacles;
+      const player            = this.player;
+      const playerProjectiles = this.playerProjectiles;
+
+      for (let i = 0, l = obstacles.length; i < l; i++) {
+
+         // first test (find out how close objects are)
+         const obstacle = obstacles[i];
+
+         const squaredDistance = projectile.position.squaredDistanceTo(obstacle.position);
+         const range           = projectile.boundingRadius + obstacle.boundingRadius;
+
+         if (squaredDistance <= (range * range)) {
+
+            // second more expensive test (only performed if objects are close enough)
+            if (obstacle.obb.intersectsBoundingSphere(projectile.boundingSphere) === true) {
+
+               this.removeProjectile(projectile);
+               return;
+
+            }
+
+         }
+
+      }
+
+      if (projectile.isDestructible === true) {
+
+         // perform intersection test with player projectiles
+         for (let i = (playerProjectiles.length - 1); i >= 0; i--) {
+
+            // first test (find out how close objects are)
+            const playerProjectile = playerProjectiles[i];
+
+            const squaredDistance = projectile.position.squaredDistanceTo(playerProjectile.position);
+            const range           = projectile.boundingRadius + playerProjectile.boundingRadius;
+
+            if (squaredDistance <= (range * range)) {
+
+               // second more expensive test (only performed if objects are close enough)
+               if (playerProjectile.obb.intersectsBoundingSphere(projectile.boundingSphere) === true) {
+
+                  this.removeProjectile(projectile);
+                  this.removeProjectile(playerProjectile);
+                  return;
+
+               }
+
+            }
+
+         }
+
+      }
+
+      // perform intersection test with player
+      const squaredDistance = projectile.position.squaredDistanceTo(player.position);
+      const range           = projectile.boundingRadius + player.boundingRadius;
 
       if (squaredDistance <= (range * range)) {
 
-        if (player.obb.intersectsBoundingSphere(guard.boundingSphere) === true) {
+         if (player.obb.intersectsBoundingSphere(projectile.boundingSphere) === true) {
 
-          // dead
-          if (player._GOD_MODE_ === false) {
+            projectile.sendMessage(player, 'hit');
+            this.removeProjectile(projectile);
+            return;
 
-            player.healthPoints--;
-            const audio = player.audios.get('playerHit');
-            this.playAudio(audio);
-
-          }
-
-
-          return;
-
-        }
+         }
 
       }
 
-    }
+   }
 
-    // perform intersection test with pursuers
 
-    for (let i = 0, l = pursuers.length; i < l; i++) {
+   _checkPlayerProjectileCollision(playerProjectile) {
 
-      const pursuer = pursuers[i];
+      const guards    = this.guards;
+      const pursuers  = this.pursuers;
+      const towers    = this.towers;
+      const obstacles = this.obstacles;
 
-      const squaredDistance = player.position.squaredDistanceTo(pursuer.position);
-      const range           = player.boundingRadius + pursuer.boundingRadius;
+      // enemies
 
-      if (squaredDistance <= (range * range)) {
+      // guards
+      for (let i = 0, l = guards.length; i < l; i++) {
 
-        if (player.obb.intersectsBoundingSphere(pursuer.boundingSphere) === true) {
+         // first test (find out how close objects are)
+         const guard = guards[i];
 
-          // dead
+         const squaredDistance = playerProjectile.position.squaredDistanceTo(guard.position);
+         const range           = playerProjectile.boundingRadius + guard.boundingRadius;
 
-          player.healthPoints = 0;
+         if (squaredDistance <= (range * range)) {
 
-          const audio = player.audios.get('playerExplode');
-          this.playAudio(audio);
-          return;
+            // second more expensive test (only performed if objects are close enough)
+            if (playerProjectile.obb.intersectsBoundingSphere(guard.boundingSphere) === true) {
 
-        }
+               playerProjectile.sendMessage(guard, 'hit');
+               this.removeProjectile(playerProjectile);
+               return;
 
-      }
+            }
 
-    }
-
-    // perform intersection test with towers
-
-    for (let i = 0, l = towers.length; i < l; i++) {
-
-      const tower = towers[i];
-
-      const squaredDistance = player.position.squaredDistanceTo(tower.position);
-      const range           = player.boundingRadius + tower.boundingRadius;
-
-      if (squaredDistance <= (range * range)) {
-
-        if (player.obb.intersectsBoundingSphere(tower.boundingSphere) === true) {
-
-          // dead
-
-          player.healthPoints = 0;
-
-          const audio = player.audios.get('playerExplode');
-          this.playAudio(audio);
-          return;
-
-        }
+         }
 
       }
 
-    }
+      // pursuers
+      for (let i = 0, l = pursuers.length; i < l; i++) {
 
-  }
+         // first test (find out how close objects are)
+         const pursuer = pursuers[i];
 
+         const squaredDistance = playerProjectile.position.squaredDistanceTo(pursuer.position);
+         const range           = playerProjectile.boundingRadius + pursuer.boundingRadius;
 
-  _checkPlayerProjectileCollisions() {
+         if (squaredDistance <= (range * range)) {
 
-    const playerProjectiles = this.playerProjectiles;
+            // second more expensive test (only performed if objects are close enough)
+            if (playerProjectile.obb.intersectsBoundingSphere(pursuer.boundingSphere) === true) {
 
-    // perform intersection test of player projectiles
+               playerProjectile.sendMessage(pursuer, 'hit');
+               this.removeProjectile(playerProjectile);
+               return;
 
-    for (let i = (playerProjectiles.length - 1); i >= 0; i--) {
+            }
 
-      this._checkPlayerProjectileCollision(playerProjectiles[i]);
-
-    }
-
-  }
-
-
-  _checkEnemyProjectileCollisions() {
-
-    const enemyProjectiles             = this.enemyProjectiles;
-    const enemyDestructibleProjectiles = this.enemyDestructibleProjectiles;
-
-    // perform intersection test of enemy projectiles
-
-    for (let i = (enemyProjectiles.length - 1); i >= 0; i--) {
-
-      this._checkEnemyProjectileCollision(enemyProjectiles[i]);
-
-    }
-
-    for (let i = (enemyDestructibleProjectiles.length - 1); i >= 0; i--) {
-
-      this._checkEnemyProjectileCollision(enemyDestructibleProjectiles[i]);
-
-    }
-
-  }
-
-
-  _checkEnemyProjectileCollision(projectile) {
-
-    const obstacles         = this.obstacles;
-    const player            = this.player;
-    const playerProjectiles = this.playerProjectiles;
-
-    for (let i = 0, l = obstacles.length; i < l; i++) {
-
-      // first test (find out how close objects are)
-
-      const obstacle = obstacles[i];
-
-      const squaredDistance = projectile.position.squaredDistanceTo(obstacle.position);
-      const range           = projectile.boundingRadius + obstacle.boundingRadius;
-
-      if (squaredDistance <= (range * range)) {
-
-        // second more expensive test (only performed if objects are close enough)
-
-        if (obstacle.obb.intersectsBoundingSphere(projectile.boundingSphere) === true) {
-
-          this.removeProjectile(projectile);
-          return;
-
-        }
+         }
 
       }
 
-    }
+      // towers
+      for (let i = 0, l = towers.length; i < l; i++) {
 
-    if (projectile.isDestructible === true) {
+         // first test (find out how close objects are)
+         const tower = towers[i];
 
-      // perform intersection test with player projectiles
+         const squaredDistance = playerProjectile.position.squaredDistanceTo(tower.position);
+         const range           = playerProjectile.boundingRadius + tower.boundingRadius;
+
+         if (squaredDistance <= (range * range)) {
+
+            // second more expensive test (only performed if objects are close enough)
+            if (playerProjectile.obb.intersectsBoundingSphere(tower.boundingSphere) === true) {
+
+               playerProjectile.sendMessage(tower, 'hit');
+               this.removeProjectile(playerProjectile);
+               return;
+
+            }
+
+         }
+
+      }
+
+      // obstacles
+      for (let i = 0, l = obstacles.length; i < l; i++) {
+
+         // first test (find out how close objects are)
+         const obstacle = obstacles[i];
+
+         const squaredDistance = playerProjectile.position.squaredDistanceTo(obstacle.position);
+         const range           = playerProjectile.boundingRadius + obstacle.boundingRadius;
+
+         if (squaredDistance <= (range * range)) {
+
+            // second more expensive test (only performed if objects are close enough)
+            if (playerProjectile.obb.intersectsOBB(obstacle.obb) === true) {
+
+               this.removeProjectile(playerProjectile);
+               return;
+
+            }
+
+         }
+
+      }
+
+   }
+
+
+   _checkGameStatus() {
+
+      const player   = this.player;
+      const guards   = this.guards;
+      const pursuers = this.pursuers;
+      const towers   = this.towers;
+
+      if (player.healthPoints === 0) {
+
+         this.active   = false;
+         this.gameOver = true;
+         this.ui.gameOver.classList.remove('hidden');
+         this.controls.exit();
+
+      } else {
+
+         // check guard protection
+         if (this.guardsProtected === true && (pursuers.length === 0 && towers.length === 0)) {
+
+            // disable protection when all pursuers are destroyed
+            this.guardsProtected = false;
+
+            for (let i = 0, l = guards.length; i < l; i++) {
+
+               guards[i].disableProtection();
+
+            }
+
+         }
+
+         // all guards have been destroyed
+         if (guards.length === 0) {
+
+            // advance
+            this.currentStage++;
+
+            // halt simulation
+            this.active = false;
+
+            // restore hit points after clearing a stage
+            this.player.heal();
+
+            if (this.currentStage > this.maxStage) {
+
+               // game completed
+               this.gameOver = true;
+
+               this.controls.exit();
+               this.ui.gameComplete.classList.remove('hidden');
+
+            } else {
+
+               // load next stage
+               this.ui.levelComplete.classList.remove('hidden');
+
+               setTimeout(() => {
+
+                  this._loadStage(this.currentStage);
+                  this.ui.levelComplete.classList.add('hidden');
+
+               }, 1000);
+
+            }
+
+         }
+
+      }
+
+   }
+
+
+   _loadStage(id) {
+
+      this._clearStage();
+
+      this._updateMenu(id);
+
+      this.sceneManager.load(id);
+
+      this.active = true;
+
+   }
+
+
+   _updateBackground(delta) {
+      this.stargeometry.vertices.forEach((vertex) => {
+
+         vertex.velocity += vertex.acceleration * (delta * 0.01);
+         vertex.y -= vertex.velocity;
+
+         if (vertex.y <= -80) {
+
+            vertex.y        = -45;
+            vertex.velocity = 0;
+
+         }
+
+      });
+      this.stargeometry.verticesNeedUpdate = true;
+   }
+
+
+   _updateMenu(currentStage) {
+
+      if (currentStage > 1) {
+
+         this.ui.continueButton.textContent      = '■ Continue';
+         this.ui.restartButtonMenu.style.display = 'inline-block';
+
+      } else {
+
+         this.ui.continueButton.textContent      = '■ Start';
+         this.ui.restartButtonMenu.style.display = 'none';
+
+      }
+
+      this.ui.stagesCleared.textContent = currentStage - 1;
+
+   }
+
+
+   _clearStage() {
+
+      const guards                       = this.guards;
+      const pursuers                     = this.pursuers;
+      const towers                       = this.towers;
+      const obstacles                    = this.obstacles;
+      const enemyProjectiles             = this.enemyProjectiles;
+      const enemyDestructibleProjectiles = this.enemyDestructibleProjectiles;
+      const playerProjectiles            = this.playerProjectiles;
+
+      this.guardsProtected = false;
+
+      for (let i = (guards.length - 1); i >= 0; i--) {
+
+         this.removeGuard(guards[i]);
+
+      }
+
+      for (let i = (pursuers.length - 1); i >= 0; i--) {
+
+         this.removePursuer(pursuers[i]);
+
+      }
+
+      for (let i = (towers.length - 1); i >= 0; i--) {
+
+         this.removeTower(towers[i]);
+
+      }
+
+      for (let i = (obstacles.length - 1); i >= 0; i--) {
+
+         this.removeObstacle(obstacles[i]);
+
+      }
+
+      for (let i = (enemyProjectiles.length - 1); i >= 0; i--) {
+
+         this.removeProjectile(enemyProjectiles[i]);
+
+      }
+
+      for (let i = (enemyDestructibleProjectiles.length - 1); i >= 0; i--) {
+
+         this.removeProjectile(enemyDestructibleProjectiles[i]);
+
+      }
 
       for (let i = (playerProjectiles.length - 1); i >= 0; i--) {
 
-        // first test (find out how close objects are)
-
-        const playerProjectile = playerProjectiles[i];
-
-        const squaredDistance = projectile.position.squaredDistanceTo(playerProjectile.position);
-        const range           = projectile.boundingRadius + playerProjectile.boundingRadius;
-
-        if (squaredDistance <= (range * range)) {
-
-          // second more expensive test (only performed if objects are close enough)
-
-          if (playerProjectile.obb.intersectsBoundingSphere(projectile.boundingSphere) === true) {
-
-            this.removeProjectile(projectile);
-            this.removeProjectile(playerProjectile);
-            return;
-
-          }
-
-        }
+         this.removeProjectile(playerProjectiles[i]);
 
       }
 
-    }
+      this._updateObstaclesMeshes(true);
 
-    // perform intersection test with player
+      this.player.particleSystem.clear();
 
-    const squaredDistance = projectile.position.squaredDistanceTo(player.position);
-    const range           = projectile.boundingRadius + player.boundingRadius;
-
-    if (squaredDistance <= (range * range)) {
-
-      if (player.obb.intersectsBoundingSphere(projectile.boundingSphere) === true) {
-
-        projectile.sendMessage(player, 'hit');
-        this.removeProjectile(projectile);
-        return;
-
-      }
-
-    }
-
-  }
+   }
 
 
-  _checkPlayerProjectileCollision(playerProjectile) {
+   _updateObstaclesMeshes(force) {
 
-    const guards    = this.guards;
-    const pursuers  = this.pursuers;
-    const towers    = this.towers;
-    const obstacles = this.obstacles;
+      let needsUpdate = force || false;
 
-    // enemies
+      const obstacleCount = this.obstacles.length;
 
-    // guards
+      for (let i = 0; i < obstacleCount; i++) {
 
-    for (let i = 0, l = guards.length; i < l; i++) {
+         const obstacle = this.obstacles[i];
 
-      // first test (find out how close objects are)
+         if (obstacle.needsUpdate === true) {
 
-      const guard = guards[i];
+            obstacle.updateBoundingVolumes(); // ensure bounding volume is up-to-date
 
-      const squaredDistance = playerProjectile.position.squaredDistanceTo(guard.position);
-      const range           = playerProjectile.boundingRadius + guard.boundingRadius;
+            this.obstacleMesh.setMatrixAt(i, obstacle.worldMatrix);
+            obstacle.needsUpdate = false;
+            needsUpdate          = true;
 
-      if (squaredDistance <= (range * range)) {
-
-        // second more expensive test (only performed if objects are close enough)
-
-        if (playerProjectile.obb.intersectsBoundingSphere(guard.boundingSphere) === true) {
-
-          playerProjectile.sendMessage(guard, 'hit');
-          this.removeProjectile(playerProjectile);
-          return;
-
-        }
+         }
 
       }
 
-    }
+      if (needsUpdate === true) {
 
-    // pursuers
-
-    for (let i = 0, l = pursuers.length; i < l; i++) {
-
-      // first test (find out how close objects are)
-
-      const pursuer = pursuers[i];
-
-      const squaredDistance = playerProjectile.position.squaredDistanceTo(pursuer.position);
-      const range           = playerProjectile.boundingRadius + pursuer.boundingRadius;
-
-      if (squaredDistance <= (range * range)) {
-
-        // second more expensive test (only performed if objects are close enough)
-
-        if (playerProjectile.obb.intersectsBoundingSphere(pursuer.boundingSphere) === true) {
-
-          playerProjectile.sendMessage(pursuer, 'hit');
-          this.removeProjectile(playerProjectile);
-          return;
-
-        }
+         this.obstacleMesh.count                      = obstacleCount;
+         this.obstacleMesh.instanceMatrix.needsUpdate = true;
 
       }
 
-    }
+   }
 
-    // towers
 
-    for (let i = 0, l = towers.length; i < l; i++) {
+   _updateProjectileMeshes() {
 
-      // first test (find out how close objects are)
+      // player projectiles
 
-      const tower = towers[i];
+      const playerProjectileCount = this.playerProjectiles.length;
 
-      const squaredDistance = playerProjectile.position.squaredDistanceTo(tower.position);
-      const range           = playerProjectile.boundingRadius + tower.boundingRadius;
+      for (let i = 0; i < playerProjectileCount; i++) {
 
-      if (squaredDistance <= (range * range)) {
+         const projectile = this.playerProjectiles[i];
 
-        // second more expensive test (only performed if objects are close enough)
-
-        if (playerProjectile.obb.intersectsBoundingSphere(tower.boundingSphere) === true) {
-
-          playerProjectile.sendMessage(tower, 'hit');
-          this.removeProjectile(playerProjectile);
-          return;
-
-        }
+         this.playerProjectileMesh.setMatrixAt(i, projectile.worldMatrix);
 
       }
 
-    }
+      this.playerProjectileMesh.count                      = playerProjectileCount;
+      this.playerProjectileMesh.instanceMatrix.needsUpdate = true;
 
-    // obstacles
+      // enemy projectiles
 
-    for (let i = 0, l = obstacles.length; i < l; i++) {
+      const enemyProjectileCount = this.enemyProjectiles.length;
 
-      // first test (find out how close objects are)
 
-      const obstacle = obstacles[i];
+      for (let i = 0; i < enemyProjectileCount; i++) {
 
-      const squaredDistance = playerProjectile.position.squaredDistanceTo(obstacle.position);
-      const range           = playerProjectile.boundingRadius + obstacle.boundingRadius;
-
-      if (squaredDistance <= (range * range)) {
-
-        // second more expensive test (only performed if objects are close enough)
-
-        if (playerProjectile.obb.intersectsOBB(obstacle.obb) === true) {
-
-          this.removeProjectile(playerProjectile);
-          return;
-
-        }
+         const projectile = this.enemyProjectiles[i];
+         this.enemyProjectileMesh.setMatrixAt(i, projectile.worldMatrix);
 
       }
 
-    }
+      this.enemyProjectileMesh.count                      = enemyProjectileCount;
+      this.enemyProjectileMesh.instanceMatrix.needsUpdate = true;
 
-  }
+      // enemy destructible projectiles
 
+      const enemyDestructibleProjectileCount = this.enemyDestructibleProjectiles.length;
 
-  _checkGameStatus() {
+      for (let i = 0; i < enemyDestructibleProjectileCount; i++) {
 
-    const player   = this.player;
-    const guards   = this.guards;
-    const pursuers = this.pursuers;
-    const towers   = this.towers;
-
-    if (player.healthPoints === 0) {
-
-      this.active   = false;
-      this.gameOver = true;
-      this.ui.gameOver.classList.remove('hidden');
-      this.controls.exit();
-
-    } else {
-
-      // check guard protection
-
-      if (this.guardsProtected === true && (pursuers.length === 0 && towers.length === 0)) {
-
-        // disable protection when all pursuers are destroyed
-
-        this.guardsProtected = false;
-
-        for (let i = 0, l = guards.length; i < l; i++) {
-
-          guards[i].disableProtection();
-
-        }
+         const projectile = this.enemyDestructibleProjectiles[i];
+         this.enemyDestructibleProjectileMesh.setMatrixAt(i, projectile.worldMatrix);
 
       }
 
-      // all guards have been destroyed
+      this.enemyDestructibleProjectileMesh.count                      = enemyDestructibleProjectileCount;
+      this.enemyDestructibleProjectileMesh.instanceMatrix.needsUpdate = true;
 
-      if (guards.length === 0) {
+   }
 
-        // advance
 
-        this.currentStage++;
+   _enforceNonPenetrationConstraint() {
 
-        // halt simulation
+      const guards    = this.guards;
+      const pursuers  = this.pursuers;
+      const towers    = this.towers;
+      const obstacles = this.obstacles;
 
-        this.active = false;
+      // guards
 
-        // restore hit points after clearing a stage
+      for (let i = 0, il = guards.length; i < il; i++) {
 
-        this.player.heal();
+         const guard = guards[i];
 
-        if (this.currentStage > this.maxStage) {
+         for (let j = 0, jl = guards.length; j < jl; j++) {
 
-          // game completed
+            const entity = guards[j];
 
-          this.gameOver = true;
+            if (guard !== entity) {
 
-          this.controls.exit();
-          this.ui.gameComplete.classList.remove('hidden');
+               this._checkOverlappingEntites(guard, entity);
 
-        } else {
+            }
 
-          // load next stage
 
-          this.ui.levelComplete.classList.remove('hidden');
+         }
 
-          setTimeout(() => {
+         for (let j = 0, jl = pursuers.length; j < jl; j++) {
 
-            this._loadStage(this.currentStage);
-            this.ui.levelComplete.classList.add('hidden');
+            this._checkOverlappingEntites(guard, pursuers[j]);
 
-          }, 1000);
+         }
 
-        }
+         for (let j = 0, jl = towers.length; j < jl; j++) {
+
+            this._checkOverlappingEntites(guard, towers[j]);
+
+         }
+
+         for (let j = 0, jl = obstacles.length; j < jl; j++) {
+
+            this._checkOverlappingEntites(guard, obstacles[j]);
+
+         }
 
       }
 
-    }
+      // pursuer
 
-  }
+      for (let i = 0, il = pursuers.length; i < il; i++) {
 
+         const pursuer = pursuers[i];
 
-  _loadStage(id) {
+         for (let j = 0, jl = guards.length; j < jl; j++) {
 
-    this._clearStage();
+            const entity = guards[j];
 
-    this._updateMenu(id);
+            this._checkOverlappingEntites(pursuer, entity);
 
-    this.sceneManager.load(id);
+         }
 
-    this.active = true;
+         for (let j = 0, jl = pursuers.length; j < jl; j++) {
 
-  }
+            const entity = pursuers[j];
 
+            if (pursuer !== entity) {
 
-  _updateMenu(currentStage) {
+               this._checkOverlappingEntites(pursuer, entity);
 
-    if (currentStage > 1) {
+            }
 
-      this.ui.continueButton.textContent      = '■ Continue';
-      this.ui.restartButtonMenu.style.display = 'inline-block';
+         }
 
-    } else {
+         for (let j = 0, jl = towers.length; j < jl; j++) {
 
-      this.ui.continueButton.textContent      = '■ Start';
-      this.ui.restartButtonMenu.style.display = 'none';
+            this._checkOverlappingEntites(pursuer, towers[j]);
 
-    }
+         }
 
-    this.ui.stagesCleared.textContent = currentStage - 1;
+         for (let j = 0, jl = obstacles.length; j < jl; j++) {
 
-  }
+            this._checkOverlappingEntites(pursuer, obstacles[j]);
 
-
-  _clearStage() {
-
-    const guards                       = this.guards;
-    const pursuers                     = this.pursuers;
-    const towers                       = this.towers;
-    const obstacles                    = this.obstacles;
-    const enemyProjectiles             = this.enemyProjectiles;
-    const enemyDestructibleProjectiles = this.enemyDestructibleProjectiles;
-    const playerProjectiles            = this.playerProjectiles;
-
-    this.guardsProtected = false;
-
-    for (let i = (guards.length - 1); i >= 0; i--) {
-
-      this.removeGuard(guards[i]);
-
-    }
-
-    for (let i = (pursuers.length - 1); i >= 0; i--) {
-
-      this.removePursuer(pursuers[i]);
-
-    }
-
-    for (let i = (towers.length - 1); i >= 0; i--) {
-
-      this.removeTower(towers[i]);
-
-    }
-
-    for (let i = (obstacles.length - 1); i >= 0; i--) {
-
-      this.removeObstacle(obstacles[i]);
-
-    }
-
-    for (let i = (enemyProjectiles.length - 1); i >= 0; i--) {
-
-      this.removeProjectile(enemyProjectiles[i]);
-
-    }
-
-    for (let i = (enemyDestructibleProjectiles.length - 1); i >= 0; i--) {
-
-      this.removeProjectile(enemyDestructibleProjectiles[i]);
-
-    }
-
-    for (let i = (playerProjectiles.length - 1); i >= 0; i--) {
-
-      this.removeProjectile(playerProjectiles[i]);
-
-    }
-
-    this._updateObstaclesMeshes(true);
-
-    this.player.particleSystem.clear();
-
-  }
-
-
-  _updateObstaclesMeshes(force) {
-
-    let needsUpdate = force || false;
-
-    const obstacleCount = this.obstacles.length;
-
-    for (let i = 0; i < obstacleCount; i++) {
-
-      const obstacle = this.obstacles[i];
-
-      if (obstacle.needsUpdate === true) {
-
-        obstacle.updateBoundingVolumes(); // ensure bounding volume is up-to-date
-
-        this.obstacleMesh.setMatrixAt(i, obstacle.worldMatrix);
-        obstacle.needsUpdate = false;
-        needsUpdate          = true;
+         }
 
       }
 
-    }
-
-    if (needsUpdate === true) {
-
-      this.obstacleMesh.count                      = obstacleCount;
-      this.obstacleMesh.instanceMatrix.needsUpdate = true;
-
-    }
-
-  }
+   }
 
 
-  _updateProjectileMeshes() {
+   _checkOverlappingEntites(entity1, entity2) {
 
-    // player projectiles
+      // code based on "Programming Game AI by Example", chapter 3 section "Ensuring Zero Overlap"
 
-    const playerProjectileCount = this.playerProjectiles.length;
+      toVector.subVectors(entity1.position, entity2.position);
 
-    for (let i = 0; i < playerProjectileCount; i++) {
+      const distance = toVector.length();
+      const range    = entity1.boundingRadius + entity2.boundingRadius;
 
-      const projectile = this.playerProjectiles[i];
+      const overlap = range - distance;
 
-      this.playerProjectileMesh.setMatrixAt(i, projectile.worldMatrix);
+      if (overlap >= 0) {
 
-    }
-
-    this.playerProjectileMesh.count                      = playerProjectileCount;
-    this.playerProjectileMesh.instanceMatrix.needsUpdate = true;
-
-    // enemy projectiles
-
-    const enemyProjectileCount = this.enemyProjectiles.length;
-
-
-    for (let i = 0; i < enemyProjectileCount; i++) {
-
-      const projectile = this.enemyProjectiles[i];
-      this.enemyProjectileMesh.setMatrixAt(i, projectile.worldMatrix);
-
-    }
-
-    this.enemyProjectileMesh.count                      = enemyProjectileCount;
-    this.enemyProjectileMesh.instanceMatrix.needsUpdate = true;
-
-    // enemy destructible projectiles
-
-    const enemyDestructibleProjectileCount = this.enemyDestructibleProjectiles.length;
-
-    for (let i = 0; i < enemyDestructibleProjectileCount; i++) {
-
-      const projectile = this.enemyDestructibleProjectiles[i];
-      this.enemyDestructibleProjectileMesh.setMatrixAt(i, projectile.worldMatrix);
-
-    }
-
-    this.enemyDestructibleProjectileMesh.count                      = enemyDestructibleProjectileCount;
-    this.enemyDestructibleProjectileMesh.instanceMatrix.needsUpdate = true;
-
-  }
-
-
-  _enforceNonPenetrationConstraint() {
-
-    const guards    = this.guards;
-    const pursuers  = this.pursuers;
-    const towers    = this.towers;
-    const obstacles = this.obstacles;
-
-    // guards
-
-    for (let i = 0, il = guards.length; i < il; i++) {
-
-      const guard = guards[i];
-
-      for (let j = 0, jl = guards.length; j < jl; j++) {
-
-        const entity = guards[j];
-
-        if (guard !== entity) {
-
-          this._checkOverlappingEntites(guard, entity);
-
-        }
-
+         toVector.divideScalar(distance || 1); // normalize
+         displacement.copy(toVector).multiplyScalar(overlap);
+         entity1.position.add(displacement);
 
       }
 
-      for (let j = 0, jl = pursuers.length; j < jl; j++) {
-
-        this._checkOverlappingEntites(guard, pursuers[j]);
-
-      }
-
-      for (let j = 0, jl = towers.length; j < jl; j++) {
-
-        this._checkOverlappingEntites(guard, towers[j]);
-
-      }
-
-      for (let j = 0, jl = obstacles.length; j < jl; j++) {
-
-        this._checkOverlappingEntites(guard, obstacles[j]);
-
-      }
-
-    }
-
-    // pursuer
-
-    for (let i = 0, il = pursuers.length; i < il; i++) {
-
-      const pursuer = pursuers[i];
-
-      for (let j = 0, jl = guards.length; j < jl; j++) {
-
-        const entity = guards[j];
-
-        this._checkOverlappingEntites(pursuer, entity);
-
-      }
-
-      for (let j = 0, jl = pursuers.length; j < jl; j++) {
-
-        const entity = pursuers[j];
-
-        if (pursuer !== entity) {
-
-          this._checkOverlappingEntites(pursuer, entity);
-
-        }
-
-      }
-
-      for (let j = 0, jl = towers.length; j < jl; j++) {
-
-        this._checkOverlappingEntites(pursuer, towers[j]);
-
-      }
-
-      for (let j = 0, jl = obstacles.length; j < jl; j++) {
-
-        this._checkOverlappingEntites(pursuer, obstacles[j]);
-
-      }
-
-    }
-
-  }
+   }
 
 
-  _checkOverlappingEntites(entity1, entity2) {
-
-    // code based on "Programming Game AI by Example", chapter 3 section "Ensuring Zero Overlap"
-
-    toVector.subVectors(entity1.position, entity2.position);
-
-    const distance = toVector.length();
-    const range    = entity1.boundingRadius + entity2.boundingRadius;
-
-    const overlap = range - distance;
-
-    if (overlap >= 0) {
-
-      toVector.divideScalar(distance || 1); // normalize
-      displacement.copy(toVector).multiplyScalar(overlap);
-      entity1.position.add(displacement);
-
-    }
-
-  }
 
 }
 
@@ -1414,7 +1386,7 @@ class World {
 
 function sync(entity, renderComponent) {
 
-  renderComponent.matrix.copy(entity.worldMatrix);
+   renderComponent.matrix.copy(entity.worldMatrix);
 
 }
 
@@ -1432,66 +1404,66 @@ function sync(entity, renderComponent) {
 
 function onRestart() {
 
-  this._stopAnimation();
+   this._stopAnimation();
 
-  this.controls.connect();
+   this.controls.connect();
 
-  this.player.heal();
+   this.player.heal();
 
-  this.gameOver = false;
+   this.gameOver = false;
 
-  this.currentStage = 1;
+   this.currentStage = 1;
 
-  this._loadStage(this.currentStage);
+   this._loadStage(this.currentStage);
 
-  this.ui.gameComplete.classList.add('hidden');
-  this.ui.gameOver.classList.add('hidden');
+   this.ui.gameComplete.classList.add('hidden');
+   this.ui.gameOver.classList.add('hidden');
 
-  const audio = this.assetManager.audios.get('buttonClick');
-  this.playAudio(audio);
+   const audio = this.assetManager.audios.get('buttonClick');
+   this.playAudio(audio);
 
 }
 
 
 function onContinueButtonClick() {
 
-  this.controls.connect();
+   this.controls.connect();
 
-  const audio = this.assetManager.audios.get('buttonClick');
-  this.playAudio(audio);
+   const audio = this.assetManager.audios.get('buttonClick');
+   this.playAudio(audio);
 
 }
 
 
 function onTransitionEnd(event) {
 
-  event.target.remove();
+   event.target.remove();
 
 }
 
 
 function onWindowResize() {
 
-  this.camera.aspect = window.innerWidth / window.innerHeight;
-  this.camera.updateProjectionMatrix();
+   this.camera.aspect = window.innerWidth / window.innerHeight;
+   this.camera.updateProjectionMatrix();
 
-  this.renderer.setSize(window.innerWidth, window.innerHeight);
+   this.renderer.setSize(window.innerWidth, window.innerHeight);
 
 }
 
 
 function startAnimation() {
 
-  this._requestID = requestAnimationFrame(this._startAnimation);
+   this._requestID = requestAnimationFrame(this._startAnimation);
 
-  this.update();
+   this.update();
 
 }
 
 
 function stopAnimation() {
 
-  cancelAnimationFrame(this._requestID);
+   cancelAnimationFrame(this._requestID);
 
 }
 
