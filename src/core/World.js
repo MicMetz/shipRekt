@@ -395,7 +395,8 @@ class World {
       this.scene.add(this.wallsMeshes);
 
       // player
-      this.playerMesh = this.assetManager.models.get('Wanderer');
+      // this.playerMesh = this.assetManager.models.get('Wanderer');
+      this.playerMesh = this.assetManager.models.get('Android');
       // this.playerMesh.updateWorldMatrix(true, true);
       // this.playerMesh.rotation.set(0,0,Math.PI/2);
       this.playerMesh.matrixAutoUpdate = false;
@@ -543,7 +544,8 @@ class World {
       protectionMesh.material = this.protectionMesh.material.clone(); // cloning a mesh does not clone its material (but we need unique uniforms!)
 
       this.playerMesh.add(protectionMesh)
-      this.player                = new Player(this, this.playerMesh, this.assetManager.mixers.get('Wanderer'), this.assetManager.animations.get('Wanderer'));
+      // this.player                = new Player(this, this.playerMesh, this.assetManager.mixers.get('Wanderer'), this.assetManager.animations.get('Wanderer'));
+      this.player                = new Player(this, this.playerMesh, this.assetManager.mixers.get('Android'), this.assetManager.animations.get('Android'));
       this.player.protectionMesh = protectionMesh
 
       // particle system

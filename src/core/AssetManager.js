@@ -212,7 +212,7 @@ class AssetManager {
 
 
       // Pickup Health
-      gltfLoader.load('./models/PickupHealth.glb', (gltf) => {
+      gltfLoader.load('./models/pickups/PickupHealth.glb', (gltf) => {
          const healthpackMesh            = gltf.scene.getObjectByName('Pickup_Health').children[0];
          healthpackMesh.matrixAutoUpdate = false;
          models.set('pickupHealth', healthpackMesh);
@@ -354,7 +354,7 @@ class AssetManager {
 
 
       // Astronaut model
-      gltfLoader.load('./models/astronaut.glb', (gltf) => {
+      gltfLoader.load('./models/player/astronaut.glb', (gltf) => {
          const model   = gltf.scene;
          var geometry  = new THREE.Mesh();
          let geoms     = [];
@@ -384,43 +384,9 @@ class AssetManager {
       });
 
 
-      // Wanderer model
-      // gltfLoader.load('./models/Soldier.glb', (gltf) => {
-      //    const model  = gltf.scene;
-      //    var geometry = new THREE.Mesh();
-      //    let geoms    = [];
-      //    let meshes   = [];
-      //    let mats     = [];
-      //
-      //
-      //    model.updateMatrixWorld();
-      //    model.traverse(e => e.isMesh && meshes.push(e) && (geoms.push((e.geometry.index) ? e.geometry.toNonIndexed() : e.geometry().clone())));
-      //    geoms.forEach((g, i) => g.applyMatrix4(meshes[i].matrixWorld));
-      //
-      //
-      //    let wanderer = BufferGeometryUtils.mergeBufferGeometries(geoms);
-      //    wanderer.computeVertexNormals();
-      //    wanderer.applyMatrix4(model.matrix.clone().invert());
-      //    wanderer.userData.materials = meshes.map(m => m.material);
-      //
-      //    const wandererMesh = new THREE.Mesh(wanderer, new THREE.MeshStandardMaterial({color: 0x000000}));
-      //    wandererMesh.name  = 'Wanderer';
-      //
-      //    let wandererAnimations = null
-      //    if (model.animations.length > 0) {
-      //       wandererAnimations = model.animations;
-      //    }
-      //
-      //    models.set('Player_01', wandererMesh);
-      //    animations.set('Player_01', wandererAnimations);
-      //
-      // });
 
-
-      // Soldier model
-      gltfLoader.load('./models/wanderer.glb', (gltf) => {
-         const wanderer      = new THREE.Mesh();
-         // soldier.animations = gltf.animations;
+      // Wanderer Player model
+      gltfLoader.load('./models/player/wanderer.glb', (gltf) => {
          const skinnedMeshes = {};
          const clone         = {
             animations: gltf.animations,
@@ -538,7 +504,6 @@ class AssetManager {
          walkAction.play();
          walkAction.enabled = false;
 
-
          animations.set('IDLE', idleAction);
          animations.set('IDLE_GUN', idleGunAction);
          animations.set('IDLE_GUN_POINT', idleGunPointAction);
@@ -560,6 +525,146 @@ class AssetManager {
          this.models.set('Wanderer', clone.scene);
 
       });
+
+
+      // Android Player model
+      gltfLoader.load('./models/player/Android.gltf', (gltf) => {
+         const skinnedMeshes = {};
+         const clone         = {
+            animations: gltf.animations,
+            scene     : gltf.scene.clone(true)
+         }
+         gltf.scene.traverse(node => {
+            if (node.isSkinnedMesh) {
+               skinnedMeshes[node.name] = node;
+            }
+         })
+
+         const cloneBones         = {};
+         const cloneSkinnedMeshes = {};
+
+         clone.scene.traverse(node => {
+            if (node.isBone) {
+               cloneBones[node.name] = node;
+            }
+
+            if (node.isSkinnedMesh) {
+               cloneSkinnedMeshes[node.name] = node;
+            }
+         });
+
+         for (let name in skinnedMeshes) {
+            const SMesh      = skinnedMeshes[name];
+            const skeleton   = SMesh.skeleton;
+            const cloneSMesh = cloneSkinnedMeshes[name];
+
+            const orderedCloneBone = [];
+
+            for (let i = 0; i < skeleton.bones.length; i++) {
+               const cloneBone = cloneBones[skeleton.bones[i].name];
+               orderedCloneBone.push(cloneBone);
+            }
+
+            cloneSMesh.bind(
+              new THREE.Skeleton(orderedCloneBone, skeleton.boneInverses),
+              cloneSMesh.matrixWorld
+            );
+         }
+
+         const mixer      = new THREE.AnimationMixer(clone.scene);
+         const animations = new Map();
+
+         const deathAction = mixer.clipAction(clone.animations[0]);
+         deathAction.play();
+         deathAction.enabled = false;
+
+         const shootAction = mixer.clipAction(clone.animations[1]);
+         shootAction.play();
+         shootAction.enabled = false;
+
+         const hitAction = mixer.clipAction(clone.animations[2]);
+         hitAction.play();
+         hitAction.enabled = false;
+
+         const idleAction = mixer.clipAction(clone.animations[6]);
+         idleAction.play();
+         idleAction.enabled = false;
+
+         const idleGunPointAction = mixer.clipAction(clone.animations[4]);
+         idleGunPointAction.play();
+         idleGunPointAction.enabled = false;
+
+         const idleGunShootAction = mixer.clipAction(clone.animations[5]);
+         idleGunShootAction.play();
+         idleGunShootAction.enabled = false;
+
+         const idleNeutralAction = mixer.clipAction(clone.animations[6]);
+         idleNeutralAction.play();
+         idleNeutralAction.enabled = false;
+
+         const idleMeleeAction = mixer.clipAction(clone.animations[7]);
+         idleMeleeAction.play();
+         idleMeleeAction.enabled = false;
+
+         const interactAction = mixer.clipAction(clone.animations[8]);
+         interactAction.play();
+         interactAction.enabled = false;
+
+         const rollAction = mixer.clipAction(clone.animations[13]);
+         rollAction.play();
+         rollAction.enabled = false;
+
+         const runAction = mixer.clipAction(clone.animations[14]);
+         runAction.play();
+         runAction.enabled = false;
+
+         const runBackAction = mixer.clipAction(clone.animations[15]);
+         runBackAction.play();
+         runBackAction.enabled = false;
+
+         const runLeftAction = mixer.clipAction(clone.animations[16]);
+         runLeftAction.play();
+         runLeftAction.enabled = false;
+
+         const runRightAction = mixer.clipAction(clone.animations[17]);
+         runRightAction.play();
+         runRightAction.enabled = false;
+
+         const runShootAction = mixer.clipAction(clone.animations[18]);
+         runShootAction.play();
+         runShootAction.enabled = false;
+
+         const slashAction = mixer.clipAction(clone.animations[19]);
+         slashAction.play();
+         slashAction.enabled = false;
+
+         const walkAction = mixer.clipAction(clone.animations[20]);
+         walkAction.play();
+         walkAction.enabled = false;
+
+          animations.set('DEATH', deathAction);
+          animations.set('SHOOT', shootAction);
+          animations.set('SLASH', slashAction);
+          animations.set('HIT', hitAction);
+          animations.set('IDLE', idleAction);
+          animations.set('IDLE_GUN_POINT', idleGunPointAction);
+          animations.set('IDLE_GUN_SHOOT', idleGunShootAction);
+          animations.set('IDLE_MELEE', idleMeleeAction);
+          animations.set('INTERACT', interactAction);
+          animations.set('ROLL', rollAction);
+          animations.set('RUN', runAction);
+          animations.set('RUN_BACK', runBackAction);
+          animations.set('RUN_LEFT', runLeftAction);
+          animations.set('RUN_RIGHT', runRightAction);
+          animations.set('RUN_SHOOT', runShootAction);
+          // animations.set('RUN_SLASH', runSlashAction);
+
+
+         clone.name = 'Android';
+         this.animations.set('Android', animations);
+         this.mixers.set('Android', mixer);
+         this.models.set('Android', clone.scene);
+      })
 
 
       // Droid model

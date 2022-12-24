@@ -2,8 +2,8 @@
  * @author Mugen87 / https://github.com/Mugen87
  */
 
-import {AnimationMixer}                                                        from "three";
-import {AABB, MovingEntity, MathUtils, OBB, Ray, Vector3, StateMachine, State} from 'yuka';
+import {AnimationMixer}                                                                    from "three";
+import {AABB, MovingEntity, MathUtils, OBB, Ray, Vector3, StateMachine, State, GameEntity} from 'yuka';
 
 import {Particle, ParticleSystem} from '../core/ParticleSystem.js';
 import {PlayerProjectile}         from './PlayerProjectile.js';
@@ -53,8 +53,22 @@ class Player extends MovingEntity {
 
       this.audios = new Map();
 
-      // particles
+      this.hand = new GameEntity();
+      this.handContainer = new GameEntity();
+      this.weaponContainer = new GameEntity();
+      this.add( this.handContainer );
+      // this.hand.parent = this.bodyMesh;
+      // this.hand = this.bodyMesh.getObjectByName('Hand.R');
+      this.hand.position.set(3.087563626991141e-08,  0.28008419275283813, -5.012247328295416e-08);
+      this.handContainer.add( this.hand );
+      // this.bodyMesh.getObjectByName('Hand.R').attach(this.hand);
+      this.hand.add( this.weaponContainer );
 
+      // this.weapon = new Shotgun( this );
+      // this.weapon.position.set( 0.25, - 0.3, - 1 );
+      // this.weaponContainer.add( this.weapon );
+
+      // particles
       this.maxParticles   = 20;
       this.particleSystem = new ParticleSystem();
       this.particleSystem.init(this.maxParticles);
@@ -341,7 +355,7 @@ class WalkState extends State {
 
       console.log('Entering State: Walk');
       const walk = player.animations.get("WALK");
-      walk.reset().fadeIn(player.crossFadeDuration);
+      walk.reset().play()
 
    }
 
