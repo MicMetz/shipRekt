@@ -42,7 +42,6 @@
     "serve": "14.1.2"
   },
   "dependencies": {
-    "dotenv": "^16.0.3",
     "three": "0.124.0",
     "yuka": "0.7.0"
   }

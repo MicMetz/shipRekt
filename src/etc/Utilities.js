@@ -2,6 +2,16 @@
  * @author MicMetzger /
  */
 
+const GuardType = {
+
+   DEFAULT: 'default',
+   SNIPER : 'sniper',
+   HEAVY  : 'heavy',
+   MEDIC  : 'medic',
+   SWAT   : 'SwatOfficer',
+   RIOT   : 'riot'
+
+};
 
 
 function dumpObject(obj, lines = [], isLast = true, prefix = '') {
@@ -52,4 +62,4 @@ function randomExExcept(arr, exceptArr) {
 }
 
 
-export {dumpObject, randomString, randomInt, randomBool, randomExcept, randomExExcept};
+export {dumpObject, randomString, randomInt, randomBool, randomExcept, randomExExcept, GuardType};

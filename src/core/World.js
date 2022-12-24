@@ -15,7 +15,7 @@ import {PursuerGeometry}             from '../etc/PursuerGeometry.js';
 import {AnimationSystem}             from './AnimationSystem.js';
 import {SceneManager}                from './SceneManager.js';
 import {Tower}                       from '../entities/Tower.js';
-import {dumpObject}                  from '../etc/Utilities.js';
+import {dumpObject, GuardType}       from '../etc/Utilities.js';
 
 
 
@@ -230,16 +230,6 @@ class World {
    }
 
 
-   updateField(x, y, z) {
-
-      this.field.set(x, y, z);
-
-      this.fieldMesh.geometry.dispose();
-      this.fieldMesh.geometry = new THREE.BoxBufferGeometry(x, y, z);
-
-   }
-
-
    addProjectile(projectile) {
 
       if (projectile.isPlayerProjectile) {
@@ -365,7 +355,6 @@ class World {
 
       // field
       const fieldGeometry = new THREE.BoxBufferGeometry(this.field.x, this.field.y, this.field.z);
-      // const fieldMaterial = new THREE.MeshLambertMaterial({color: 0xaca181});
       const fieldMaterial = new THREE.MeshLambertMaterial({color: 0x9da4b0});
 
       this.fieldMesh                  = new THREE.Mesh(fieldGeometry, fieldMaterial);
@@ -406,19 +395,13 @@ class World {
       this.scene.add(this.wallsMeshes);
 
       // player
-      const playerGeometry = new THREE.ConeBufferGeometry(0.2, 1, 8);
-      playerGeometry.rotateX(Math.PI * 0.5);
-      const playerMaterial             = new THREE.MeshLambertMaterial({color: 0xdedad3});
-      // this.playerMesh                  = this.assetManager.models.get('Wanderer');
-      this.playerMesh                  = new THREE.Mesh(playerGeometry, playerMaterial);
+      this.playerMesh = this.assetManager.models.get('Wanderer');
+      // this.playerMesh.updateWorldMatrix(true, true);
+      // this.playerMesh.rotation.set(0,0,Math.PI/2);
       this.playerMesh.matrixAutoUpdate = false;
-      this.playerMesh.castShadow       = true;
       this.scene.add(this.playerMesh);
 
-
-
-      // player projectile
-
+      // player projectiles
       const playerProjectileGeometry = new THREE.PlaneBufferGeometry(0.2, 1);
       playerProjectileGeometry.rotateX(Math.PI * -0.5);
       const playerProjectileMaterial = new THREE.MeshBasicMaterial({color: 0xfff9c2});
@@ -556,8 +539,12 @@ class World {
 
    _initPlayer() {
 
-      this.player = new Player(this);
-      this.player.setRenderComponent(this.playerMesh, sync);
+      const protectionMesh    = this.protectionMesh.clone();
+      protectionMesh.material = this.protectionMesh.material.clone(); // cloning a mesh does not clone its material (but we need unique uniforms!)
+
+      this.playerMesh.add(protectionMesh)
+      this.player                = new Player(this, this.playerMesh, this.assetManager.mixers.get('Wanderer'), this.assetManager.animations.get('Wanderer'));
+      this.player.protectionMesh = protectionMesh
 
       // particle system
       this.scene.add(this.player.particleSystem._points);
@@ -572,6 +559,8 @@ class World {
       this.player.audios.set('playerShot', playerShot);
       this.player.audios.set('playerHit', playerHit);
       this.player.audios.set('playerExplode', playerExplode);
+
+      this.player.setRenderComponent(this.playerMesh, sync);
 
       //
       this.entityManager.add(this.player);
@@ -610,12 +599,15 @@ class World {
 
 
    _createGuard(type) {
+      console.log(type);
+      if (!type) {
+         type = GuardType.SWAT;
+      }
 
       const guardMesh = this.assetManager.models.get(type);
       const mixer     = this.assetManager.animations.get(type);
       const guard     = new Guard(this, type, guardMesh);
       console.log(guardMesh);
-
 
       const protectionMesh    = this.protectionMesh.clone();
       protectionMesh.material = this.protectionMesh.material.clone(); // cloning a mesh does not clone its material (but we need unique uniforms!)
@@ -1089,6 +1081,18 @@ class World {
    }
 
 
+
+   updateField(x, y, z) {
+
+      this.field.set(x, y, z);
+
+      this.fieldMesh.geometry.dispose();
+      this.fieldMesh.geometry = new THREE.BoxBufferGeometry(x, y, z);
+
+      this._updateWalls();
+   }
+
+
    _updateBackground(delta) {
       this.stargeometry.vertices.forEach((vertex) => {
 
@@ -1104,6 +1108,42 @@ class World {
 
       });
       this.stargeometry.verticesNeedUpdate = true;
+   }
+
+
+   _updateWalls() {
+
+      const wallGeometry = new THREE.BoxBufferGeometry(1, 1, 1);
+      const wallMaterial = new THREE.MeshLambertMaterial({color: 0x8e8e8e});
+
+      this.wallsMeshes.clear();
+      for (let x = -this.field.x / 2; x <= this.field.x / 2; x++) {
+         if (x === -this.field.x / 2 || x === this.field.x / 2) {
+            for (let z = -this.field.z / 2; z <= this.field.z / 2; z++) {
+               if (z === -this.field.z / 2 || z === this.field.z / 2) {
+                  for (let i = -this.field.x / 2; i <= this.field.x / 2; i++) {
+                     const wallMesh            = new THREE.Mesh(wallGeometry, wallMaterial);
+                     wallMesh.matrixAutoUpdate = false;
+                     wallMesh.position.set(i, 0.5, z);
+                     wallMesh.updateMatrix();
+                     wallMesh.castShadow    = true;
+                     wallMesh.receiveShadow = true;
+                     this.wallsMeshes.add(wallMesh);
+                  }
+               } else {
+                  const wallMesh            = new THREE.Mesh(wallGeometry, wallMaterial);
+                  wallMesh.matrixAutoUpdate = false;
+                  wallMesh.position.set(x, 0.5, z);
+                  wallMesh.updateMatrix();
+                  wallMesh.castShadow    = true;
+                  wallMesh.receiveShadow = true;
+                  this.wallsMeshes.add(wallMesh);
+               }
+            }
+         }
+      }
+      this.scene.add(this.wallsMeshes);
+
    }
 
 

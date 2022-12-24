@@ -5,6 +5,7 @@
 
 import {AnimationMixer}                                    from "three";
 import {BoundingSphere, Vehicle, StateMachine, Quaternion} from 'yuka';
+import {GuardType}                                         from "../etc/Utilities.js";
 
 
 
@@ -12,25 +13,15 @@ const q = new Quaternion();
 
 
 
-const GuardType = [{
-
-   default: 'default',
-   sniper : 'sniper',
-   heavy  : 'heavy',
-   medic  : 'medic',
-   swat   : 'swat',
-   riot   : 'riot'
-
-}];
-
-
-
 class Guard extends Vehicle {
 
-   constructor(world, type = GuardType.default, body = null) {
+   constructor(world, type = GuardType.SWAT, body) {
       super();
 
-      this.world = world;
+      this.world      = world;
+      this.bodyMesh   = body;
+      this.guardType  = type;
+      this.animations = new AnimationMixer(this.bodyMesh);
 
       this.boundingRadius = 0.5;
 
@@ -44,10 +35,6 @@ class Guard extends Vehicle {
       this.stateMachineCombat   = new StateMachine(this);
 
       this.audios = new Map();
-
-      this.bodyMesh   = body;
-      this.animations = new AnimationMixer(this.bodyMesh);
-      this.guardType  = type;
 
       this.protectionMesh = null;
       this.protected      = false;

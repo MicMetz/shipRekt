@@ -22,9 +22,8 @@ class AssetManager {
       this.listener      = new THREE.AudioListener();
       this.gltfLoader    = new GLTFLoader(this.loadingManager);
 
-      this.animationMixer = new THREE.AnimationMixer();
-
       this.animations = new Map();
+      this.mixers     = new Map();
       this.audios     = new Map();
       this.textures   = new Map();
       this.fonts      = new Map();
@@ -262,28 +261,65 @@ class AssetManager {
 
 
       // Robot model
-      // gltfLoader.load('./models/robot.glb', (gltf) => {
-      //     const model   = gltf.scene;
-      //     var geometry  = new THREE.Mesh();
-      //     let geoms     = []
-      //     let meshes    = []
-      //     let materials = []
-      //
-      //
-      //     model.updateMatrixWorld()
-      //     model.traverse(e => e.isMesh && meshes.push(e) && (geoms.push((e.geometry.index) ? e.geometry.toNonIndexed() : e.geometry().clone())))
-      //     geoms.forEach((g, i) => g.applyMatrix4(meshes[i].matrixWorld));
-      //
-      //     let robot = BufferGeometryUtils.mergeBufferGeometries(geoms);
-      //     robot.computeVertexNormals();
-      //     robot.applyMatrix4(model.matrix.clone().invert());
-      //     robot.userData.materials = meshes.map(m => m.material)
-      //
-      //     const robotMesh = new THREE.Mesh(robot, new THREE.MeshStandardMaterial({color: 0x000000}));
-      //     robotMesh.name  = 'Boom Bot';
-      //
-      //     models.set('BoomBot', robotMesh);
-      // });
+      gltfLoader.load('./models/robot.glb', (gltf) => {
+         this.gltf = gltf
+         this.mesh = this.gltf.scene
+
+         this.mesh.traverse((child) => {
+            if (child.isMesh) {
+               child.castShadow    = true
+               child.receiveShadow = true
+            }
+         })
+
+         models.set('Robot', this.mesh);
+         this.mesh.scale.set(0.26, 0.26, 0.26)
+
+      });
+
+
+      gltfLoader.load('./models/yuka.glb', (gltf) => {
+         const avatar      = gltf.scene;
+         // const avatar      = gltf.scene.meshes[0];
+         avatar.animations = gltf.animations;
+
+         avatar.traverse((object) => {
+            // gltf.scene.traverse((object) => {
+
+            if (object.isMesh) {
+
+               object.material.transparent = true;
+               object.material.opacity     = 1;
+               object.material.alphaTest   = 0.7;
+               object.material.side        = THREE.DoubleSide;
+               object.castShadow           = true;
+
+            }
+
+         });
+         avatar.updateWorldMatrix(true, true);
+         avatar.rotation.set(0,0,0);
+
+         const mixer      = new THREE.AnimationMixer(gltf.scene);
+         const animations = new Map();
+
+         const idleAction = mixer.clipAction('Character_Idle');
+         idleAction.play();
+         idleAction.enabled = false;
+
+         const walkAction = mixer.clipAction('Character_Walk');
+         walkAction.play();
+         walkAction.enabled = false;
+
+         animations.set('IDLE', idleAction);
+         animations.set('WALK', walkAction);
+
+         avatar.name = 'Yuka';
+         this.animations.set('Avatar', animations);
+         this.mixers.set('Avatar', mixer);
+         this.models.set('Avatar', avatar);
+
+      });
 
 
       // Alien model
@@ -349,40 +385,152 @@ class AssetManager {
 
 
       // Wanderer model
+      // gltfLoader.load('./models/Soldier.glb', (gltf) => {
+      //    const model  = gltf.scene;
+      //    var geometry = new THREE.Mesh();
+      //    let geoms    = [];
+      //    let meshes   = [];
+      //    let mats     = [];
+      //
+      //
+      //    model.updateMatrixWorld();
+      //    model.traverse(e => e.isMesh && meshes.push(e) && (geoms.push((e.geometry.index) ? e.geometry.toNonIndexed() : e.geometry().clone())));
+      //    geoms.forEach((g, i) => g.applyMatrix4(meshes[i].matrixWorld));
+      //
+      //
+      //    let wanderer = BufferGeometryUtils.mergeBufferGeometries(geoms);
+      //    wanderer.computeVertexNormals();
+      //    wanderer.applyMatrix4(model.matrix.clone().invert());
+      //    wanderer.userData.materials = meshes.map(m => m.material);
+      //
+      //    const wandererMesh = new THREE.Mesh(wanderer, new THREE.MeshStandardMaterial({color: 0x000000}));
+      //    wandererMesh.name  = 'Wanderer';
+      //
+      //    let wandererAnimations = null
+      //    if (model.animations.length > 0) {
+      //       wandererAnimations = model.animations;
+      //    }
+      //
+      //    models.set('Player_01', wandererMesh);
+      //    animations.set('Player_01', wandererAnimations);
+      //
+      // });
+
+
+      // Soldier model
       gltfLoader.load('./models/wanderer.glb', (gltf) => {
-         const model   = gltf.scene;
-         var geometry  = new THREE.Mesh();
-         let geoms     = [];
-         let meshes    = [];
-         let materials = [];
-
-
-         model.updateMatrixWorld();
-         model.traverse(e => e.isMesh && meshes.push(e) && (geoms.push((e.geometry.index) ? e.geometry.toNonIndexed() : e.geometry().clone())));
-         geoms.forEach((g, i) => g.applyMatrix4(meshes[i].matrixWorld));
-
-         var wanderer = geoms[0];
-         for (var i = 1; i < geoms.length; i++) {
-            // if (geoms[i] !== undefined) {
-            //     MergeSkinnedGeometry(wanderer, geoms[i]);
-            // }
-            wanderer.merge(geoms[i]);
+         const wanderer       = new THREE.Mesh();
+         // soldier.animations = gltf.animations;
+         const skinnedMeshes = {};
+         const clone         = {
+            animations: gltf.animations,
+            scene     : gltf.scene.clone(true)
          }
-         // let wanderer = BufferGeometryUtils.mergeBufferGeometries(geoms);
-         wanderer.computeVertexNormals();
-         wanderer.applyMatrix4(model.matrix.clone().invert());
-         wanderer.userData.materials = meshes.map(m => m.material);
+         gltf.scene.traverse(node => {
+            if (node.isSkinnedMesh) {
+               skinnedMeshes[node.name] = node;
+            }
+         })
 
-         const wandererMesh = new THREE.Mesh(wanderer, new THREE.MeshStandardMaterial({color: 0x000000}));
-         wandererMesh.name  = 'Wanderer';
+         const cloneBones         = {};
+         const cloneSkinnedMeshes = {};
 
-         let wandererAnimations = null
-         if (model.animations.length > 0) {
-            wandererAnimations = model.animations;
+         clone.scene.traverse(node => {
+            if (node.isBone) {
+               cloneBones[node.name] = node;
+            }
+
+            if (node.isSkinnedMesh) {
+               cloneSkinnedMeshes[node.name] = node;
+            }
+         });
+
+         for (let name in skinnedMeshes) {
+            const SMesh      = skinnedMeshes[name];
+            const skeleton   = SMesh.skeleton;
+            const cloneSMesh = cloneSkinnedMeshes[name];
+
+            const orderedCloneBone = [];
+
+            for (let i = 0; i < skeleton.bones.length; i++) {
+               const cloneBone = cloneBones[skeleton.bones[i].name];
+               orderedCloneBone.push(cloneBone);
+            }
+
+            cloneSMesh.bind(
+              new THREE.Skeleton(orderedCloneBone, skeleton.boneInverses),
+              cloneSMesh.matrixWorld
+            );
          }
 
-         models.set('Wanderer', wandererMesh);
-         animations.set('Wanderer', wandererAnimations);
+         const mixer      = new THREE.AnimationMixer(clone.animations);
+         const animations = new Map();
+
+         const interactAction = mixer.clipAction('CharacterArmature|Interact');
+         interactAction.play();
+         interactAction.enabled = false;
+
+         const rollAction = mixer.clipAction('CharacterArmature|Roll');
+         rollAction.play();
+         rollAction.enabled = false;
+
+         const idleAction = mixer.clipAction('CharacterArmature|Idle');
+         idleAction.play();
+         idleAction.enabled = false;
+
+         const idleGunAction = mixer.clipAction('CharacterArmature|Idle_Gun');
+         idleGunAction.play();
+         idleGunAction.enabled = false;
+
+         const idleGunPointingAction = mixer.clipAction('CharacterArmature|Idle_Gun_Pointing');
+         idleGunPointingAction.play();
+         idleGunPointingAction.enabled = false;
+
+         const idleGunShootAction = mixer.clipAction('CharacterArmature|Idle_Gun_Shoot');
+         idleGunShootAction.play();
+         idleGunShootAction.enabled = false;
+
+         const idleMeleeAction = mixer.clipAction('CharacterArmature|Idle_Sword');
+         idleMeleeAction.play();
+         idleMeleeAction.enabled = false;
+
+         const walkAction = mixer.clipAction('CharacterArmature|Walk');
+         walkAction.play();
+         walkAction.enabled = false;
+
+         const runAction = mixer.clipAction('CharacterArmature|Run');
+         runAction.play();
+         runAction.enabled = false;
+
+         const hitAction = mixer.clipAction('CharacterArmature|HitRecieve');
+         hitAction.play();
+         hitAction.enabled = false;
+
+         const deathAction = mixer.clipAction('CharacterArmature|Death');
+         deathAction.play();
+         deathAction.enabled = false;
+
+         const shootAction = mixer.clipAction('CharacterArmature|Gun_Shoot');
+         shootAction.play();
+         shootAction.enabled = false;
+
+         animations.set('IDLE', idleAction);
+         animations.set('WALK', walkAction);
+         animations.set('RUN', runAction);
+         animations.set('DEATH', deathAction);
+         animations.set('HIT', hitAction);
+         animations.set('SHOOT', shootAction);
+         animations.set('INTERACT', interactAction);
+         animations.set('ROLL', rollAction);
+         animations.set('IDLE_GUN', idleGunAction);
+         animations.set('IDLE_GUN_POINTING', idleGunPointingAction);
+         animations.set('IDLE_GUN_SHOOT', idleGunShootAction);
+         animations.set('IDLE_MELEE', idleMeleeAction);
+
+         this.animations.set('Wanderer', animations);
+         this.mixers.set('Wanderer', mixer);
+         this.models.set('Wanderer', clone.scene);
+
       });
 
 
