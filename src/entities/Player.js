@@ -65,10 +65,10 @@ class Player extends MovingEntity {
 
       this.stateMachine = new StateMachine(this);
 
-      // this.stateMachine.add('IDLE', new IdleState(this));
-      // this.stateMachine.add('WALK', new WalkState(this));
+      this.stateMachine.add('IDLE', new IdleState(this));
+      this.stateMachine.add('WALK', new WalkState(this));
 
-      // this.stateMachine.changeTo('IDLE');
+      this.stateMachine.changeTo('IDLE');
 
       this.currentTime       = 0; // tracks how long the entity is in the current state
       this.stateDuration     = 5; // duration of a single state in seconds
@@ -316,15 +316,15 @@ class Player extends MovingEntity {
 
 class IdleState extends State {
    enter(player) {
-
+      console.log('Entering State: Idle');
       const idle = player.animations.get('IDLE');
       idle.reset().fadeIn(player.crossFadeDuration);
    }
 
 
    execute(player) {
-
       if (player.currentTime >= player.stateDuration) {
+         console.log('Executing State: Idle');
 
          player.currentTime = 0;
          player.stateMachine.changeTo('WALK');
@@ -339,7 +339,7 @@ class WalkState extends State {
 
    enter(player) {
 
-
+      console.log('Entering State: Walk');
       const walk = player.animations.get("WALK");
       walk.reset().fadeIn(player.crossFadeDuration);
 
@@ -349,7 +349,7 @@ class WalkState extends State {
    execute(player) {
 
       if (player.currentTime >= player.stateDuration) {
-
+         console.log('Executing State: Walk');
          player.currentTime = 0;
          player.stateMachine.changeTo("IDLE");
 
@@ -359,7 +359,7 @@ class WalkState extends State {
 
 
    exit(player) {
-
+      console.log('Exiting State: Walk');
       const walk = player.animations.get("WALK");
       walk.fadeOut(player.crossFadeDuration);
 
