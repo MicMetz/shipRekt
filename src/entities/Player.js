@@ -2,7 +2,7 @@
  * @author Mugen87 / https://github.com/Mugen87
  */
 
-import {AnimationMixer}                                                                    from "three";
+import {AnimationMixer, LoopRepeat}                                                        from "three";
 import {AABB, MovingEntity, MathUtils, OBB, Ray, Vector3, StateMachine, State, GameEntity} from 'yuka';
 
 import {Particle, ParticleSystem} from '../core/ParticleSystem.js';
@@ -53,16 +53,16 @@ class Player extends MovingEntity {
 
       this.audios = new Map();
 
-      this.hand = new GameEntity();
-      this.handContainer = new GameEntity();
+      this.hand            = new GameEntity();
+      this.handContainer   = new GameEntity();
       this.weaponContainer = new GameEntity();
-      this.add( this.handContainer );
+      this.add(this.handContainer);
       // this.hand.parent = this.bodyMesh;
       // this.hand = this.bodyMesh.getObjectByName('Hand.R');
-      this.hand.position.set(3.087563626991141e-08,  0.28008419275283813, -5.012247328295416e-08);
-      this.handContainer.add( this.hand );
+      this.hand.position.set(3.087563626991141e-08, 0.28008419275283813, -5.012247328295416e-08);
+      this.handContainer.add(this.hand);
       // this.bodyMesh.getObjectByName('Hand.R').attach(this.hand);
-      this.hand.add( this.weaponContainer );
+      this.hand.add(this.weaponContainer);
 
       // this.weapon = new Shotgun( this );
       // this.weapon.position.set( 0.25, - 0.3, - 1 );
@@ -80,13 +80,9 @@ class Player extends MovingEntity {
       this.stateMachine = new StateMachine(this);
 
       this.stateMachine.add('IDLE', new IdleState(this));
-      this.stateMachine.add('WALK', new WalkState(this));
+      this.stateMachine.add('MOVE', new MoveState(this));
 
       this.stateMachine.changeTo('IDLE');
-
-      this.currentTime       = 0; // tracks how long the entity is in the current state
-      this.stateDuration     = 5; // duration of a single state in seconds
-      this.crossFadeDuration = 1; // duration of a crossfade in seconds
    }
 
 
@@ -152,8 +148,8 @@ class Player extends MovingEntity {
       this.currentTime += delta;
 
       this.stateMachine.update();
-
       this.mixer.update(delta);
+
       this.obb.center.copy(this.position);
       this.obb.rotation.fromQuaternion(this.rotation);
       this.bodyMesh.position.copy(this.position);
@@ -255,6 +251,11 @@ class Player extends MovingEntity {
    }
 
 
+   _isMoving() {
+      return super.getSpeed() > 0.01;
+   }
+
+
    _restrictMovement() {
 
       if (this.velocity.squaredLength() === 0) return;
@@ -330,52 +331,55 @@ class Player extends MovingEntity {
 
 class IdleState extends State {
    enter(player) {
-      console.log('Entering State: Idle');
-      const idle = player.animations.get('IDLE');
-      idle.reset().fadeIn(player.crossFadeDuration);
+      console.log('Enter State: Idle');
+      const idleAction       = player.animations.get('IDLE');
+      const {previousState} = player.stateMachine;
+      if (previousState) {
+         const previousAnimation = previousState.getClip();
+         idleAction.time         = 0.0;
+         idleAction.enabled      = true;
+         idleAction.setEffectiveTimeScale(1.0);
+         idleAction.setEffectiveWeight(1.0);
+         idleAction.crossFadeFrom(previousAnimation, 0.2, true);
+      }
+      idleAction.enabled = true;
+
    }
 
 
    execute(player) {
-      if (player.currentTime >= player.stateDuration) {
-         console.log('Executing State: Idle');
-
-         player.currentTime = 0;
-         player.stateMachine.changeTo('WALK');
-
+      if (player._isMoving()) {
+         player.stateMachine.changeTo('MOVE');
       }
+   }
+
+
+   exit(player) {
+      console.log('Exit State: Idle');
+      const idleAction   = player.animations.get('IDLE');
+      idleAction.enabled = false;
    }
 }
 
 
 
-class WalkState extends State {
+class MoveState extends State {
 
    enter(player) {
 
-      console.log('Entering State: Walk');
-      const walk = player.animations.get("WALK");
-      walk.reset().play()
+
 
    }
 
 
    execute(player) {
 
-      if (player.currentTime >= player.stateDuration) {
-         console.log('Executing State: Walk');
-         player.currentTime = 0;
-         player.stateMachine.changeTo("IDLE");
 
-      }
 
    }
 
 
    exit(player) {
-      console.log('Exiting State: Walk');
-      const walk = player.animations.get("WALK");
-      walk.fadeOut(player.crossFadeDuration);
 
    }
 
