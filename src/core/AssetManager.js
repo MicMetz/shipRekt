@@ -571,6 +571,29 @@ class AssetManager {
             );
          }
 
+         // console.log(clone.scene.getObjectByName('Weapon'));
+         // const equipDelegate      = new THREE.Object3D();
+         // equipDelegate.position.x = clone.scene.getObjectByName('PT.R').x;
+         // // equipDelegate.position.x = clone.scene.getObjectByName('PT.R').getWorldScale(new THREE.Vector3()).x;
+         // equipDelegate.position.y = clone.scene.getObjectByName('PT.R').y;
+         // // equipDelegate.position.y = clone.scene.getObjectByName('PT.R').getWorldScale(new THREE.Vector3()).y;
+         // equipDelegate.position.z = clone.scene.getObjectByName('PT.R').z;
+         // // equipDelegate.position.z = clone.scene.getObjectByName('PT.R').getWorldScale(new THREE.Vector3()).z;
+         //
+         // const offHandDelegate      = new THREE.Object3D();
+         // offHandDelegate.position.x = clone.scene.getObjectByName('PT.L').x;
+         // // offHandDelegate.position.x = clone.scene.getObjectByName('PT.L').getWorldScale(new THREE.Vector3()).x;
+         // offHandDelegate.position.y = clone.scene.getObjectByName('PT.L').y;
+         // // offHandDelegate.position.y = clone.scene.getObjectByName('PT.L').getWorldScale(new THREE.Vector3()).y;
+         // offHandDelegate.position.z = clone.scene.getObjectByName('PT.L').z;
+         // // offHandDelegate.position.z = clone.scene.getObjectByName('PT.L').getWorldScale(new THREE.Vector3()).z;
+         //
+         // const equipBone   = clone.scene.getObjectByName('PT.R');
+         // const offHandBone = clone.scene.getObjectByName('PT.L');
+         //
+         // equipBone.add("equipDelegate", equipDelegate);
+         // offHandBone.add("offHandDelegate", offHandDelegate);
+
          const mixer      = new THREE.AnimationMixer(clone.scene);
          const animations = new Map();
 
@@ -642,22 +665,22 @@ class AssetManager {
          walkAction.play();
          walkAction.enabled = false;
 
-          animations.set('DEATH', deathAction);
-          animations.set('SHOOT', shootAction);
-          animations.set('SLASH', slashAction);
-          animations.set('HIT', hitAction);
-          animations.set('IDLE', idleAction);
-          animations.set('IDLE_GUN_POINT', idleGunPointAction);
-          animations.set('IDLE_GUN_SHOOT', idleGunShootAction);
-          animations.set('IDLE_MELEE', idleMeleeAction);
-          animations.set('INTERACT', interactAction);
-          animations.set('ROLL', rollAction);
-          animations.set('RUN', runAction);
-          animations.set('RUN_BACK', runBackAction);
-          animations.set('RUN_LEFT', runLeftAction);
-          animations.set('RUN_RIGHT', runRightAction);
-          animations.set('RUN_SHOOT', runShootAction);
-          // animations.set('RUN_SLASH', runSlashAction);
+         animations.set('DEATH', deathAction);
+         animations.set('SHOOT', shootAction);
+         animations.set('SLASH', slashAction);
+         animations.set('HIT', hitAction);
+         animations.set('IDLE', idleAction);
+         animations.set('IDLE_GUN_POINT', idleGunPointAction);
+         animations.set('IDLE_GUN_SHOOT', idleGunShootAction);
+         animations.set('IDLE_MELEE', idleMeleeAction);
+         animations.set('INTERACT', interactAction);
+         animations.set('ROLL', rollAction);
+         animations.set('RUN', runAction);
+         animations.set('RUN_BACK', runBackAction);
+         animations.set('RUN_LEFT', runLeftAction);
+         animations.set('RUN_RIGHT', runRightAction);
+         animations.set('RUN_SHOOT', runShootAction);
+         // animations.set('RUN_SLASH', runSlashAction);
 
 
          clone.name = 'Android';

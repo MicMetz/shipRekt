@@ -6,6 +6,7 @@ import {AnimationMixer, LoopRepeat}                                             
 import {AABB, MovingEntity, MathUtils, OBB, Ray, Vector3, StateMachine, State, GameEntity} from 'yuka';
 
 import {Particle, ParticleSystem} from '../core/ParticleSystem.js';
+import {dumpObject}               from "../etc/Utilities.js";
 import {PlayerProjectile}         from './PlayerProjectile.js';
 
 
@@ -22,7 +23,7 @@ const offset             = new Vector3();
 
 class Player extends MovingEntity {
 
-   constructor(world, body, mixer, animations) {
+   constructor(world, body, mixer, animations, weapon) {
       super();
 
       console.log(process.env.NODE_ENV);
@@ -53,20 +54,13 @@ class Player extends MovingEntity {
 
       this.audios = new Map();
 
-      this.hand            = new GameEntity();
-      this.handContainer   = new GameEntity();
-      this.weaponContainer = new GameEntity();
-      this.add(this.handContainer);
-      // this.hand.parent = this.bodyMesh;
-      // this.hand = this.bodyMesh.getObjectByName('Hand.R');
-      this.hand.position.set(3.087563626991141e-08, 0.28008419275283813, -5.012247328295416e-08);
-      this.handContainer.add(this.hand);
-      // this.bodyMesh.getObjectByName('Hand.R').attach(this.hand);
-      this.hand.add(this.weaponContainer);
-
-      // this.weapon = new Shotgun( this );
-      // this.weapon.position.set( 0.25, - 0.3, - 1 );
-      // this.weaponContainer.add( this.weapon );
+      this.hand    = this.bodyMesh.getObjectByName('HandR');
+      this.offHand = this.bodyMesh.getObjectByName('HandL');
+      this.weapon  = this.hand.children[0];
+      // this.hand.remove(this.hand.children[0]);
+      console.log(this.hand);
+      console.log(this.offHand);
+      console.log(this.weapon);
 
       // particles
       this.maxParticles   = 20;
@@ -332,7 +326,7 @@ class Player extends MovingEntity {
 class IdleState extends State {
    enter(player) {
       console.log('Enter State: Idle');
-      const idleAction       = player.animations.get('IDLE');
+      const idleAction      = player.animations.get('IDLE');
       const {previousState} = player.stateMachine;
       if (previousState) {
          const previousAnimation = previousState.getClip();
