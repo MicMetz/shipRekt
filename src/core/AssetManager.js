@@ -571,29 +571,6 @@ class AssetManager {
             );
          }
 
-         // console.log(clone.scene.getObjectByName('Weapon'));
-         // const equipDelegate      = new THREE.Object3D();
-         // equipDelegate.position.x = clone.scene.getObjectByName('PT.R').x;
-         // // equipDelegate.position.x = clone.scene.getObjectByName('PT.R').getWorldScale(new THREE.Vector3()).x;
-         // equipDelegate.position.y = clone.scene.getObjectByName('PT.R').y;
-         // // equipDelegate.position.y = clone.scene.getObjectByName('PT.R').getWorldScale(new THREE.Vector3()).y;
-         // equipDelegate.position.z = clone.scene.getObjectByName('PT.R').z;
-         // // equipDelegate.position.z = clone.scene.getObjectByName('PT.R').getWorldScale(new THREE.Vector3()).z;
-         //
-         // const offHandDelegate      = new THREE.Object3D();
-         // offHandDelegate.position.x = clone.scene.getObjectByName('PT.L').x;
-         // // offHandDelegate.position.x = clone.scene.getObjectByName('PT.L').getWorldScale(new THREE.Vector3()).x;
-         // offHandDelegate.position.y = clone.scene.getObjectByName('PT.L').y;
-         // // offHandDelegate.position.y = clone.scene.getObjectByName('PT.L').getWorldScale(new THREE.Vector3()).y;
-         // offHandDelegate.position.z = clone.scene.getObjectByName('PT.L').z;
-         // // offHandDelegate.position.z = clone.scene.getObjectByName('PT.L').getWorldScale(new THREE.Vector3()).z;
-         //
-         // const equipBone   = clone.scene.getObjectByName('PT.R');
-         // const offHandBone = clone.scene.getObjectByName('PT.L');
-         //
-         // equipBone.add("equipDelegate", equipDelegate);
-         // offHandBone.add("offHandDelegate", offHandDelegate);
-
          const mixer      = new THREE.AnimationMixer(clone.scene);
          const animations = new Map();
 

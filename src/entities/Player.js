@@ -56,7 +56,10 @@ class Player extends MovingEntity {
 
       this.hand    = this.bodyMesh.getObjectByName('HandR');
       this.offHand = this.bodyMesh.getObjectByName('HandL');
-      this.weapon  = this.hand.children[0];
+
+      this.weapon    = this.hand.children[0];
+      this.equipment = {};
+
       // this.hand.remove(this.hand.children[0]);
       console.log(this.hand);
       console.log(this.offHand);
@@ -74,7 +77,8 @@ class Player extends MovingEntity {
       this.stateMachine = new StateMachine(this);
 
       this.stateMachine.add('IDLE', new IdleState(this));
-      this.stateMachine.add('MOVE', new MoveState(this));
+      this.stateMachine.add('WALK', new WalkState(this));
+      this.stateMachine.add('RUN', new RunState(this));
 
       this.stateMachine.changeTo('IDLE');
    }
@@ -324,17 +328,25 @@ class Player extends MovingEntity {
 
 
 class IdleState extends State {
+   constructor(props) {
+      super(props);
+      this.id = 'IDLE';
+   }
+
+
    enter(player) {
       console.log('Enter State: Idle');
       const idleAction      = player.animations.get('IDLE');
       const {previousState} = player.stateMachine;
+
       if (previousState) {
-         const previousAnimation = previousState.getClip();
-         idleAction.time         = 0.0;
-         idleAction.enabled      = true;
+         const previousAction = player.animations.get(previousState.id);
+
+         idleAction.time    = 0.0;
+         idleAction.enabled = true;
          idleAction.setEffectiveTimeScale(1.0);
          idleAction.setEffectiveWeight(1.0);
-         idleAction.crossFadeFrom(previousAnimation, 0.2, true);
+         idleAction.crossFadeFrom(previousAction, 0.2, true);
       }
       idleAction.enabled = true;
 
@@ -342,8 +354,15 @@ class IdleState extends State {
 
 
    execute(player) {
+      const {stateMachine} = player;
+      const input          = player.world.controls.input;
+
       if (player._isMoving()) {
-         player.stateMachine.changeTo('MOVE');
+         if (input.shift) {
+            stateMachine.changeTo('WALK');
+         } else {
+            stateMachine.changeTo('RUN');
+         }
       }
    }
 
@@ -357,24 +376,98 @@ class IdleState extends State {
 
 
 
-class MoveState extends State {
+class WalkState extends State {
+   constructor(props) {
+      super(props);
+      this.id = 'WALK';
+   }
+
 
    enter(player) {
+      console.log('Enter State: Move');
+      const walkAction      = player.animations.get('WALK');
+      const {previousState} = player.stateMachine.previousState;
+      const previousAction  = player.animations.get(previousState.id);
+      walkAction.enabled    = true;
 
-
-
+      if (previousAction.id === 'RUN') {
+         walkAction.time = 0.0;
+         walkAction.crossFadeFrom(previousAction, 0.2, true);
+      } else {
+         walkAction.time = 0.0;
+         walkAction.setEffectiveTimeScale(1.0);
+         walkAction.setEffectiveWeight(1.0);
+         walkAction.crossFadeFrom(previousAction, 0.2, true);
+      }
    }
 
 
    execute(player) {
 
-
+      const {stateMachine} = player;
+      const input          = player.world.controls.input;
+      if (!input.shift) {
+         stateMachine.changeTo('RUN');
+      } else if (!player._isMoving()) {
+         stateMachine.changeTo('IDLE');
+      }
 
    }
 
 
    exit(player) {
 
+      console.log('Exit State: Walk');
+      const walkAction   = player.animations.get('WALK');
+      walkAction.enabled = false;
+
+   }
+
+}
+
+
+
+class RunState extends State {
+   constructor(props) {
+      super(props);
+      this.id = 'RUN';
+   }
+
+
+   enter(player) {
+      console.log('Enter State: Run');
+      const runAction       = player.animations.get('RUN');
+      const {previousState} = player.stateMachine.previousState;
+      const previousAction  = player.animations.get(previousState.id);
+      runAction.enabled     = true;
+
+      if (previousAction.id === 'WALK') {
+         runAction.time = 0.0;
+         runAction.crossFadeFrom(previousAction, 0.2, true);
+      } else {
+         runAction.time = 0.0;
+         runAction.setEffectiveTimeScale(1.0);
+         runAction.setEffectiveWeight(1.0);
+         runAction.crossFadeFrom(previousAction, 0.2, true);
+      }
+   }
+
+
+   execute(player) {
+      const {stateMachine} = player;
+      const input          = player.world.controls.input;
+      if (input.shift) {
+         stateMachine.changeTo('WALK');
+      } else if (!player._isMoving()) {
+         stateMachine.changeTo('IDLE');
+      }
+   }
+
+
+   exit(player) {
+      console.log('Exit State: Run');
+      const runAction   = player.animations.get('RUN');
+      runAction.enabled = false;
    }
 
 }
