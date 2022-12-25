@@ -7,6 +7,7 @@ import * as THREE            from 'three';
 import {BufferGeometryUtils} from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import {GLTFLoader}          from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {dumpObject}          from '../etc/Utilities.js';
+import fs                    from 'fs';
 
 
 
@@ -16,27 +17,35 @@ class AssetManager {
 
       this.loadingManager = new THREE.LoadingManager();
 
+      this.gltfLoader    = new GLTFLoader(this.loadingManager);
+      this.jsonLoader    = new THREE.FileLoader(this.loadingManager);
       this.audioLoader   = new THREE.AudioLoader(this.loadingManager);
       this.fontLoader    = new THREE.FontLoader(this.loadingManager);
       this.textureLoader = new THREE.TextureLoader(this.loadingManager);
       this.listener      = new THREE.AudioListener();
-      this.gltfLoader    = new GLTFLoader(this.loadingManager);
 
-      this.animations = new Map();
-      this.mixers     = new Map();
-      this.audios     = new Map();
-      this.textures   = new Map();
-      this.fonts      = new Map();
-      this.models     = new Map();
+      this.animations  = new Map();
+      this.mixers      = new Map();
+      this.audios      = new Map();
+      this.textures    = new Map();
+      this.fonts       = new Map();
+      this.models      = new Map();
+      this.descriptors = new Map();
 
 
-      this.loadingManager.onProgress = (url, itemsLoaded, itemsTotal) => { console.log(`Loading file: ${url}. ${itemsLoaded} of ${itemsTotal} files loaded.`); };
-
-      this.loadingManager.onError = (url) => { console.log(`There was an error loading ${url}`); };
-
-      this.loadingManager.onLoad = () => { console.log('Loading complete!'); };
-
-      this.loadingManager.onStart = (url, itemsLoaded, itemsTotal) => { console.log(`Loading file: ${url}. ${itemsLoaded} of ${itemsTotal} files loaded.`); };
+      // this.loadingManager.onProgress = (url, itemsLoaded, itemsTotal) => {
+      //    console.log(`Loading file: ${url}. ${itemsLoaded} of ${itemsTotal} files loaded.`);
+      // };
+      //
+      // this.loadingManager.onError = (url) => {
+      //    console.log(`There was an error loading ${url}`);
+      // };
+      //
+      // this.loadingManager.onLoad = () => { console.log('Loading complete!'); };
+      //
+      // this.loadingManager.onStart = (url, itemsLoaded, itemsTotal) => {
+      //    console.log(`Loading file: ${url}. ${itemsLoaded} of ${itemsTotal} files loaded.`);
+      // };
 
    }
 
@@ -46,6 +55,7 @@ class AssetManager {
       // this._itemsLoading();
       this._loadAudios();
       this._loadModels();
+      // this._loadJSON();
 
       const loadingManager = this.loadingManager;
 
@@ -699,6 +709,20 @@ class AssetManager {
    }
 
 
+   _loadJSON() {
+      const jsonLoader = this.jsonLoader;
+
+      // Data fetch
+      jsonLoader.load('./File/Data', (folders) => {
+         folders.forEach((folder) => {
+            this.descriptors.set(folder.name, folder);
+            folder.files.forEach((file) => {
+
+            });
+         });
+      });
+
+   }
 }
 
 

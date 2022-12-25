@@ -328,32 +328,45 @@ class Player extends MovingEntity {
 
 
 class IdleState extends State {
-   constructor(props) {
-      super(props);
-      this.id = 'IDLE';
+   constructor() {
+      super();
+
+      this.name = 'IDLE';
+
    }
 
 
    enter(player) {
       console.log('Enter State: Idle');
+
       const idleAction      = player.animations.get('IDLE');
-      const {previousState} = player.stateMachine;
+      const {previousState} = player.stateMachine.previousState || {};
 
-      if (previousState) {
-         const previousAction = player.animations.get(previousState.id);
+      player.stateMachine.currentState = this;
 
-         idleAction.time    = 0.0;
-         idleAction.enabled = true;
+      if (previousState !== undefined) {
+         
+         const previousAction = player.animations.get(previousState.name);
+
+         idleAction.time = 0.0;
          idleAction.setEffectiveTimeScale(1.0);
          idleAction.setEffectiveWeight(1.0);
          idleAction.crossFadeFrom(previousAction, 0.2, true);
+
+      } else {
+
+         player.stateMachine.previousState = this;
+
       }
+
       idleAction.enabled = true;
 
    }
 
 
    execute(player) {
+      // console.log('Post-Execute State: Idle');
+
       const {stateMachine} = player;
       const input          = player.world.controls.input;
 
@@ -364,48 +377,64 @@ class IdleState extends State {
             stateMachine.changeTo('RUN');
          }
       }
+
    }
 
 
    exit(player) {
       console.log('Exit State: Idle');
+
       const idleAction   = player.animations.get('IDLE');
       idleAction.enabled = false;
+
+      player.stateMachine.previousState = this;
+
    }
 }
 
 
 
 class WalkState extends State {
-   constructor(props) {
-      super(props);
-      this.id = 'WALK';
+   constructor() {
+      super();
+
+      this.name = 'WALK';
+
    }
 
 
    enter(player) {
-      console.log('Enter State: Move');
+      console.log('Enter State: Walk');
+
       const walkAction      = player.animations.get('WALK');
       const {previousState} = player.stateMachine.previousState;
-      const previousAction  = player.animations.get(previousState.id);
-      walkAction.enabled    = true;
+      const previousAction  = player.animations.get(previousState.name);
 
-      if (previousAction.id === 'RUN') {
+      walkAction.enabled               = true;
+      player.stateMachine.currentState = this;
+
+      if (previousAction.name === 'RUN') {
+
          walkAction.time = 0.0;
          walkAction.crossFadeFrom(previousAction, 0.2, true);
+
       } else {
+
          walkAction.time = 0.0;
          walkAction.setEffectiveTimeScale(1.0);
          walkAction.setEffectiveWeight(1.0);
          walkAction.crossFadeFrom(previousAction, 0.2, true);
+
       }
    }
 
 
    execute(player) {
+      // console.log('Post-Execute State: Walk');
 
       const {stateMachine} = player;
       const input          = player.world.controls.input;
+
       if (!input.shift) {
          stateMachine.changeTo('RUN');
       } else if (!player._isMoving()) {
@@ -416,10 +445,12 @@ class WalkState extends State {
 
 
    exit(player) {
-
       console.log('Exit State: Walk');
+
       const walkAction   = player.animations.get('WALK');
       walkAction.enabled = false;
+
+      player.stateMachine.previousState = this;
 
    }
 
@@ -428,46 +459,73 @@ class WalkState extends State {
 
 
 class RunState extends State {
-   constructor(props) {
-      super(props);
-      this.id = 'RUN';
+   constructor() {
+      super();
+
+      this.name = 'RUN';
+
    }
 
 
    enter(player) {
       console.log('Enter State: Run');
+
       const runAction       = player.animations.get('RUN');
       const {previousState} = player.stateMachine.previousState;
-      const previousAction  = player.animations.get(previousState.id);
-      runAction.enabled     = true;
 
-      if (previousAction.id === 'WALK') {
-         runAction.time = 0.0;
-         runAction.crossFadeFrom(previousAction, 0.2, true);
+      runAction.enabled                = true;
+      player.stateMachine.currentState = this;
+
+      if (previousState !== undefined) {
+
+         const previousAction = player.animations.get(previousState.name);
+
+         if (previousAction.name === 'WALK') {
+
+            runAction.time = 0.0;
+            runAction.crossFadeFrom(previousAction, 0.2, true);
+
+         } else {
+
+            runAction.time = 0.0;
+            runAction.setEffectiveTimeScale(1.0);
+            runAction.setEffectiveWeight(1.0);
+            runAction.crossFadeFrom(previousAction, 0.2, true);
+
+         }
       } else {
-         runAction.time = 0.0;
-         runAction.setEffectiveTimeScale(1.0);
-         runAction.setEffectiveWeight(1.0);
-         runAction.crossFadeFrom(previousAction, 0.2, true);
+
+         player.stateMachine.previousState = this;
+
       }
+
+
    }
 
 
    execute(player) {
+      // console.log('Post-Execute State: Run');
+
       const {stateMachine} = player;
       const input          = player.world.controls.input;
+
       if (input.shift) {
          stateMachine.changeTo('WALK');
       } else if (!player._isMoving()) {
          stateMachine.changeTo('IDLE');
       }
+
    }
 
 
    exit(player) {
       console.log('Exit State: Run');
+
       const runAction   = player.animations.get('RUN');
       runAction.enabled = false;
+
+      player.stateMachine.previousState = this;
+
    }
 
 }
