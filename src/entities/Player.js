@@ -2,7 +2,7 @@
  * @author Mugen87 / https://github.com/Mugen87
  */
 
-import {AnimationMixer, LoopRepeat}                                                        from "three";
+import {AnimationMixer, LoopOnce, LoopRepeat}                                              from "three";
 import {AABB, MovingEntity, MathUtils, OBB, Ray, Vector3, StateMachine, State, GameEntity} from 'yuka';
 
 import {Particle, ParticleSystem} from '../core/ParticleSystem.js';
@@ -345,7 +345,7 @@ class IdleState extends State {
       player.stateMachine.currentState = this;
 
       if (previousState !== undefined) {
-         
+
          const previousAction = player.animations.get(previousState.name);
 
          idleAction.time = 0.0;
@@ -470,35 +470,22 @@ class RunState extends State {
    enter(player) {
       console.log('Enter State: Run');
 
-      const runAction       = player.animations.get('RUN');
-      const {previousState} = player.stateMachine.previousState;
+      const input = player.world.controls.input;
 
-      runAction.enabled                = true;
-      player.stateMachine.currentState = this;
+      if (input.forward) {
+         console.log('forward');
+         const runAction       = player.animations.get('RUN');
+         const {previousState} = player.stateMachine.previousState;
 
-      if (previousState !== undefined) {
-
-         const previousAction = player.animations.get(previousState.name);
-
-         if (previousAction.name === 'WALK') {
-
-            runAction.time = 0.0;
-            runAction.crossFadeFrom(previousAction, 0.2, true);
-
-         } else {
-
-            runAction.time = 0.0;
-            runAction.setEffectiveTimeScale(1.0);
-            runAction.setEffectiveWeight(1.0);
-            runAction.crossFadeFrom(previousAction, 0.2, true);
-
-         }
-      } else {
-
-         player.stateMachine.previousState = this;
-
+         runAction.enabled                = true;
+         player.stateMachine.currentState = this;
+      } else if (input.backward) {
+         new RunBackState().enter(player);
+      } else if (input.left) {
+         new RunLeftState().enter(player);
+      } else if (input.right) {
+         new RunRightState().enter(player);
       }
-
 
    }
 
@@ -528,6 +515,119 @@ class RunState extends State {
 
    }
 
+}
+
+
+
+class RunLeftState extends RunState {
+   constructor() {
+      super();
+
+      this.name = 'RUN_LEFT';
+
+   }
+
+
+   enter(player) {
+      console.log('Enter State: Run Left');
+
+      const input           = player.world.controls.input;
+      const {previousState} = player.stateMachine.previousState;
+
+      const runAction   = player.animations.get('RUN_LEFT');
+      runAction.time    = 0.0;
+      runAction.enabled = true;
+
+
+      // player.stateMachine.currentState = this;
+
+   }
+
+
+   exit(player) {
+      console.log('Exit State: Run Left');
+
+      const runAction   = player.animations.get('RUN_LEFT');
+      runAction.enabled = false;
+
+      player.stateMachine.previousState = this;
+
+   }
+}
+
+
+
+class RunRightState extends RunState {
+   constructor() {
+      super();
+
+      this.name = 'RUN_RIGHT';
+
+   }
+
+
+   enter(player) {
+      console.log('Enter State: Run Right');
+
+      const input           = player.world.controls.input;
+      const {previousState} = player.stateMachine.previousState;
+
+      const runAction   = player.animations.get('RUN_RIGHT');
+      runAction.time    = 0.0;
+      runAction.enabled = true;
+
+
+      // player.stateMachine.currentState = this;
+
+   }
+
+
+   exit(player) {
+      console.log('Exit State: Run Right');
+
+      const runAction   = player.animations.get('RUN_RIGHT');
+      runAction.enabled = false;
+
+      player.stateMachine.previousState = this;
+
+   }
+}
+
+
+
+class RunBackState extends RunState {
+   constructor() {
+      super();
+
+      this.name = 'RUN_BACK';
+
+   }
+
+
+   enter(player) {
+      console.log('Enter State: Run Back');
+
+      const input           = player.world.controls.input;
+      const {previousState} = player.stateMachine.previousState;
+
+      const runAction   = player.animations.get('RUN_BACK');
+      runAction.time    = 0.0;
+      runAction.enabled = true;
+
+      // player.stateMachine.currentState = this;
+
+   }
+
+
+   exit(player) {
+      console.log('Exit State: Run Back');
+
+      const runAction   = player.animations.get('RUN_BACK');
+      runAction.enabled = false;
+
+      player.stateMachine.previousState = this;
+
+   }
 }
 
 
