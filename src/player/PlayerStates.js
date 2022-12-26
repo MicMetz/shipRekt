@@ -446,35 +446,46 @@ export class MeleeAttackState extends PlayerState {
 
    enter(prevState) {
       const curAction = this.parent.proxy._animations.get('slash').action;
-      // const mixer = curAction.getMixer()
-      // mixer.addEventListener('finished', this.finish)
+      const previousAction = this.parent.proxy.animations.get(prevState.name).action;
 
-      if (prevState) {
-         const previousAction = this.parent.proxy.animations.get(prevState.name).action;
+      curAction.reset()
+      curAction.setLoop(LoopOnce, 1)
+      curAction.clampWhenFinished = false
+      curAction.crossFadeFrom(previousAction, 0.2, true)
+      curAction.play()
 
-         if (prevState.name.includes('run')) {
-            this.mixer.stopAllAction();
-
-            var fromAction = this.play(previousAction, 0.1);
-            var toAction   = this.play(curAction, 0.1);
-
-            fromAction.crossFadeTo(toAction, 0.1, true);
-            return;
-         }
-
-         curAction.reset()
-         curAction.setLoop(LoopOnce, 1)
-         curAction.clampWhenFinished = true
-         curAction.crossFadeFrom(previousAction, 0.1, true)
-         curAction.play()
-      } else {
-         curAction.play()
-      }
    }
 
 
    execute(_, input, moving) {
+      if (input.forward || input.backward) {
+         if (input.shift) {
+            this.parent.changeTo('walk')
+         } else {
+            if (input.forward) {
+               this.parent.changeTo('run')
+            } else if (input.backward) {
+               this.parent.changeTo('runBack')
+            }
+         }
 
+         return;
+      }
+      if (input.left || input.right) {
+         if (input.shift) {
+            this.parent.changeTo('walk')
+         } else {
+            if (input.left) {
+               this.parent.changeTo('runLeft')
+            } else if (input.right) {
+               this.parent.changeTo('runRight')
+            }
+         }
+
+         return;
+      }
+
+      this.parent.changeTo('idle')
    }
 
 

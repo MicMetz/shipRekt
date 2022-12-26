@@ -181,8 +181,8 @@ class AssetManager {
       playerHeavySwing.setRefDistance(refDistance);
       const playerRoll = new THREE.PositionalAudio(listener);
       playerRoll.setRefDistance(refDistance);
-      const fleshHit = new THREE.PositionalAudio(listener);
-      fleshHit.setRefDistance(refDistance);
+      // const fleshHit = new THREE.PositionalAudio(listener);
+      // fleshHit.setRefDistance(refDistance);
 
       const buttonClick = new THREE.Audio(listener);
       buttonClick.setVolume(0.5);
