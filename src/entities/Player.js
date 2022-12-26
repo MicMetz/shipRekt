@@ -76,11 +76,11 @@ class Player extends MovingEntity {
 
       this.stateMachine = new StateMachine(this);
 
-      this.stateMachine.add('IDLE', new IdleState(this));
-      this.stateMachine.add('WALK', new WalkState(this));
-      this.stateMachine.add('RUN', new RunState(this));
+      this.stateMachine.add('idle', new IdleState(this));
+      this.stateMachine.add('walk', new WalkState(this));
+      this.stateMachine.add('run', new RunState(this));
 
-      this.stateMachine.changeTo('IDLE');
+      this.stateMachine.changeTo('idle');
    }
 
 
@@ -250,7 +250,9 @@ class Player extends MovingEntity {
 
 
    _isMoving() {
-      return super.getSpeed() > 0.01;
+
+      return this.world.controls.input.forward || this.world.controls.input.backward || this.world.controls.input.left || this.world.controls.input.right;
+
    }
 
 
@@ -328,38 +330,41 @@ class Player extends MovingEntity {
 
 
 class IdleState extends State {
-   constructor() {
+   constructor(player) {
       super();
-
-      this.name = 'IDLE';
-
+      this.parent = player;
    }
 
 
-   enter(player) {
+   get name() {
+      return 'idle';
+   }
+
+
+   enter() {
       console.log('Enter State: Idle');
 
-      const idleAction      = player.animations.get('IDLE');
-      const {previousState} = player.stateMachine.previousState || {};
+      const idleAction      = this.parent.animations.get('idle');
+      const {previousState} = this.parent.stateMachine.previousState || {};
+      idleAction.enabled    = true;
 
-      player.stateMachine.currentState = this;
+      // this.parent.stateMachine.currentState = this;
 
       if (previousState !== undefined) {
 
-         const previousAction = player.animations.get(previousState.name);
+         const previousAction = this.parent.animations.get(previousState.name);
 
          idleAction.time = 0.0;
          idleAction.setEffectiveTimeScale(1.0);
          idleAction.setEffectiveWeight(1.0);
-         idleAction.crossFadeFrom(previousAction, 0.2, true);
+         // idleAction.crossFadeFrom(previousAction, 0.2, true);
 
       } else {
 
-         player.stateMachine.previousState = this;
+         // this.parent.stateMachine.previousState = this;
 
       }
 
-      idleAction.enabled = true;
 
    }
 
@@ -367,53 +372,54 @@ class IdleState extends State {
    execute(player) {
       // console.log('Post-Execute State: Idle');
 
-      const {stateMachine} = player;
-      const input          = player.world.controls.input;
+      const {stateMachine} = this.parent.stateMachine;
+      const input          = this.parent.world.controls.input;
 
-      if (player._isMoving()) {
+      if (this.parent._isMoving()) {
          if (input.shift) {
-            stateMachine.changeTo('WALK');
+            this.parent.stateMachine.changeTo('walk');
          } else {
-            stateMachine.changeTo('RUN');
+            this.parent.stateMachine.changeTo('run');
          }
       }
 
    }
 
 
-   exit(player) {
+   exit() {
       console.log('Exit State: Idle');
 
-      const idleAction   = player.animations.get('IDLE');
-      idleAction.enabled = false;
-
-      player.stateMachine.previousState = this;
-
+      // const idleAction   = this.parent.animations.get('idle');
+      // idleAction.enabled = false;
    }
+
 }
 
 
 
 class WalkState extends State {
-   constructor() {
+   constructor(player) {
       super();
+      this.parent = player;
+   }
 
-      this.name = 'WALK';
 
+   get name() {
+      return 'walk'
    }
 
 
    enter(player) {
       console.log('Enter State: Walk');
 
-      const walkAction      = player.animations.get('WALK');
-      const {previousState} = player.stateMachine.previousState;
-      const previousAction  = player.animations.get(previousState.name);
+      const walkAction      = this.parent.animations.get('walk');
+      const {previousState} = this.parent.stateMachine.previousState;
+      const previousAction  = this.parent.animations.get(previousState.name);
 
-      walkAction.enabled               = true;
-      player.stateMachine.currentState = this;
+      walkAction.enabled = true;
+      // player.stateMachine.currentState = this;
 
-      if (previousAction.name === 'RUN') {
+      if (previousAction.name === 'run') {
 
          walkAction.time = 0.0;
          walkAction.crossFadeFrom(previousAction, 0.2, true);
@@ -423,7 +429,7 @@ class WalkState extends State {
          walkAction.time = 0.0;
          walkAction.setEffectiveTimeScale(1.0);
          walkAction.setEffectiveWeight(1.0);
-         walkAction.crossFadeFrom(previousAction, 0.2, true);
+         // walkAction.crossFadeFrom(previousAction, 0.2, true);
 
       }
    }
@@ -432,26 +438,26 @@ class WalkState extends State {
    execute(player) {
       // console.log('Post-Execute State: Walk');
 
-      const {stateMachine} = player;
-      const input          = player.world.controls.input;
+      const {stateMachine} = this.parent.stateMachine;
+      const input          = this.parent.world.controls.input;
 
-      if (!input.shift) {
-         stateMachine.changeTo('RUN');
-      } else if (!player._isMoving()) {
-         stateMachine.changeTo('IDLE');
+      if (!player._isMoving()) {
+         this.parent.stateMachine.changeTo('idle');
+      }
+      if (!input.shift && player._isMoving()) {
+         this.parent.stateMachine.changeTo('run');
       }
 
    }
 
 
-   exit(player) {
+   exit() {
       console.log('Exit State: Walk');
 
-      const walkAction   = player.animations.get('WALK');
+      const walkAction   = this.parent.animations.get('walk');
       walkAction.enabled = false;
 
-      player.stateMachine.previousState = this;
-
+      this.parent.stateMachine.changeTo('idle');
    }
 
 }
@@ -459,60 +465,84 @@ class WalkState extends State {
 
 
 class RunState extends State {
-   constructor() {
+   constructor(player) {
       super();
-
-      this.name = 'RUN';
-
+      this.parent = player;
    }
 
 
-   enter(player) {
+   get name() {
+      return 'run'
+   }
+
+
+   /*    enter(player) {
+
+    const input = player.world.controls.input;
+
+    if (input.forward) {
+    console.log('forward');
+    const runAction       = player.animations.get('run');
+    const {previousState} = player.stateMachine.previousState;
+
+    runAction.enabled                = true;
+    player.stateMachine.currentState = this;
+    } else if (input.backward) {
+    new RunBackState().enter(player);
+    } else if (input.left) {
+    new RunLeftState().enter(player);
+    } else if (input.right) {
+    new RunRightState().enter(player);
+    }
+    } */
+
+   enter(prevState) {
       console.log('Enter State: Run');
 
-      const input = player.world.controls.input;
+      const currentAction = this.parent.animations.get('run');
 
-      if (input.forward) {
-         console.log('forward');
-         const runAction       = player.animations.get('RUN');
-         const {previousState} = player.stateMachine.previousState;
+      if (prevState) {
+         const prevAction = this.parent.animations.get(prevState.name);
 
-         runAction.enabled                = true;
-         player.stateMachine.currentState = this;
-      } else if (input.backward) {
-         new RunBackState().enter(player);
-      } else if (input.left) {
-         new RunLeftState().enter(player);
-      } else if (input.right) {
-         new RunRightState().enter(player);
+         currentAction.enabled = true
+
+         if (prevState.name === 'walk') {
+            const ratio        = currentAction.getClip().duration / prevAction.getClip().duration
+            currentAction.time = prevAction.time * ratio
+         } else {
+            currentAction.time = 0.0
+            currentAction.setEffectiveTimeScale(1.0)
+            currentAction.setEffectiveWeight(1.0)
+         }
+
+         // currentAction.crossFadeFrom(prevAction, 0.5, true)
+         currentAction.play()
+      } else {
+         currentAction.play()
       }
-
    }
 
 
    execute(player) {
       // console.log('Post-Execute State: Run');
 
-      const {stateMachine} = player;
-      const input          = player.world.controls.input;
+      const {stateMachine} = this.parent.stateMachine;
+      const input          = this.parent.world.controls.input;
 
-      if (input.shift) {
-         stateMachine.changeTo('WALK');
-      } else if (!player._isMoving()) {
-         stateMachine.changeTo('IDLE');
+      if (!player._isMoving()) {
+         this.parent.stateMachine.changeTo('idle');
       }
 
    }
 
 
-   exit(player) {
+   exit() {
       console.log('Exit State: Run');
-
-      const runAction   = player.animations.get('RUN');
-      runAction.enabled = false;
-
-      player.stateMachine.previousState = this;
-
+      //
+      // const runAction   = this.parent.animations.get('run');
+      // runAction.enabled = false;
+      //
+      // this.parent.stateMachine.changeTo('idle');
    }
 
 }
@@ -520,21 +550,24 @@ class RunState extends State {
 
 
 class RunLeftState extends RunState {
-   constructor() {
+   constructor(player) {
       super();
+      this.parent = player;
+   }
 
-      this.name = 'RUN_LEFT';
 
+   get name() {
+      return 'runLeft'
    }
 
 
    enter(player) {
       console.log('Enter State: Run Left');
 
-      const input           = player.world.controls.input;
-      const {previousState} = player.stateMachine.previousState;
+      const input           = this.parent.world.controls.input;
+      const {previousState} = this.parent.stateMachine.previousState;
 
-      const runAction   = player.animations.get('RUN_LEFT');
+      const runAction   = this.parent.animations['runLeft'].clip;
       runAction.time    = 0.0;
       runAction.enabled = true;
 
@@ -544,36 +577,32 @@ class RunLeftState extends RunState {
    }
 
 
-   exit(player) {
-      console.log('Exit State: Run Left');
+   exit() {}
 
-      const runAction   = player.animations.get('RUN_LEFT');
-      runAction.enabled = false;
-
-      player.stateMachine.previousState = this;
-
-   }
 }
 
 
 
 class RunRightState extends RunState {
-   constructor() {
+   constructor(player) {
       super();
+      this.parent = player;
+   }
 
-      this.name = 'RUN_RIGHT';
 
+   get name() {
+      return 'runRight';
    }
 
 
    enter(player) {
       console.log('Enter State: Run Right');
 
-      const input           = player.world.controls.input;
-      const {previousState} = player.stateMachine.previousState;
+      const runAction       = this.parent.animations.get('runRight');
+      const input           = this.parent.world.controls.input;
+      const {previousState} = this.parent.stateMachine.previousState;
 
-      const runAction   = player.animations.get('RUN_RIGHT');
-      runAction.time    = 0.0;
+      // runAction.time    = 0.0;
       runAction.enabled = true;
 
 
@@ -582,35 +611,31 @@ class RunRightState extends RunState {
    }
 
 
-   exit(player) {
-      console.log('Exit State: Run Right');
+   exit() { }
 
-      const runAction   = player.animations.get('RUN_RIGHT');
-      runAction.enabled = false;
-
-      player.stateMachine.previousState = this;
-
-   }
 }
 
 
 
 class RunBackState extends RunState {
-   constructor() {
+   constructor(player) {
       super();
+      this.parent = player;
+   }
 
-      this.name = 'RUN_BACK';
 
+   get name() {
+      return 'runBack'
    }
 
 
    enter(player) {
-      console.log('Enter State: Run Back');
+      console.log('Enter State: runBack');
 
-      const input           = player.world.controls.input;
-      const {previousState} = player.stateMachine.previousState;
+      const runAction       = this.parent.animations.get('runBack');
+      const input           = this.parent.world.controls.input;
+      const {previousState} = this.parent.stateMachine.previousState;
 
-      const runAction   = player.animations.get('RUN_BACK');
       runAction.time    = 0.0;
       runAction.enabled = true;
 
@@ -619,15 +644,7 @@ class RunBackState extends RunState {
    }
 
 
-   exit(player) {
-      console.log('Exit State: Run Back');
-
-      const runAction   = player.animations.get('RUN_BACK');
-      runAction.enabled = false;
-
-      player.stateMachine.previousState = this;
-
-   }
+   exit() {}
 }
 
 

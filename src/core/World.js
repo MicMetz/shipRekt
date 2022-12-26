@@ -32,6 +32,9 @@ const toVector     = new YUKA.Vector3();
 const displacement = new YUKA.Vector3();
 
 
+const _DEBUG_ = process.env.NODE_ENV === 'development' ? true : false;
+
+
 
 class World {
 
@@ -351,7 +354,9 @@ class World {
       this.scene.add(dirLight);
 
       /* TODO: DEBUG */
-      this.scene.add(new THREE.CameraHelper(dirLight.shadow.camera));
+      if (_DEBUG_) {
+         this.scene.add(new THREE.CameraHelper(dirLight.shadow.camera));
+      }
 
       // field
       const fieldGeometry = new THREE.BoxBufferGeometry(this.field.x, this.field.y, this.field.z);

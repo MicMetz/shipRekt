@@ -514,21 +514,21 @@ class AssetManager {
          walkAction.play();
          walkAction.enabled = false;
 
-         animations.set('IDLE', idleAction);
-         animations.set('IDLE_GUN', idleGunAction);
-         animations.set('IDLE_GUN_POINT', idleGunPointAction);
-         animations.set('IDLE_GUN_SHOOT', idleGunShootAction);
-         animations.set('IDLE_NEUTRAL', idleNeutralAction);
-         animations.set('IDLE_MELEE', idleMeleeAction);
-         animations.set('INTERACT', interactAction);
-         animations.set('ROLL', rollAction);
-         animations.set('RUN', runAction);
-         animations.set('RUN_BACK', runBackAction);
-         animations.set('RUN_LEFT', runLeftAction);
-         animations.set('RUN_RIGHT', runRightAction);
-         animations.set('RUN_SHOOT', runShootAction);
-         animations.set('RUN_SLASH', runSlashAction);
-         animations.set('WALK', walkAction);
+         animations.set('idle', idleAction);
+         animations.set('idleGun', idleGunAction);
+         animations.set('idleGunPoint', idleGunPointAction);
+         animations.set('idleGunShoot', idleGunShootAction);
+         animations.set('idleNeutral', idleNeutralAction);
+         animations.set('idleMelee', idleMeleeAction);
+         animations.set('interact', interactAction);
+         animations.set('roll', rollAction);
+         animations.set('run', runAction);
+         animations.set('runBack', runBackAction);
+         animations.set('runLeft', runLeftAction);
+         animations.set('runRight', runRightAction);
+         animations.set('runShoot', runShootAction);
+         animations.set('runSlash', runSlashAction);
+         animations.set('walk', walkAction);
 
          this.animations.set('Wanderer', animations);
          this.mixers.set('Wanderer', mixer);
@@ -652,23 +652,24 @@ class AssetManager {
          walkAction.play();
          walkAction.enabled = false;
 
-         animations.set('DEATH', deathAction);
-         animations.set('SHOOT', shootAction);
-         animations.set('SLASH', slashAction);
-         animations.set('HIT', hitAction);
-         animations.set('IDLE', idleAction);
-         animations.set('IDLE_GUN_POINT', idleGunPointAction);
-         animations.set('IDLE_GUN_SHOOT', idleGunShootAction);
-         animations.set('IDLE_MELEE', idleMeleeAction);
-         animations.set('INTERACT', interactAction);
-         animations.set('ROLL', rollAction);
-         animations.set('RUN', runAction);
-         animations.set('RUN_BACK', runBackAction);
-         animations.set('RUN_LEFT', runLeftAction);
-         animations.set('RUN_RIGHT', runRightAction);
-         animations.set('RUN_SHOOT', runShootAction);
-         // animations.set('RUN_SLASH', runSlashAction);
 
+         animations.set('idle', idleAction);
+         animations.set('shoot', shootAction);
+         animations.set('die', deathAction);
+         animations.set('hit', hitAction);
+         animations.set('idleGunPoint', idleGunPointAction);
+         animations.set('idleGunShoot', idleGunShootAction);
+         animations.set('idleNeutral', idleNeutralAction);
+         animations.set('idleMelee', idleMeleeAction);
+         animations.set('interact', interactAction);
+         animations.set('roll', rollAction);
+         animations.set('run', runAction);
+         animations.set('runBack', runBackAction);
+         animations.set('runLeft', runLeftAction);
+         animations.set('runRight', runRightAction);
+         animations.set('runShoot', runShootAction);
+         animations.set('slash', slashAction);
+         animations.set('walk', walkAction);
 
          clone.name = 'Android';
          this.animations.set('Android', animations);
