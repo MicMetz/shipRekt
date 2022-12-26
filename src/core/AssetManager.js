@@ -177,6 +177,12 @@ class AssetManager {
       enemyExplode.setRefDistance(refDistance);
       const playerSwing = new THREE.PositionalAudio(listener);
       playerSwing.setRefDistance(refDistance);
+      const playerHeavySwing = new THREE.PositionalAudio(listener);
+      playerHeavySwing.setRefDistance(refDistance);
+      const playerRoll = new THREE.PositionalAudio(listener);
+      playerRoll.setRefDistance(refDistance);
+      const fleshHit = new THREE.PositionalAudio(listener);
+      fleshHit.setRefDistance(refDistance);
 
       const buttonClick = new THREE.Audio(listener);
       buttonClick.setVolume(0.5);
@@ -192,6 +198,9 @@ class AssetManager {
       audioLoader.load('./audio/enemyExplode.ogg', buffer => enemyExplode.setBuffer(buffer));
       audioLoader.load('./audio/buttonClick.ogg', buffer => buttonClick.setBuffer(buffer));
       audioLoader.load('./audio/playerSwing.ogg', buffer => playerSwing.setBuffer(buffer));
+      audioLoader.load('./audio/playerHeavySwing.ogg', buffer => playerHeavySwing.setBuffer(buffer));
+      audioLoader.load('./audio/playerRoll.ogg', buffer => playerRoll.setBuffer(buffer));
+      // audioLoader.load('./audio/fleshHit.ogg', buffer => fleshHit.setBuffer(buffer));
 
       audios.set('playerShot', playerShot);
       audios.set('playerHit', playerHit);
@@ -204,6 +213,9 @@ class AssetManager {
       audios.set('enemyExplode', enemyExplode);
       audios.set('buttonClick', buttonClick);
       audios.set('playerSwing', playerSwing);
+      audios.set('playerHeavySwing', playerHeavySwing);
+      audios.set('playerRoll', playerRoll);
+      // audios.set('fleshHit', fleshHit);
 
    }
 
