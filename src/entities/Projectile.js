@@ -1,40 +1,55 @@
 /**
- * @author Mugen87 / https://github.com/Mugen87
+ * @author MicMetzger /
  */
 
-import { MovingEntity } from 'yuka';
+import {MovingEntity} from 'yuka';
+
+
 
 class Projectile extends MovingEntity {
 
-	constructor( owner = null ) {
+   constructor(owner = null) {
 
-		super();
+      super();
 
-		this.owner = owner;
+      this.owner = owner;
 
-	}
+   }
 
-	update( delta ) {
 
-		super.update( delta );
+   update(delta) {
 
-		// remove the projectile when it leaves the game area
+      super.update(delta);
 
-		const world = this.owner.world;
+      // remove the projectile when it leaves the game area
 
-		const fieldXHalfSize = world.field.x / 2;
-		const fieldZHalfSize = world.field.z / 2;
+      const world = this.owner.world;
 
-		if ( this.position.x > fieldXHalfSize || this.position.x < - fieldXHalfSize ||
-			this.position.z > fieldZHalfSize || this.position.z < - fieldZHalfSize ) {
+      const fieldXHalfSize = world.field.x / 2;
+      const fieldZHalfSize = world.field.z / 2;
 
-			world.removeProjectile( this );
-			return;
+      if (this.position.x > fieldXHalfSize || this.position.x < -fieldXHalfSize ||
+        this.position.z > fieldZHalfSize || this.position.z < -fieldZHalfSize) {
 
-		}
+         world.removeProjectile(this);
+         return;
 
-	}
+      }
+
+      if (this.owner.isPlayer) {
+         if (this.owner.strategy === 'melee') {
+            console.log('remove melee effect area');
+            if (this.position.distanceTo(this.owner.position) > 3) {
+               world.removeProjectile(this);
+               return;
+            }
+         }
+      }
+
+   }
 
 }
 
-export { Projectile };
+
+
+export {Projectile};

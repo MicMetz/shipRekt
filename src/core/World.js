@@ -6,9 +6,9 @@ import * as THREE                    from 'three';
 import * as YUKA                     from 'yuka';
 import {GLTFLoader}                  from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {AssetManager}                from './AssetManager.js';
-import {VehicleControls} from './VehicleControls.js';
-import {Player}          from '../player/Player.js';
-import {Guard}           from '../entities/Guard.js';
+import {VehicleControls}             from './VehicleControls.js';
+import {Player}                      from '../player/Player.js';
+import {Guard}                       from '../entities/Guard.js';
 import {Pursuer}                     from '../entities/Pursuer.js';
 import {BufferGeometryUtils}         from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import {ProtectionShader, HitShader} from '../etc/Shaders.js';
@@ -1277,7 +1277,11 @@ class World {
 
          const projectile = this.playerProjectiles[i];
 
-         this.playerProjectileMesh.setMatrixAt(i, projectile.worldMatrix);
+         if (this.player.strategy === 'range') {
+            this.playerProjectileMesh.setMatrixAt(i, projectile.worldMatrix);
+         } else {
+
+         }
 
       }
 

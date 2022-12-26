@@ -457,6 +457,7 @@ class AssetManager {
          idleAction.play();
          idleAction.enabled = false;
 
+
          const idleGunAction = mixer.clipAction(clone.animations[5]);
          idleGunAction.play();
          idleGunAction.enabled = false;

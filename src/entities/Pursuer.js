@@ -2,100 +2,115 @@
  * @author Mugen87 / https://github.com/Mugen87
  */
 
-import { BoundingSphere, Vehicle, StateMachine } from 'yuka';
+import {BoundingSphere, Vehicle, StateMachine} from 'yuka';
+
+
 
 class Pursuer extends Vehicle {
 
-	constructor( world ) {
+   constructor(world) {
 
-		super();
+      super();
 
-		this.maxSpeed = 2;
+      this.maxSpeed = 2;
 
-		this.world = world;
+      this.world = world;
 
-		this.boundingRadius = 0.5;
+      this.boundingRadius = 0.5;
 
-		this.MAX_HEALTH_POINTS = 1;
-		this.healthPoints = this.MAX_HEALTH_POINTS;
+      this.MAX_HEALTH_POINTS = 1;
+      this.healthPoints      = this.MAX_HEALTH_POINTS;
 
-		this.boundingSphere = new BoundingSphere();
-		this.boundingSphere.radius = this.boundingRadius;
+      this.boundingSphere        = new BoundingSphere();
+      this.boundingSphere.radius = this.boundingRadius;
 
-		this.stateMachineMovement = new StateMachine( this );
-		this.stateMachineCombat = new StateMachine( this );
+      this.stateMachineMovement = new StateMachine(this);
+      this.stateMachineCombat   = new StateMachine(this);
 
-		this.audios = new Map();
+      this.audios = new Map();
 
-	}
+   }
 
-	setCombatPattern( pattern ) {
 
-		this.stateMachineCombat.currentState = pattern;
-		this.stateMachineCombat.currentState.enter( this );
+   isPlayer() {
 
-		return this;
+      return false;
 
-	}
+   }
 
-	setMovementPattern( pattern ) {
 
-		this.stateMachineMovement.currentState = pattern;
-		this.stateMachineMovement.currentState.enter( this );
+   setCombatPattern(pattern) {
 
-		return this;
+      this.stateMachineCombat.currentState = pattern;
+      this.stateMachineCombat.currentState.enter(this);
 
-	}
+      return this;
 
-	update( delta ) {
+   }
 
-		this.boundingSphere.center.copy( this.position );
 
-		this.stateMachineMovement.update();
-		this.stateMachineCombat.update();
+   setMovementPattern(pattern) {
 
-		super.update( delta );
+      this.stateMachineMovement.currentState = pattern;
+      this.stateMachineMovement.currentState.enter(this);
 
-		return this;
+      return this;
 
-	}
+   }
 
-	handleMessage( telegram ) {
 
-		switch ( telegram.message ) {
+   update(delta) {
 
-			case 'hit':
+      this.boundingSphere.center.copy(this.position);
 
-				this.healthPoints --;
+      this.stateMachineMovement.update();
+      this.stateMachineCombat.update();
 
-				if ( this.healthPoints === 0 ) {
+      super.update(delta);
 
-					const world = this.world;
+      return this;
 
-					const audio = this.audios.get( 'enemyExplode' );
-					world.playAudio( audio );
+   }
 
-					world.removePursuer( this );
 
-					// clear states
+   handleMessage(telegram) {
 
-					this.stateMachineCombat.currentState.exit( this );
-					this.stateMachineMovement.currentState.exit( this );
+      switch (telegram.message) {
 
-				}
+         case 'hit':
 
-				break;
+            this.healthPoints--;
 
-			default:
+            if (this.healthPoints === 0) {
 
-				console.error( 'Unknown message type:', telegram.message );
+               const world = this.world;
 
-		}
+               const audio = this.audios.get('enemyExplode');
+               world.playAudio(audio);
 
-		return true;
+               world.removePursuer(this);
 
-	}
+               // clear states
+
+               this.stateMachineCombat.currentState.exit(this);
+               this.stateMachineMovement.currentState.exit(this);
+
+            }
+
+            break;
+
+         default:
+
+            console.error('Unknown message type:', telegram.message);
+
+      }
+
+      return true;
+
+   }
 
 }
 
-export { Pursuer };
+
+
+export {Pursuer};

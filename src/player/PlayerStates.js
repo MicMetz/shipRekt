@@ -394,7 +394,31 @@ export class ShootAttackState extends PlayerState {
 
 
    enter(prevState) {
+      const curAction = this.parent.proxy._animations.get('shoot').action;
+      // const mixer = curAction.getMixer()
+      // mixer.addEventListener('finished', this.finish)
 
+      if (prevState) {
+         const previousAction = this.parent.proxy.animations.get(prevState.name).action;
+
+         if (prevState.name.includes('run')) {
+            this.mixer.stopAllAction();
+
+            var fromAction = this.play(previousAction, 1);
+            var toAction   = this.play(curAction, 1);
+
+            fromAction.crossFadeTo(toAction, 1, true);
+            return;
+         }
+
+         curAction.reset()
+         curAction.setLoop(LoopOnce, 1)
+         curAction.clampWhenFinished = true
+         curAction.crossFadeFrom(previousAction, 0.2, true)
+         curAction.play()
+      } else {
+         curAction.play()
+      }
    }
 
 
@@ -431,17 +455,17 @@ export class MeleeAttackState extends PlayerState {
          if (prevState.name.includes('run')) {
             this.mixer.stopAllAction();
 
-            var fromAction = this.play(previousAction, 1);
-            var toAction   = this.play(curAction, 1);
+            var fromAction = this.play(previousAction, 0.1);
+            var toAction   = this.play(curAction, 0.1);
 
-            fromAction.crossFadeTo(toAction, 1, true);
+            fromAction.crossFadeTo(toAction, 0.1, true);
             return;
          }
 
          curAction.reset()
          curAction.setLoop(LoopOnce, 1)
          curAction.clampWhenFinished = true
-         curAction.crossFadeFrom(previousAction, 0.2, true)
+         curAction.crossFadeFrom(previousAction, 0.1, true)
          curAction.play()
       } else {
          curAction.play()

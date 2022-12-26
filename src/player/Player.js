@@ -8,8 +8,8 @@ import {Particle, ParticleSystem} from '../core/ParticleSystem.js';
 import PlayerStateMachine         from "./PlayerStateMachine.js";
 import PlayerControllerProxy      from "./PlayerControllerProxy.js";
 import {PlayerProjectile}         from './PlayerProjectile.js';
-import PlayerProxy                from "./PlayerProxy.js";
-import {EventDispatcher}          from 'three';
+import PlayerProxy                  from "./PlayerProxy.js";
+import {EventDispatcher, Raycaster} from 'three';
 
 
 
@@ -44,10 +44,13 @@ class Player extends MovingEntity {
       this.maxSpeed          = 6;
       this.updateOrientation = false;
 
-      this.MAX_HEALTH_POINTS = 3;
+      this.MAX_HEALTH_POINTS = 5;
       this.healthPoints      = this.MAX_HEALTH_POINTS;
 
       this.boundingRadius = 0.5;
+
+      this.swipesPerSecond = 2;
+      this.lastswipeTime   = 0;
 
       this.shotsPerSecond = 10;
       this.lastShotTime   = 0;
@@ -61,6 +64,8 @@ class Player extends MovingEntity {
       this.offHand = this.bodyMesh.getObjectByName('HandL');
 
       this.weapon    = this.hand.children[0];
+      this.offWeapon = this.offHand.children[0];
+      this.strategy  = 'melee';
       this.equipment = {};
 
       console.log(this.hand);
@@ -82,6 +87,13 @@ class Player extends MovingEntity {
       this._evaluate = this._evaluateActions.bind(this);
 
       this._connect();
+
+   }
+
+
+   isPlayer() {
+
+        return true;
 
    }
 
@@ -122,6 +134,65 @@ class Player extends MovingEntity {
    }
 
 
+   attack() {
+
+      if (this.strategy === 'melee') {
+         return this.slash();
+      }
+
+      if (this.strategy === 'range') {
+         return this.shoot();
+      }
+
+   }
+
+
+   slash() {
+
+      const world       = this.world;
+      const elapsedTime = world.time.getElapsed();
+
+      if (elapsedTime - this.lastswipeTime > (1 / this.swipesPerSecond)) {
+
+         this.lastswipeTime = elapsedTime;
+
+         this.getDirection(direction);
+
+         this.stateMachine.changeTo('meleeAttack');
+
+         // this.weapon.trigger = function () {}
+
+         const swipe = new PlayerProjectile(this, direction);
+
+         // this.weapon.collisionDetected = function (nextPos) {
+         //    var vect             = nextPos.clone().sub(this.getPosition());
+         //    //check for collisions at foot level
+         //    var origin           = this.weapon.getPosition();
+         //    var ray              = new Raycaster(origin, vect.clone().normalize(), 0, vect.length());
+         //    var collisionResults = ray.intersectObjects(this.world.en, true);
+         //    if (collisionResults.length > 0) {
+         //       let t = collisionResults[0].object
+         //       if (t.trigger) t.trigger()
+         //    }
+         //    collisionResults = ray.intersectObjects(this.world.getEnemies([origin, nextPos]), true);
+         //    if (collisionResults.length > 0) {
+         //       return true;
+         //    }
+         //    return false;
+         // };
+
+         world.addProjectile(swipe);
+
+         const audio = this.audios.get('playerShot');
+         world.playAudio(audio);
+
+      }
+
+      return this;
+
+   }
+
+
    shoot() {
 
       const world       = this.world;
@@ -133,8 +204,7 @@ class Player extends MovingEntity {
 
          this.getDirection(direction);
 
-         // this.stateMachine.changeTo('shootAttack');
-         this.stateMachine.changeTo('meleeAttack');
+         this.stateMachine.changeTo('shootAttack');
 
          const projectile = new PlayerProjectile(this, direction);
 

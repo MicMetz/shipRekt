@@ -48,6 +48,13 @@ class Guard extends Vehicle {
    }
 
 
+   isPlayer() {
+
+      return false;
+
+   }
+
+
    enableProtection() {
 
       this.protected              = true;

@@ -1,20 +1,13 @@
 /**
- * @author Mugen87 / https://github.com/Mugen87
+ * @author MicMetzger /
  */
 
 import {EventDispatcher, Vector3, Logger, MathUtils} from 'yuka';
 
 
 
-const direction            = new Vector3();
-const target               = new Vector3();
-const currentGamepadValues = {
-   buttonPressed: false,
-   leftStickX   : 0,
-   leftStickY   : 0,
-   rightStickX  : 0,
-   rightStickY  : 0,
-};
+const direction = new Vector3();
+const target    = new Vector3();
 
 
 
@@ -44,20 +37,13 @@ class VehicleControls extends EventDispatcher {
          mouseDown: false
       };
 
-      this.gamepadActive = false;
-
-      this._mouseUpHandler             = onMouseUp.bind(this);
-      this._mouseDownHandler           = onMouseDown.bind(this);
-      this._mouseMoveHandler           = onMouseMove.bind(this);
-      this._pointerlockChangeHandler   = onPointerlockChange.bind(this);
-      this._pointerlockErrorHandler    = onPointerlockError.bind(this);
-      this._keyDownHandler             = onKeyDown.bind(this);
-      this._keyUpHandler               = onKeyUp.bind(this);
-      this._gamepadconnectedHandler    = onGamepadconnected.bind(this);
-      this._gamepaddisconnectedHandler = onGamepaddisconnected.bind(this);
-
-      window.addEventListener('gamepadconnected', this._gamepadconnectedHandler);
-      window.addEventListener('gamepaddisconnected', this._gamepaddisconnectedHandler);
+      this._mouseUpHandler           = onMouseUp.bind(this);
+      this._mouseDownHandler         = onMouseDown.bind(this);
+      this._mouseMoveHandler         = onMouseMove.bind(this);
+      this._pointerlockChangeHandler = onPointerlockChange.bind(this);
+      this._pointerlockErrorHandler  = onPointerlockError.bind(this);
+      this._keyDownHandler           = onKeyDown.bind(this);
+      this._keyUpHandler             = onKeyUp.bind(this);
 
    }
 
@@ -99,55 +85,23 @@ class VehicleControls extends EventDispatcher {
 
    update(delta) {
 
-      if (this.gamepadActive === true) {
+      // mouse input
+      const input = this.input;
 
-         // gamepad input
+      direction.z = Number(input.backward) - Number(input.forward);
+      direction.x = Number(input.right) - Number(input.left);
+      direction.normalize();
 
-         this.pollGamepad();
+      // rotation
+      target.set(this.movementX, 0, this.movementY).normalize();
+      target.add(this.owner.position);
 
-         direction.x = currentGamepadValues.leftStickX;
-         direction.z = currentGamepadValues.leftStickY;
-
-         //
-
-         target.set(0, 0, 0);
-
-         target.x = currentGamepadValues.rightStickX;
-         target.z = currentGamepadValues.rightStickY;
-
-         if (target.squaredLength() !== 0) {
-
-            target.add(this.owner.position);
-
-            this.owner.lookAt(target);
-
-         }
-
-      } else {
-
-         // mouse input
-
-         const input = this.input;
-
-         direction.z = Number(input.backward) - Number(input.forward);
-         direction.x = Number(input.right) - Number(input.left);
-         direction.normalize();
-
-         //
-
-         target.set(this.movementX, 0, this.movementY).normalize();
-         target.add(this.owner.position);
-
-         this.owner.lookAt(target);
-
-      }
+      this.owner.lookAt(target);
 
       // update player position
-
       if (direction.squaredLength() === 0) {
 
          // brake
-
          this.owner.velocity.x -= this.owner.velocity.x * this.brakingForce * delta;
          this.owner.velocity.z -= this.owner.velocity.z * this.brakingForce * delta;
 
@@ -158,42 +112,18 @@ class VehicleControls extends EventDispatcher {
       }
 
       // update shooting
+      if (this.input.mouseDown) {
 
-      if (this.input.mouseDown || currentGamepadValues.buttonPressed === true) {
-
-         this.owner.shoot();
+         this.owner.attack();
 
       }
 
       // update camera
-
       const offsetX = (this.camera.position.x - this.cameraOffset.x) - this.owner.position.x;
       const offsetZ = (this.camera.position.z - this.cameraOffset.z) - this.owner.position.z;
 
       if (offsetX !== 0) this.camera.position.x -= (offsetX * delta * this.cameraMovementSpeed);
       if (offsetZ !== 0) this.camera.position.z -= (offsetZ * delta * this.cameraMovementSpeed);
-
-   }
-
-
-   pollGamepad() {
-
-      const gamepad = getGamepad(); // assuming PS4 gamepad
-
-      if (gamepad) {
-
-         const axes = gamepad.axes;
-
-         currentGamepadValues.leftStickX  = (Math.abs(axes[0]) < 0.2) ? 0 : axes[0]; // ignore small input values
-         currentGamepadValues.leftStickY  = (Math.abs(axes[1]) < 0.2) ? 0 : axes[1];
-         currentGamepadValues.rightStickX = (Math.abs(axes[2]) < 0.2) ? 0 : axes[2];
-         currentGamepadValues.rightStickY = (Math.abs(axes[3]) < 0.2) ? 0 : axes[3];
-
-         const buttons = gamepad.buttons;
-
-         currentGamepadValues.buttonPressed = buttons[5].pressed; // R1
-
-      }
 
    }
 
@@ -206,12 +136,6 @@ class VehicleControls extends EventDispatcher {
       this.input.right     = false;
       this.input.space     = false;
       this.input.mouseDown = false;
-
-      currentGamepadValues.leftStickX  = 0;
-      currentGamepadValues.leftStickY  = 0;
-      currentGamepadValues.rightStickX = 0;
-      currentGamepadValues.rightStickY = 0;
-      currentGamepadValues.button      = false;
 
    }
 
@@ -238,25 +162,7 @@ class VehicleControls extends EventDispatcher {
 
 
 
-function getGamepad() {
-
-   var gamepads = navigator.getGamepads && navigator.getGamepads();
-
-   for (var i = 0; i < 4; i++) {
-
-      var gamepad = gamepads[i];
-
-      if (gamepad) return gamepad;
-
-   }
-
-   return null;
-
-}
-
-
 // handler
-
 function onMouseDown(event) {
 
    if (event.which === 1) {
@@ -315,20 +221,6 @@ function onPointerlockChange() {
 function onPointerlockError() {
 
    Logger.warn('YUKA.VehicleControls: Unable to use Pointer Lock API.');
-
-}
-
-
-function onGamepadconnected() {
-
-   this.gamepadActive = true;
-
-}
-
-
-function onGamepaddisconnected() {
-
-   this.gamepadActive = false;
 
 }
 

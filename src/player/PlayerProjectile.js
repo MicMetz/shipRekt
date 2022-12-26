@@ -1,5 +1,5 @@
 /**
- * @author Mugen87 / https://github.com/Mugen87
+ * @author MicMetzger /
  */
 
 import { OBB, Vector3 } from 'yuka';
@@ -39,7 +39,6 @@ class PlayerProjectile extends Projectile {
 		super.update( delta );
 
 		// update OBB
-
 		this.obb.center.copy( this.position );
 
 	}

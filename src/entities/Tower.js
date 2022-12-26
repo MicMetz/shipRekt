@@ -2,91 +2,106 @@
  * @author Mugen87 / https://github.com/Mugen87
  */
 
-import { BoundingSphere, GameEntity, StateMachine } from 'yuka';
+import {BoundingSphere, GameEntity, StateMachine} from 'yuka';
+
+
 
 class Tower extends GameEntity {
 
-	constructor( world ) {
+   constructor(world) {
 
-		super();
+      super();
 
-		this.world = world;
+      this.world = world;
 
-		this.boundingRadius = 0.5;
+      this.boundingRadius = 0.5;
 
-		this.MAX_HEALTH_POINTS = 8;
-		this.healthPoints = this.MAX_HEALTH_POINTS;
+      this.MAX_HEALTH_POINTS = 8;
+      this.healthPoints      = this.MAX_HEALTH_POINTS;
 
-		this.boundingSphere = new BoundingSphere();
-		this.boundingSphere.radius = this.boundingRadius;
+      this.boundingSphere        = new BoundingSphere();
+      this.boundingSphere.radius = this.boundingRadius;
 
-		this.stateMachineCombat = new StateMachine( this );
+      this.stateMachineCombat = new StateMachine(this);
 
-		this.audios = new Map();
+      this.audios = new Map();
 
-	}
+   }
 
-	setCombatPattern( pattern ) {
 
-		this.stateMachineCombat.currentState = pattern;
-		this.stateMachineCombat.currentState.enter( this );
+   isPlayer() {
 
-		return this;
+      return false;
 
-	}
+   }
 
-	updateBoundingVolumes() {
 
-		this.boundingSphere.center.copy( this.position );
+   setCombatPattern(pattern) {
 
-	}
+      this.stateMachineCombat.currentState = pattern;
+      this.stateMachineCombat.currentState.enter(this);
 
-	update() {
+      return this;
 
-		this.stateMachineCombat.update();
+   }
 
-		return this;
 
-	}
+   updateBoundingVolumes() {
 
-	handleMessage( telegram ) {
+      this.boundingSphere.center.copy(this.position);
 
-		switch ( telegram.message ) {
+   }
 
-			case 'hit':
 
-				const world = this.world;
+   update() {
 
-				this.healthPoints --;
+      this.stateMachineCombat.update();
 
-				const audio = this.audios.get( 'enemyHit' );
-				world.playAudio( audio );
+      return this;
 
-				if ( this.healthPoints === 0 ) {
+   }
 
-					const audio = this.audios.get( 'enemyExplode' );
-					world.playAudio( audio );
 
-					world.removeTower( this );
+   handleMessage(telegram) {
 
-					// clear states
+      switch (telegram.message) {
 
-					this.stateMachineCombat.currentState.exit( this );
+         case 'hit':
 
-				}
+            const world = this.world;
 
-				break;
+            this.healthPoints--;
 
-			default:
+            const audio = this.audios.get('enemyHit');
+            world.playAudio(audio);
 
-				console.error( 'Unknown message type:', telegram.message );
+            if (this.healthPoints === 0) {
 
-		}
+               const audio = this.audios.get('enemyExplode');
+               world.playAudio(audio);
 
-		return true;
+               world.removeTower(this);
 
-	}
+               // clear states
+
+               this.stateMachineCombat.currentState.exit(this);
+
+            }
+
+            break;
+
+         default:
+
+            console.error('Unknown message type:', telegram.message);
+
+      }
+
+      return true;
+
+   }
 
 }
 
-export { Tower };
+
+
+export {Tower};
