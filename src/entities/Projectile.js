@@ -38,8 +38,8 @@ class Projectile extends MovingEntity {
 
       if (this.owner.isPlayer) {
          if (this.owner.strategy === 'melee') {
-            console.log('remove melee effect area');
-            if (this.position.distanceTo(this.owner.position) > 3) {
+            // console.log('remove melee effect area');
+            if (this.position.distanceTo(this.owner.position) > 1.5) {
                world.removeProjectile(this);
                return;
             }

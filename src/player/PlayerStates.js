@@ -152,9 +152,13 @@ export class RunState extends PlayerState {
       const runAction      = this.parent.proxy.animations.get('run').action;
       const previousAction = this.parent.proxy.animations.get(prevState.name).action;
 
-      // runAction.time    = 0.0;
-      runAction.enabled = true;
+      if (prevState.name.includes('Attack')) {
+         runAction.time = 0.0;
 
+         runAction.crossFadeFrom(previousAction, 0.7, true);
+      }
+
+      runAction.enabled = true;
       runAction.play();
    }
 
@@ -191,7 +195,11 @@ export class RunState extends PlayerState {
    }
 
 
-   exit() {}
+   exit() {
+      // const runAction = this.parent.proxy.animations.get('run').action;
+      // runAction.stop();
+      // runAction.enabled = false;
+   }
 
 }
 
@@ -211,11 +219,17 @@ export class RunLeftState extends PlayerState {
    enter(prevState) {
       // console.log('Enter State: Run Left');
 
-      const runLeftAction  = this.parent.proxy.animations.get('runLeft').action;
+      const runAction  = this.parent.proxy.animations.get('runLeft').action;
       const previousAction = this.parent.proxy.animations.get(prevState.name).action;
 
-      runLeftAction.enabled = true;
-      runLeftAction.play();
+      if (prevState.name.includes('Attack')) {
+         runAction.time = 0.0;
+
+         runAction.crossFadeFrom(previousAction, 0.7, true);
+      }
+
+      runAction.enabled = true;
+      runAction.play();
    }
 
 
@@ -251,7 +265,12 @@ export class RunLeftState extends PlayerState {
    }
 
 
-   exit() {}
+   exit() {
+      // const runAction = this.parent.proxy.animations.get('runLeft').action;
+      // runAction.stop();
+      // runAction.enabled = false;
+
+   }
 
 }
 
@@ -274,9 +293,13 @@ export class RunRightState extends PlayerState {
       const runAction      = this.parent.proxy.animations.get('runRight').action;
       const previousAction = this.parent.proxy.animations.get(prevState.name).action;
 
-      // runAction.time    = 0.0;
-      runAction.enabled = true;
+      if (prevState.name.includes('Attack')) {
+         runAction.time = 0.0;
 
+         runAction.crossFadeFrom(previousAction, 0.7, true);
+      }
+
+      runAction.enabled = true;
       runAction.play();
 
 
@@ -317,7 +340,11 @@ export class RunRightState extends PlayerState {
    }
 
 
-   exit() {}
+   exit() {
+      // const runAction = this.parent.proxy.animations.get('runRight').action;
+      // runAction.stop();
+      // runAction.enabled = false;
+   }
 
 }
 
@@ -338,9 +365,13 @@ export class RunBackState extends PlayerState {
       const runAction      = this.parent.proxy.animations.get('runBack').action;
       const previousAction = this.parent.proxy.animations.get(prevState.name).action;
 
-      // runAction.time    = 0.0;
-      runAction.enabled = true;
+      if (prevState.name.includes('Attack')) {
+         runAction.time = 0.0;
 
+         runAction.crossFadeFrom(previousAction, 0.7, true);
+      }
+
+      runAction.enabled = true;
       runAction.play();
    }
 
@@ -377,7 +408,11 @@ export class RunBackState extends PlayerState {
    }
 
 
-   exit() {}
+   exit() {
+      // const runAction = this.parent.proxy.animations.get('runBack').action;
+      // runAction.stop();
+      // runAction.enabled = false;
+   }
 }
 
 
@@ -394,30 +429,30 @@ export class ShootAttackState extends PlayerState {
 
 
    enter(prevState) {
-      const curAction = this.parent.proxy._animations.get('shoot').action;
-      // const mixer = curAction.getMixer()
+      const currentAction = this.parent.proxy.animations.get('shoot').action;
+      // const mixer = currentAction.getMixer()
       // mixer.addEventListener('finished', this.finish)
 
       if (prevState) {
          const previousAction = this.parent.proxy.animations.get(prevState.name).action;
 
          if (prevState.name.includes('run')) {
-            this.mixer.stopAllAction();
+            this.parent.animations.stopAllAction();
 
-            var fromAction = this.play(previousAction, 1);
-            var toAction   = this.play(curAction, 1);
+            var fromAction = this.parent.proxy.animations.get(prevState.name).clip;
+            var toAction   = this.parent.proxy.animations.get('shoot').clip;
 
             fromAction.crossFadeTo(toAction, 1, true);
             return;
          }
 
-         curAction.reset()
-         curAction.setLoop(LoopOnce, 1)
-         curAction.clampWhenFinished = true
-         curAction.crossFadeFrom(previousAction, 0.2, true)
-         curAction.play()
+         currentAction.reset()
+         currentAction.setLoop(LoopOnce, 1)
+         currentAction.clampWhenFinished = true
+         currentAction.crossFadeFrom(previousAction, 0.2, true)
+         currentAction.play()
       } else {
-         curAction.play()
+         currentAction.play()
       }
    }
 
@@ -445,15 +480,27 @@ export class MeleeAttackState extends PlayerState {
 
 
    enter(prevState) {
-      const curAction = this.parent.proxy._animations.get('slash').action;
-      const previousAction = this.parent.proxy.animations.get(prevState.name).action;
+      const currentAction = this.parent.proxy.animations.get('slash').action;
+      currentAction.setLoop(LoopOnce, 1);
+      currentAction.clampWhenFinished = false
 
-      curAction.reset()
-      curAction.setLoop(LoopOnce, 1)
-      curAction.clampWhenFinished = false
-      curAction.crossFadeFrom(previousAction, 0.2, true)
-      curAction.play()
+      if (prevState) {
+         const prevAction = this.parent.proxy.animations.get(prevState.name).action
 
+         currentAction.enabled = true
+
+         if (prevState.name === 'run' || prevState.name === 'runBack' || prevState.name === 'runLeft' || prevState.name === 'runRight' || prevState.name === 'walk') {
+            currentAction.crossFadeTo(prevAction, 1, true)
+
+         } else {
+            currentAction.setEffectiveTimeScale(1.0)
+            currentAction.setEffectiveWeight(1.0)
+         }
+
+         currentAction.play()
+      } else {
+         currentAction.play()
+      }
    }
 
 
@@ -509,14 +556,18 @@ export class RollState extends PlayerState {
    enter(prevState) {
       console.log('Enter State: Roll');
 
-      const curAction      = this.parent.proxy._animations.get('roll').action;
+      const currentAction  = this.parent.proxy._animations.get('roll').action;
       const previousAction = this.parent.proxy.animations.get(prevState.name).action;
 
-      curAction.reset()
-      curAction.setLoop(LoopOnce, 1)
-      curAction.clampWhenFinished = false
-      curAction.crossFadeFrom(previousAction, 0.2, true)
-      curAction.play()
+      if (prevState) {
+
+      }
+
+      currentAction.reset()
+      currentAction.setLoop(LoopOnce, 1)
+      currentAction.clampWhenFinished = false
+      currentAction.crossFadeFrom(previousAction, 0.2, true)
+      currentAction.play()
 
    }
 

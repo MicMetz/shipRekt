@@ -183,8 +183,8 @@ class Player extends MovingEntity {
 
          world.addProjectile(swipe);
 
-         const audio = this.audios.get('playerShot');
-         world.playAudio(audio);
+         // const audio = this.audios.get('playerSwing');
+         // world.playAudio(audio);
 
       }
 
