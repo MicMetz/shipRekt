@@ -3,48 +3,51 @@
  */
 
 class FiniteStateMachine {
-  constructor() {
-    this.states = {};
-    this.currentState = null
-  }
-
-  addState(name, type) {
-    this.states[name] = type;
-  }
+   constructor() {
+      this.states       = {};
+      this.currentState = null
+   }
 
 
-  changeTo( id ) {
-
-    const state = this.states[ id ];
-
-    this._change( state );
-
-    return this;
-
-  }
+   addState(name, type) {
+      this.states[name] = type;
+   }
 
 
-  _change( state ) {
+   changeTo(id) {
 
-    this.previousState = this.currentState;
+      const state = this.states[id];
 
-    if ( this.currentState !== null ) {
+      this._change(state);
 
-      this.currentState.exit();
+      return this;
 
-    }
-
-    this.currentState = state;
-
-    this.currentState.enter( this.previousState );
-
-  }
+   }
 
 
+   _change(state) {
 
-  update(timeElapsed, input, moving) {
-    this.currentState?.execute(timeElapsed, input, moving);
-  }
+      this.previousState = this.currentState;
+
+      if (this.currentState !== null) {
+
+         this.currentState.exit();
+
+      }
+
+      this.currentState = state;
+
+      this.currentState.enter(this.previousState);
+
+   }
+
+
+
+   update(timeElapsed, input, moving) {
+      this.currentState?.execute(timeElapsed, input, moving);
+   }
 }
+
+
 
 export default FiniteStateMachine

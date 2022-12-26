@@ -18,7 +18,7 @@ export class IdleState extends PlayerState {
 
 
    enter(prevState) {
-      console.log('Enter State: Idle');
+      // console.log('Enter State: Idle');
 
       const idleAction = this.parent.proxy.animations.get('idle').action;
 
@@ -40,7 +40,7 @@ export class IdleState extends PlayerState {
 
 
    execute(_, input, moving) {
-      // console.log('Post-Execute State: Idle');
+      // // console.log('Post-Execute State: Idle');
 
       // const {stateMachine} = this.parent.proxy.stateMachine;
       // // const input          = this.parent.proxy.world.controls.input;
@@ -68,7 +68,7 @@ export class IdleState extends PlayerState {
 
 
    exit() {
-      console.log('Exit State: Idle');
+      // console.log('Exit State: Idle');
 
       // const idleAction   = this.parent.proxy.animations.get('idle');
       // idleAction.enabled = false;
@@ -90,7 +90,7 @@ export class WalkState extends PlayerState {
 
 
    enter(prevState) {
-      console.log('Enter State: Walk');
+      // console.log('Enter State: Walk');
 
       const walkAction     = this.parent.proxy.animations.get('walk').action;
       const previousAction = this.parent.proxy.animations.get(prevState.name).action;
@@ -115,7 +115,7 @@ export class WalkState extends PlayerState {
 
 
    execute(_, input, moving) {
-      // console.log('Post-Execute State: Walk');
+      // // console.log('Post-Execute State: Walk');
 
       // const {stateMachine} = this.parent.proxy.stateMachine;
       // const input          = this.parent.proxy.world.controls.input;
@@ -224,7 +224,7 @@ export class RunLeftState extends PlayerState {
 
 
    enter(prevState) {
-      console.log('Enter State: Run Left');
+      // console.log('Enter State: Run Left');
 
       const runLeftAction  = this.parent.proxy.animations.get('runLeft').action;
       const previousAction = this.parent.proxy.animations.get(prevState.name).action;
@@ -273,8 +273,8 @@ export class RunLeftState extends PlayerState {
 
 
 export class RunRightState extends PlayerState {
-   constructor(player) {
-      super(player);
+   constructor(parent) {
+      super(parent);
    }
 
 
@@ -284,7 +284,7 @@ export class RunRightState extends PlayerState {
 
 
    enter(prevState) {
-      console.log('Enter State: Run Right');
+      // console.log('Enter State: Run Right');
 
       const runAction      = this.parent.proxy.animations.get('runRight').action;
       const previousAction = this.parent.proxy.animations.get(prevState.name).action;
@@ -339,9 +339,8 @@ export class RunRightState extends PlayerState {
 
 
 export class RunBackState extends PlayerState {
-   constructor(player) {
+   constructor(parent) {
       super(parent);
-      this.parent.proxy = player;
    }
 
 
@@ -351,7 +350,7 @@ export class RunBackState extends PlayerState {
 
 
    enter(prevState) {
-      console.log('Enter State: runBack');
+      // console.log('Enter State: runBack');
 
       const runAction      = this.parent.proxy.animations.get('runBack').action;
       const previousAction = this.parent.proxy.animations.get(prevState.name).action;
@@ -366,7 +365,7 @@ export class RunBackState extends PlayerState {
 
 
    execute(_, input, moving) {
-      console.log('Post-Execute State: Run Back');
+      // console.log('Post-Execute State: Run Back');
 
       if (input.forward || input.backward) {
          if (input.shift) {
@@ -394,7 +393,6 @@ export class RunBackState extends PlayerState {
 
          return;
       }
-
       this.parent.changeTo('idle')
 
    }
