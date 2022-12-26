@@ -517,9 +517,9 @@ class World {
 
       for (var i = 0; i < 8000; i++) {
          var star = new THREE.Object3D();
-         star.x   = THREE.Math.randFloat(-75, 75);
+         star.x   = THREE.Math.randFloat(-200, 200);
          star.y   = THREE.Math.randFloat(-75, -50);
-         star.z   = THREE.Math.randFloat(-75, 75);
+         star.z   = THREE.Math.randFloat(-200, 200);
 
          star.scale.set(1, 1, 1).multiplyScalar(Math.random());
          // star.updateMatrix();

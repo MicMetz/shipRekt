@@ -4,7 +4,7 @@
  */
 
 import {Vector3}                                                                                              from 'yuka';
-import {dumpObject, GuardType}                                                                                from "../etc/Utilities.js";
+import {dumpObject, GUARDTYPE}                                                                                from "../etc/Utilities.js";
 import {DefaultCombatPattern, SpreadCombatPattern, FocusCombatPattern, RandomCombatPattern}                   from '../patterns/CombatPatterns';
 import {LeftRightMovementPattern, WavyMovementPattern, CircleMovementPattern, PursuitBehaviorMovementPattern} from '../patterns/MovementPatterns';
 import {Obstacle}                                                                                             from '../entities/Obstacle';
@@ -101,7 +101,7 @@ class SceneManager {
       world.controls.resetRotation();
 
       // enemies
-      const guard = world._createGuard(GuardType.SWAT);
+      const guard = world._createGuard(GUARDTYPE.SWAT);
       console.log(dumpObject(guard));
       // console.log(guard);
       guard.position.set(0, 0.5, -4);

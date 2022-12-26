@@ -385,10 +385,18 @@ class IdleState extends State {
          if (input.shift) {
             this.parent.stateMachine.changeTo('walk');
          } else {
-            this.parent.stateMachine.changeTo('run');
+            if (input.forward) {
+               this.parent.stateMachine.changeTo('run');
+            } else if (input.backward) {
+               this.parent.stateMachine.changeTo('runBack');
+            } else if (input.left) {
+               this.parent.stateMachine.changeTo('runLeft');
+            } else if (input.right) {
+               this.parent.stateMachine.changeTo('runRight');
+            }
+
          }
       }
-
    }
 
 
@@ -482,30 +490,32 @@ class RunState extends State {
    }
 
 
-   /*    enter(player) {
-
-    const input = player.world.controls.input;
-
-    if (input.forward) {
-    console.log('forward');
-    const runAction       = player.animations.get('run');
-    const {previousState} = player.stateMachine.previousState;
-
-    runAction.enabled                = true;
-    player.stateMachine.currentState = this;
-    } else if (input.backward) {
-    new RunBackState().enter(player);
-    } else if (input.left) {
-    new RunLeftState().enter(player);
-    } else if (input.right) {
-    new RunRightState().enter(player);
-    }
-    } */
-
    enter(prevState) {
       console.log('Enter State: Run');
 
-      const currentAction = this.parent.animations.get('run');
+      var currentAction     = this.parent.animations.get('run');
+      const {previousState} = this.parent.stateMachine.previousState;
+      const input           = this.parent.world.controls.input;
+
+      // if (this.parent._isMoving()) {
+      //    if (input.forward) {
+      //       // currentAction.enabled = true;
+      //       // currentAction.time    = 0.0;
+      //    } else if (input.backward) {
+      //       // new RunBackState().enter(this.parent);
+      //       currentAction = this.parent.animations.get('runBack');
+      //    } else if (input.left) {
+      //       // new RunLeftState().enter(this.parent);
+      //       currentAction = this.parent.animations.get('runLeft');
+      //    } else if (input.right) {
+      //       // new RunRightState().enter(this.parent);
+      //       currentAction = this.parent.animations.get('runRight');
+      //    }
+      // } else {
+      //    this.parent.stateMachine.changeTo('idle');
+      // }
+
+
 
       if (prevState) {
          const prevAction = this.parent.animations.get(prevState.name);
@@ -532,26 +542,44 @@ class RunState extends State {
    execute(player) {
       // console.log('Post-Execute State: Run');
 
-      const {stateMachine} = this.parent.stateMachine;
-      const input          = this.parent.world.controls.input;
+      // const {stateMachine} = this.parent.stateMachine;
+      // const input          = this.parent.world.controls.input;
+      //
+      // if (!player._isMoving()) {
+      //    this.parent.stateMachine.changeTo('idle');
+      // }
+      /* else {
+       while (player._isMoving()) {
+       const {stateMachine} = this.parent.stateMachine;
+       const input          = this.parent.world.controls.input;
+       const runAction      = this.parent.animations.get('run');
 
-      if (!player._isMoving()) {
-         this.parent.stateMachine.changeTo('idle');
-      }
+       if (input.left) {
+       runAction.crossFadeTo(this.parent.animations.get('runLeft'), 0.2, true);
+       }
+       else if (input.right) {
+       runAction.crossFadeTo(this.parent.animations.get('runRight'), 0.2, true);
+       }
+       else if (input.backward) {
+       runAction.crossFadeTo(this.parent.animations.get('runBack'), 0.2, true);
+       }
+       else {
+       continue;
+       }
+       }
+       } */
 
    }
 
 
    exit() {
-      console.log('Exit State: Run');
 
-      this.parent.animations.changeTo('idle')
+      const runAction   = this.parent.animations.get('run');
+      runAction.enabled = false;
+      runAction.stop();
 
-      //
-      // const runAction   = this.parent.animations.get('run');
-      // runAction.enabled = false;
-      //
-      // this.parent.stateMachine.changeTo('idle');
+      this.parent.stateMachine.changeTo('idle')
+
    }
 
 }
@@ -580,6 +608,7 @@ class RunLeftState extends RunState {
       runAction.time    = 0.0;
       runAction.enabled = true;
 
+      runAction.play();
 
       // player.stateMachine.currentState = this;
 
@@ -587,9 +616,12 @@ class RunLeftState extends RunState {
 
 
    exit() {
-      console.log('Exit State: Run Left');
 
-      this.parent.animations.changeTo('idle')
+      const runAction   = this.parent.animations.get('runLeft');
+      runAction.enabled = false;
+      runAction.stop();
+
+      this.parent.stateMachine.changeTo('idle');
 
    }
 
@@ -619,6 +651,8 @@ class RunRightState extends RunState {
       // runAction.time    = 0.0;
       runAction.enabled = true;
 
+      runAction.play();
+
 
       // player.stateMachine.currentState = this;
 
@@ -626,9 +660,12 @@ class RunRightState extends RunState {
 
 
    exit() {
-      console.log('Exit State: Run Right');
 
-      this.parent.animations.changeTo('idle')
+      const runAction   = this.parent.animations.get('runRight');
+      runAction.enabled = false;
+      runAction.stop();
+
+      this.parent.stateMachine.changeTo('idle')
 
    }
 
@@ -658,12 +695,29 @@ class RunBackState extends RunState {
       runAction.time    = 0.0;
       runAction.enabled = true;
 
+      runAction.play();
       // player.stateMachine.currentState = this;
 
    }
 
 
-   exit() {}
+   execute(player) {
+      console.log('Post-Execute State: Run Back');
+
+
+
+   }
+
+
+   exit() {
+
+      const runAction   = this.parent.animations.get('runBack');
+      runAction.enabled = false;
+      runAction.stop();
+
+      this.parent.stateMachine.changeTo('idle')
+
+   }
 }
 
 
