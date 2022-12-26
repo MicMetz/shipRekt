@@ -1,6 +1,7 @@
 /**
  * @author MicMetzger /
  */
+
 import * as THREE                    from 'three';
 import * as YUKA                     from 'yuka';
 import {GLTFLoader}                  from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -15,7 +16,7 @@ import {PursuerGeometry}             from '../etc/PursuerGeometry.js';
 import {AnimationSystem}             from './AnimationSystem.js';
 import {SceneManager}                from './SceneManager.js';
 import {Tower}                       from '../entities/Tower.js';
-import {dumpObject, GuardType}       from '../etc/Utilities.js';
+import {dumpObject, GUARDTYPE}       from '../etc/Utilities.js';
 
 
 
@@ -133,7 +134,6 @@ class World {
          this._initPlayer();
          this._initControls();
          this._loadStage(this.currentStage);
-         // this._initUI();
 
          this.ui.startScreen.remove();
 
@@ -608,7 +608,7 @@ class World {
    _createGuard(type) {
       console.log(type);
       if (!type) {
-         type = GuardType.SWAT;
+         type = GUARDTYPE.SWAT;
       }
 
       const guardMesh = this.assetManager.models.get(type);
@@ -649,6 +649,7 @@ class World {
       guard.audios.set('coreShieldDestroyed', coreShieldDestroyed);
 
       return guard;
+
    }
 
 

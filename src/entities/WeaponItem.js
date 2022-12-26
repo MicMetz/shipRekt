@@ -1,3 +1,7 @@
+/**
+ * @author MicMetzger /
+ */
+
 import {Item} from "./Item.js";
 
 

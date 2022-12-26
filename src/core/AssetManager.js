@@ -1,6 +1,5 @@
 /**
  * @author MicMetzger /
- * @original Mugen87 / https://github.com/Mugen87
  */
 
 import * as THREE            from 'three';

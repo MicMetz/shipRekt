@@ -1,3 +1,7 @@
+/**
+ * @author MicMetzger /
+ */
+
 import {GameEntity} from "yuka";
 
 

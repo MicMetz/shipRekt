@@ -1,5 +1,5 @@
 /**
- * @author Mugen87 / https://github.com/Mugen87
+ * @author MicMetzger /
  */
 
 import {AnimationMixer, LoopOnce, LoopRepeat}                                              from "three";
@@ -60,7 +60,6 @@ class Player extends MovingEntity {
       this.weapon    = this.hand.children[0];
       this.equipment = {};
 
-      // this.hand.remove(this.hand.children[0]);
       console.log(this.hand);
       console.log(this.offHand);
       console.log(this.weapon);
@@ -79,6 +78,13 @@ class Player extends MovingEntity {
       this.stateMachine.add('idle', new IdleState(this));
       this.stateMachine.add('walk', new WalkState(this));
       this.stateMachine.add('run', new RunState(this));
+      this.stateMachine.add('runBack', new RunBackState(this));
+      this.stateMachine.add('runLeft', new RunLeftState(this));
+      this.stateMachine.add('runRight', new RunRightState(this));
+      this.stateMachine.add('jump', new JumpState(this));
+      this.stateMachine.add('fall', new FallState(this));
+      this.stateMachine.add('shootAttack', new ShootAttackState(this));
+      this.stateMachine.add('meleeAttack', new MeleeAttackState(this));
 
       this.stateMachine.changeTo('idle');
    }
@@ -538,6 +544,9 @@ class RunState extends State {
 
    exit() {
       console.log('Exit State: Run');
+
+      this.parent.animations.changeTo('idle')
+
       //
       // const runAction   = this.parent.animations.get('run');
       // runAction.enabled = false;
@@ -577,7 +586,12 @@ class RunLeftState extends RunState {
    }
 
 
-   exit() {}
+   exit() {
+      console.log('Exit State: Run Left');
+
+      this.parent.animations.changeTo('idle')
+
+   }
 
 }
 
@@ -611,7 +625,12 @@ class RunRightState extends RunState {
    }
 
 
-   exit() { }
+   exit() {
+      console.log('Exit State: Run Right');
+
+      this.parent.animations.changeTo('idle')
+
+   }
 
 }
 
@@ -645,6 +664,118 @@ class RunBackState extends RunState {
 
 
    exit() {}
+}
+
+
+
+class ShootAttackState extends State {
+   constructor(parent) {
+      super();
+      this.parent = parent;
+   }
+
+
+   get name() {
+      return 'shootAttack'
+   }
+
+
+   enter(prevState) {
+
+   }
+
+
+   execute(player) {
+
+   }
+
+
+   exit() {}
+
+}
+
+
+
+class MeleeAttackState extends State {
+   constructor(parent) {
+      super();
+      this.parent = parent;
+   }
+
+
+   get name() {
+      return 'meleeAttack'
+   }
+
+
+   enter(prevState) {
+
+   }
+
+
+   execute(player) {
+
+   }
+
+
+   exit() {}
+
+}
+
+
+
+class JumpState extends State {
+   constructor(parent) {
+      super();
+      this.parent = parent;
+   }
+
+
+   get name() {
+      return 'jump'
+   }
+
+
+   enter(prevState) {
+
+   }
+
+
+   execute(player) {
+
+   }
+
+
+   exit() {}
+
+}
+
+
+
+class FallState extends State {
+   constructor(parent) {
+      super();
+      this.parent = parent;
+   }
+
+
+   get name() {
+      return 'fall'
+   }
+
+
+   enter(prevState) {
+
+   }
+
+
+   execute(player) {
+
+   }
+
+
+   exit() {}
+
 }
 
 

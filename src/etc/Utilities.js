@@ -2,7 +2,7 @@
  * @author MicMetzger /
  */
 
-const GuardType = {
+const GUARDTYPE = {
 
    DEFAULT: 'default',
    SNIPER : 'sniper',
@@ -62,4 +62,4 @@ function randomExExcept(arr, exceptArr) {
 }
 
 
-export {dumpObject, randomString, randomInt, randomBool, randomExcept, randomExExcept, GuardType};
+export {dumpObject, randomString, randomInt, randomBool, randomExcept, randomExExcept, GUARDTYPE};

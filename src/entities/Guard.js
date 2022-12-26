@@ -1,11 +1,10 @@
 /**
  * @author MicMetzger /
- * @original Mugen87 / https://github.com/Mugen87
  */
 
 import {AnimationMixer}                                    from "three";
 import {BoundingSphere, Vehicle, StateMachine, Quaternion} from 'yuka';
-import {GuardType}                                         from "../etc/Utilities.js";
+import {GUARDTYPE}                                         from "../etc/Utilities.js";
 
 
 
@@ -15,7 +14,7 @@ const q = new Quaternion();
 
 class Guard extends Vehicle {
 
-   constructor(world, type = GuardType.SWAT, body) {
+   constructor(world, type = GUARDTYPE.SWAT, body) {
       super();
 
       this.world      = world;
