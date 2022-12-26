@@ -6,6 +6,9 @@ import * as THREE            from 'three';
 import {BufferGeometryUtils} from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import {GLTFLoader}          from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {dumpObject}          from '../etc/Utilities.js';
+
+
+
 // import fs                    from 'fs';
 
 
@@ -172,6 +175,8 @@ class AssetManager {
       coreShieldDestroyed.setRefDistance(refDistance);
       const enemyExplode = new THREE.PositionalAudio(listener);
       enemyExplode.setRefDistance(refDistance);
+      const playerSwing = new THREE.PositionalAudio(listener);
+      playerSwing.setRefDistance(refDistance);
 
       const buttonClick = new THREE.Audio(listener);
       buttonClick.setVolume(0.5);
@@ -186,6 +191,7 @@ class AssetManager {
       audioLoader.load('./audio/coreShieldDestroyed.ogg', buffer => coreShieldDestroyed.setBuffer(buffer));
       audioLoader.load('./audio/enemyExplode.ogg', buffer => enemyExplode.setBuffer(buffer));
       audioLoader.load('./audio/buttonClick.ogg', buffer => buttonClick.setBuffer(buffer));
+      audioLoader.load('./audio/playerSwing.ogg', buffer => playerSwing.setBuffer(buffer));
 
       audios.set('playerShot', playerShot);
       audios.set('playerHit', playerHit);
@@ -197,6 +203,7 @@ class AssetManager {
       audios.set('coreShieldDestroyed', coreShieldDestroyed);
       audios.set('enemyExplode', enemyExplode);
       audios.set('buttonClick', buttonClick);
+      audios.set('playerSwing', playerSwing);
 
    }
 
@@ -540,7 +547,7 @@ class AssetManager {
       // Android Player model
       gltfLoader.load('./models/player/Android.gltf', (gltf) => {
          // const skinnedMeshes = {};
-         const clone         = {
+         const clone = {
             animations: gltf.animations,
             scene     : gltf.scene.clone(true)
          }
