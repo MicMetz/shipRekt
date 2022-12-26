@@ -326,7 +326,7 @@ class World {
    _initScene(callback) {
 
       // camera
-      this.camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 200);
+      this.camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 200);
       this.camera.add(this.assetManager.listener);
 
       // scene

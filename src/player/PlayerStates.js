@@ -149,28 +149,13 @@ export class RunState extends PlayerState {
 
 
    enter(prevState) {
-      const currentAction = this.parent.proxy.animations.get('run').action
+      const runAction      = this.parent.proxy.animations.get('run').action;
+      const previousAction = this.parent.proxy.animations.get(prevState.name).action;
 
-      if (prevState) {
-         const prevAction = this.parent.proxy.animations.get(prevState.name).action
+      // runAction.time    = 0.0;
+      runAction.enabled = true;
 
-         currentAction.enabled = true
-
-         if (prevState.name === 'walk') {
-            const ratio        =
-                    currentAction.getClip().duration / prevAction.getClip().duration
-            currentAction.time = prevAction.time * ratio
-         } else {
-            currentAction.time = 0.0
-            currentAction.setEffectiveTimeScale(1.0)
-            currentAction.setEffectiveWeight(1.0)
-         }
-
-         currentAction.crossFadeFrom(prevAction, 0.5, true)
-         currentAction.play()
-      } else {
-         currentAction.play()
-      }
+      runAction.play();
    }
 
 
@@ -178,12 +163,12 @@ export class RunState extends PlayerState {
       if (input.forward || input.backward) {
          if (input.shift) {
             this.parent.changeTo('walk')
-         }
-      } else {
-         if (input.backward) {
-            this.parent.changeTo('runBack')
          } else {
-            this.parent.changeTo('run')
+            if (input.forward) {
+               this.parent.changeTo('run')
+            } else if (input.backward) {
+               this.parent.changeTo('runBack')
+            }
          }
 
          return;
@@ -203,7 +188,6 @@ export class RunState extends PlayerState {
       }
 
       this.parent.changeTo('idle')
-
    }
 
 
@@ -351,23 +335,17 @@ export class RunBackState extends PlayerState {
 
 
    enter(prevState) {
-      // console.log('Enter State: runBack');
-
       const runAction      = this.parent.proxy.animations.get('runBack').action;
       const previousAction = this.parent.proxy.animations.get(prevState.name).action;
 
-      runAction.time    = 0.0;
+      // runAction.time    = 0.0;
       runAction.enabled = true;
 
       runAction.play();
-      // player.stateMachine.currentState = this;
-
    }
 
 
    execute(_, input, moving) {
-      // console.log('Post-Execute State: Run Back');
-
       if (input.forward || input.backward) {
          if (input.shift) {
             this.parent.changeTo('walk')
@@ -394,8 +372,8 @@ export class RunBackState extends PlayerState {
 
          return;
       }
-      this.parent.changeTo('idle')
 
+      this.parent.changeTo('idle')
    }
 
 
@@ -453,10 +431,10 @@ export class MeleeAttackState extends PlayerState {
          if (prevState.name.includes('run')) {
             this.mixer.stopAllAction();
 
-            var fromAction = this.play( previousAction, 1 );
-            var toAction = this.play( curAction, 1 );
+            var fromAction = this.play(previousAction, 1);
+            var toAction   = this.play(curAction, 1);
 
-            fromAction.crossFadeTo( toAction, 1, true );
+            fromAction.crossFadeTo(toAction, 1, true);
             return;
          }
 
@@ -494,11 +472,22 @@ export class RollState extends PlayerState {
 
 
    enter(prevState) {
+      console.log('Enter State: Roll');
+
+      const curAction      = this.parent.proxy._animations.get('roll').action;
+      const previousAction = this.parent.proxy.animations.get(prevState.name).action;
+
+      curAction.reset()
+      curAction.setLoop(LoopOnce, 1)
+      curAction.clampWhenFinished = false
+      curAction.crossFadeFrom(previousAction, 0.2, true)
+      curAction.play()
 
    }
 
 
    execute(_, input, moving) {
+
 
    }
 

@@ -9,6 +9,7 @@ import PlayerStateMachine         from "./PlayerStateMachine.js";
 import PlayerControllerProxy      from "./PlayerControllerProxy.js";
 import {PlayerProjectile}         from './PlayerProjectile.js';
 import PlayerProxy                from "./PlayerProxy.js";
+import {EventDispatcher}          from 'three';
 
 
 
@@ -78,12 +79,24 @@ class Player extends MovingEntity {
       this.stateMachine = new PlayerProxy(new PlayerControllerProxy(this.animations));
       this.stateMachine.changeTo('idle');
 
-      /* window.addEventListener("onmousedown", (e) => {
-         if (e.button === 0) {
-            this.shoot();
-         }
-      }); */
-      // window.addEventListener("onmousedown", this.shoot.bind(this));
+      this._evaluate = this._evaluateActions.bind(this);
+
+      this._connect();
+
+   }
+
+
+   _connect() {
+
+      window.addEventListener('keypress', this._evaluate, false);
+
+   }
+
+
+   _disconnect() {
+
+      window.removeEventListener('keypress', this._evaluate, false);
+
    }
 
 
@@ -252,6 +265,15 @@ class Player extends MovingEntity {
 
       return true;
 
+   }
+
+
+   _evaluateActions(event) {
+      switch (event.keyCode) {
+         case 32:
+            this.stateMachine.changeTo('roll');
+            break;
+      }
    }
 
 
