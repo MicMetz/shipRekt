@@ -2,7 +2,7 @@
  * @author MicMetzger /
  */
 
-class FiniteStateMachine {
+class PlayerStateMachine {
    constructor() {
       this.states       = {};
       this.currentState = null
@@ -58,4 +58,4 @@ class FiniteStateMachine {
 
 
 
-export default FiniteStateMachine
+export default PlayerStateMachine

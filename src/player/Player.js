@@ -5,7 +5,7 @@
 import {AABB, MathUtils, MovingEntity, OBB, Ray, Vector3} from 'yuka';
 
 import {Particle, ParticleSystem} from '../core/ParticleSystem.js';
-import FiniteStateMachine         from "./FiniteStateMachine.js";
+import PlayerStateMachine         from "./PlayerStateMachine.js";
 import PlayerControllerProxy      from "./PlayerControllerProxy.js";
 import {PlayerProjectile}         from './PlayerProjectile.js';
 import PlayerProxy                from "./PlayerProxy.js";

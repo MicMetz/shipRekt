@@ -2,7 +2,7 @@
  * @author MicMetzger /
  */
 
-import FiniteStateMachine from './FiniteStateMachine'
+import PlayerStateMachine from './PlayerStateMachine.js'
 import {RunState}         from './PlayerStates';
 import {WalkState}        from './PlayerStates';
 import {IdleState}        from './PlayerStates';
@@ -16,7 +16,7 @@ import {RunRightState}    from './PlayerStates';
 
 
 
-class PlayerProxy extends FiniteStateMachine {
+class PlayerProxy extends PlayerStateMachine {
    constructor(proxy) {
       super()
       this.proxy = proxy
