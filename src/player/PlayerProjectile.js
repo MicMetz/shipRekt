@@ -3,7 +3,7 @@
  */
 
 import { OBB, Vector3 } from 'yuka';
-import { Projectile } from './Projectile.js';
+import { Projectile }   from '../entities/Projectile.js';
 
 const target = new Vector3();
 

@@ -6,7 +6,7 @@ import * as THREE            from 'three';
 import {BufferGeometryUtils} from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import {GLTFLoader}          from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {dumpObject}          from '../etc/Utilities.js';
-import fs                    from 'fs';
+// import fs                    from 'fs';
 
 
 
@@ -582,93 +582,122 @@ class AssetManager {
 
          const mixer      = new THREE.AnimationMixer(clone.scene);
          const animations = new Map();
+         // const animations = {};
 
-         const deathAction = mixer.clipAction(clone.animations[0]);
+         const deathClip   = clone.animations[0];
+         const deathAction = mixer.clipAction(deathClip);
          deathAction.play();
          deathAction.enabled = false;
 
-         const shootAction = mixer.clipAction(clone.animations[1]);
+         const shootClip   = clone.animations[1];
+         const shootAction = mixer.clipAction(shootClip);
          shootAction.play();
          shootAction.enabled = false;
 
-         const hitAction = mixer.clipAction(clone.animations[2]);
+         const hitClip   = clone.animations[2];
+         const hitAction = mixer.clipAction(hitClip);
          hitAction.play();
          hitAction.enabled = false;
 
-         const idleAction = mixer.clipAction(clone.animations[6]);
+         const idleClip   = clone.animations[6];
+         const idleAction = mixer.clipAction(idleClip);
          idleAction.play();
          idleAction.enabled = false;
 
-         const idleGunPointAction = mixer.clipAction(clone.animations[4]);
+         const idleGunPointClip   = clone.animations[4];
+         const idleGunPointAction = mixer.clipAction(idleGunPointClip);
          idleGunPointAction.play();
          idleGunPointAction.enabled = false;
 
-         const idleGunShootAction = mixer.clipAction(clone.animations[5]);
+         const idleGunShootClip   = clone.animations[5];
+         const idleGunShootAction = mixer.clipAction(idleGunShootClip);
          idleGunShootAction.play();
          idleGunShootAction.enabled = false;
 
-         const idleNeutralAction = mixer.clipAction(clone.animations[6]);
-         idleNeutralAction.play();
-         idleNeutralAction.enabled = false;
-
-         const idleMeleeAction = mixer.clipAction(clone.animations[7]);
+         const idleMeleeClip   = clone.animations[7];
+         const idleMeleeAction = mixer.clipAction(idleMeleeClip);
          idleMeleeAction.play();
          idleMeleeAction.enabled = false;
 
-         const interactAction = mixer.clipAction(clone.animations[8]);
+         const interactClip   = clone.animations[8];
+         const interactAction = mixer.clipAction(interactClip);
          interactAction.play();
          interactAction.enabled = false;
 
-         const rollAction = mixer.clipAction(clone.animations[13]);
+         const rollClip   = clone.animations[13];
+         const rollAction = mixer.clipAction(rollClip);
          rollAction.play();
          rollAction.enabled = false;
 
-         const runAction = mixer.clipAction(clone.animations[14]);
+         const runClip   = clone.animations[14];
+         const runAction = mixer.clipAction(runClip);
          runAction.play();
          runAction.enabled = false;
 
-         const runBackAction = mixer.clipAction(clone.animations[15]);
+         const runBackClip   = clone.animations[15];
+         const runBackAction = mixer.clipAction(runBackClip);
          runBackAction.play();
          runBackAction.enabled = false;
 
-         const runLeftAction = mixer.clipAction(clone.animations[16]);
+         const runLeftClip   = clone.animations[16];
+         const runLeftAction = mixer.clipAction(runLeftClip);
          runLeftAction.play();
          runLeftAction.enabled = false;
 
-         const runRightAction = mixer.clipAction(clone.animations[17]);
+         const runRightClip   = clone.animations[17];
+         const runRightAction = mixer.clipAction(runRightClip);
          runRightAction.play();
          runRightAction.enabled = false;
 
-         const runShootAction = mixer.clipAction(clone.animations[18]);
+         const runShootClip   = clone.animations[18];
+         const runShootAction = mixer.clipAction(runShootClip);
          runShootAction.play();
          runShootAction.enabled = false;
 
-         const slashAction = mixer.clipAction(clone.animations[19]);
+         const slashClip   = clone.animations[19];
+         const slashAction = mixer.clipAction(slashClip);
          slashAction.play();
          slashAction.enabled = false;
 
-         const walkAction = mixer.clipAction(clone.animations[20]);
+         const walkClip   = clone.animations[20];
+         const walkAction = mixer.clipAction(walkClip);
          walkAction.play();
          walkAction.enabled = false;
 
 
-         animations.set('idle', idleAction);
-         animations.set('shoot', shootAction);
-         animations.set('die', deathAction);
-         animations.set('hit', hitAction);
-         animations.set('idleGunPoint', idleGunPointAction);
-         animations.set('idleGunShoot', idleGunShootAction);
-         animations.set('idleNeutral', idleNeutralAction);
-         animations.set('idleMelee', idleMeleeAction);
-         animations.set('interact', interactAction);
-         animations.set('roll', rollAction);
-         animations.set('run', runAction);
-         animations.set('runBack', runBackAction);
-         animations.set('runLeft', runLeftAction);
-         animations.set('runRight', runRightAction);
-         animations.set('runShoot', runShootAction);
-         animations.set('slash', slashAction);
-         animations.set('walk', walkAction);
+         // animations['idle']         = {idleClip, idleAction};
+         // animations['shoot']        = {shootClip, shootAction};
+         // animations['die']          = {deathClip, deathAction};
+         // animations['hit']          = {hitClip, hitAction};
+         // animations['idleGunPoint'] = {idleGunPointClip, idleGunPointAction};
+         // animations['idleGunShoot'] = {idleGunShootClip, idleGunShootAction};
+         // animations['idleMelee']    = {idleMeleeClip, idleMeleeAction};
+         // animations['interact']     = {interactClip, interactAction};
+         // animations['roll']         = {rollClip, rollAction};
+         // animations['run']          = {runClip, runAction};
+         // animations['runBack']      = {runBackClip, runBackAction};
+         // animations['runLeft']      = {runLeftClip, runLeftAction};
+         // animations['runRight']     = {runRightClip, runRightAction};
+         // animations['runShoot']     = {runShootClip, runShootAction};
+         // animations['slash']        = {slashClip, slashAction};
+         // animations['walk']         = {walkClip, walkAction};
+
+         animations.set('idle', {clip: idleClip, action: idleAction});
+         animations.set('shoot', {clip: shootClip, action: shootAction});
+         animations.set('die', {clip: deathClip, action: deathAction});
+         animations.set('hit', {clip: hitClip, action: hitAction});
+         animations.set('idleGunPoint', {clip: idleGunPointClip, action: idleGunPointAction});
+         animations.set('idleGunShoot', {clip: idleGunShootClip, action: idleGunShootAction});
+         animations.set('idleMelee', {clip: idleMeleeClip, action: idleMeleeAction});
+         animations.set('interact', {clip: interactClip, action: interactAction});
+         animations.set('roll', {clip: rollClip, action: rollAction});
+         animations.set('run', {clip: runClip, action: runAction});
+         animations.set('runBack', {clip: runBackClip, action: runBackAction});
+         animations.set('runLeft', {clip: runLeftClip, action: runLeftAction});
+         animations.set('runRight', {clip: runRightClip, action: runRightAction});
+         animations.set('runShoot', {clip: runShootClip, action: runShootAction});
+         animations.set('slash', {clip: slashClip, action: slashAction});
+         animations.set('walk', {clip: walkClip, action: walkAction});
 
          clone.name = 'Android';
          this.animations.set('Android', animations);
