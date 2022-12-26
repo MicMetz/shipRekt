@@ -538,16 +538,18 @@ class AssetManager {
 
       // Android Player model
       gltfLoader.load('./models/player/Android.gltf', (gltf) => {
-         const skinnedMeshes = {};
+         // const skinnedMeshes = {};
          const clone         = {
             animations: gltf.animations,
             scene     : gltf.scene.clone(true)
          }
-         gltf.scene.traverse(node => {
-            if (node.isSkinnedMesh) {
-               skinnedMeshes[node.name] = node;
-            }
-         })
+         // gltf.scene.traverse(node => {
+         //    if (node.isSkinnedMesh) {
+         //       node.morphTargets = true;
+         //       node.material.skinning = true;
+         //       skinnedMeshes[node.name] = node;
+         //    }
+         // })
 
          const cloneBones         = {};
          const cloneSkinnedMeshes = {};
@@ -562,10 +564,10 @@ class AssetManager {
             }
          });
 
-         for (let name in skinnedMeshes) {
-            const SMesh      = skinnedMeshes[name];
-            const skeleton   = SMesh.skeleton;
+         for (let name in cloneSkinnedMeshes) {
+            // const SMesh      = skinnedMeshes[name];
             const cloneSMesh = cloneSkinnedMeshes[name];
+            const skeleton   = cloneSMesh.skeleton;
 
             const orderedCloneBone = [];
 

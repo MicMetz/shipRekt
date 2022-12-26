@@ -34,6 +34,7 @@ class Player extends MovingEntity {
       this.bodyMesh   = body;
       this.mixer      = mixer;
       this.animations = animations;
+      this.controls   = world.controls;
 
       this.protected      = false;
       this.protection     = 0;
@@ -76,6 +77,13 @@ class Player extends MovingEntity {
 
       this.stateMachine = new PlayerProxy(new PlayerControllerProxy(this.animations));
       this.stateMachine.changeTo('idle');
+
+      /* window.addEventListener("onmousedown", (e) => {
+         if (e.button === 0) {
+            this.shoot();
+         }
+      }); */
+      // window.addEventListener("onmousedown", this.shoot.bind(this));
    }
 
 
@@ -111,6 +119,9 @@ class Player extends MovingEntity {
          this.lastShotTime = elapsedTime;
 
          this.getDirection(direction);
+
+         // this.stateMachine.changeTo('shootAttack');
+         this.stateMachine.changeTo('meleeAttack');
 
          const projectile = new PlayerProjectile(this, direction);
 

@@ -6,8 +6,8 @@ import FiniteStateMachine from './FiniteStateMachine'
 import {RunState}         from './PlayerStates';
 import {WalkState}        from './PlayerStates';
 import {IdleState}        from './PlayerStates';
-import {JumpState}        from './PlayerStates';
-import {FallState}        from './PlayerStates';
+import {RollState}        from './PlayerStates';
+import {StunState}        from './PlayerStates';
 import {ShootAttackState} from './PlayerStates';
 import {MeleeAttackState} from './PlayerStates';
 import {RunBackState}     from './PlayerStates';
@@ -27,8 +27,8 @@ class PlayerProxy extends FiniteStateMachine {
       this.addState('runBack', new RunBackState(this));
       this.addState('runLeft', new RunLeftState(this));
       this.addState('runRight', new RunRightState(this));
-      this.addState('jump', new JumpState(this));
-      this.addState('fall', new FallState(this));
+      this.addState('roll', new RollState(this));
+      this.addState('stun', new StunState(this));
       this.addState('shootAttack', new ShootAttackState(this));
       this.addState('meleeAttack', new MeleeAttackState(this));
    }

@@ -27,7 +27,15 @@ class FiniteStateMachine {
 
    _change(state) {
 
-      this.previousState = this.currentState;
+      if (this.previousState) {
+         if (this.currentState.name.includes('Attack')) {
+
+         } else {
+            this.previousState = this.currentState;
+         }
+      } else {
+         this.previousState = this.currentState;
+      }
 
       if (this.currentState !== null) {
 
