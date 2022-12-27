@@ -52,7 +52,7 @@ class PlayerStateMachine {
 
 
    update(timeElapsed, input, moving) {
-      this.currentState?.execute(timeElapsed, input, moving);
+      this.currentState?.update(timeElapsed, input, moving);
    }
 }
 

@@ -68,6 +68,9 @@ class Player extends MovingEntity {
       this.strategy  = 'melee';
       this.equipment = {};
 
+      this.offHand.position.set(this.hand.position.x, this.hand.position.y, this.hand.position.z);
+      this.offHand.needsUpdate = true;
+
       console.log(this.hand);
       console.log(this.offHand);
       console.log(this.weapon);
