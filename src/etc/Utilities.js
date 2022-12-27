@@ -4,32 +4,30 @@
 
 const GUARDTYPE = {
 
-   DEFAULT: 'default_guard',
-   HEAVY  : 'heavy_guard',
-   ASSAULT   : 'assault_guard',
+   DEFAULT: 'default_guard', HEAVY: 'heavy_guard', ASSAULT: 'assault_guard',
 
 };
 
 
+const PURSUERTYPE = {};
+
+
+const TOWERTYPE = {};
 
 
 const QUALITY = {
 
-   COMMON   : 'common',
-   UNCOMMON : 'uncommon',
-   RARE     : 'rare',
-   EPIC     : 'epic',
-   LEGENDARY: 'legendary'
+   COMMON: 'common', UNCOMMON: 'uncommon', RARE: 'rare', EPIC: 'epic', LEGENDARY: 'legendary'
 
 };
 
 
 const WEAPONTYPE = {
 
-   MELEE : 'melee',
-   RANGED: 'ranged'
+   MELEE: 'melee', RANGED: 'ranged'
 
 };
+
 
 
 function dumpObject(obj, lines = [], isLast = true, prefix = '') {
@@ -80,4 +78,4 @@ function randomExExcept(arr, exceptArr) {
 }
 
 
-export {dumpObject, randomString, randomInt, randomBool, randomExcept, randomExExcept, GUARDTYPE};
+export {dumpObject, randomString, randomInt, randomBool, randomExcept, randomExExcept, GUARDTYPE, PURSUERTYPE, TOWERTYPE, QUALITY, WEAPONTYPE};
