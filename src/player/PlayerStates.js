@@ -23,7 +23,7 @@ export class IdleState extends PlayerState {
 
    enter(prevState) {
       this._action = this.parent.proxy.animations.get('idle').action;
-      if (prevState !== null && prevState !== undefined) {
+      if (prevState) {
          const prevAction     = this.parent.proxy.animations.get(prevState.name).action;
          this._action.time    = 0.0;
          this._action.enabled = true;
@@ -90,12 +90,12 @@ export class WalkState extends PlayerState {
 
    enter(prevState) {
       this._action = this.parent.proxy.animations.get('walk').action;
-      if (prevState !== null && prevState !== undefined) {
+      if (prevState) {
          const previousAction = this.parent.proxy.animations.get(prevState.name).action;
 
          this._action.enabled = true;
 
-         if (prevState.name.includes('run')) {
+         if (prevState.name === 'run') {
             const ratio       = this._action.getClip().duration / previousAction.getClip().duration;
             this._action.time = previousAction.time * ratio;
          } else {
@@ -121,23 +121,12 @@ export class WalkState extends PlayerState {
 
 
    update(_, input, moving) {
-      if (!input.shift) {
-         if (input.forward) {
+      if (input.forward || input.backward) {
+         if (!input.shift) {
             this.parent.changeTo('run');
-            return;
          }
-         if (input.backward) {
-            this.parent.changeTo('runBack');
-            return;
-         }
-         if (input.left) {
-            this.parent.changeTo('runLeft');
-            return;
-         }
-         if (input.right) {
-            this.parent.changeTo('runRight');
-            return;
-         }
+
+         return;
       }
 
       this.parent.changeTo('idle');
@@ -393,17 +382,17 @@ export class RunBackState extends PlayerState {
 
 
    enter(prevState) {
-      const runAction      = this.parent.proxy.animations.get('runBack').action;
+      this._action      = this.parent.proxy.animations.get('runBack').action;
       const previousAction = this.parent.proxy.animations.get(prevState.name).action;
 
       if (prevState.name.includes('Attack')) {
-         runAction.time = 0.0;
+         this._action.time = 0.0;
 
-         runAction.crossFadeFrom(previousAction, 0.7, true);
+         this._action.crossFadeFrom(previousAction, 0.7, true);
       }
 
-      runAction.enabled = true;
-      runAction.play();
+      this._action.enabled = true;
+      this._action.play();
    }
 
 
@@ -473,13 +462,13 @@ export class ShootAttackState extends PlayerState {
       const mixer  = this._action.getMixer();
       mixer.addEventListener('finished', this.finishedCallback);
 
-      if (prevState !== undefined) {
+      if (!prevState.name.includes('Attack')) {
          const previousAction = this.parent.proxy.animations.get(prevState.name).action;
 
          this._action.reset();
          this._action.setLoop(LoopOnce, 1);
          this._action.clampWhenFinished = true;
-         this._action.crossFadeFrom(previousAction, 0.2, true);
+         this._action.crossFadeFrom(previousAction, 0.1, true);
          this._action.play();
       } else {
          this._action.play();
@@ -534,21 +523,30 @@ export class MeleeAttackState extends PlayerState {
 
    enter(prevState) {
       this._action = this.parent.proxy.animations.get('slash').action;
+      const previousAction = this.parent.proxy.animations.get(prevState.name).action;
+
       const mixer  = this._action.getMixer();
       mixer.addEventListener('finished', this.finishedCallback);
 
+      mixer.stopAllAction();
       this._action.reset();
       this._action.setLoop(LoopOnce, 1);
+      this._action.clampWhenFinished = false;
+      this._action.enabled = true;
 
-      if (prevState !== undefined && prevState.name.includes('Attack')) {
+      this._action.play();
+
+      // this._action.reset();
+
+      /* if (!prevState.name.includes('Attack')) {
          const previousAction = this.parent.proxy.animations.get(prevState.name).action;
 
-         this._action.clampWhenFinished = false;
-         this._action.crossFadeFrom(previousAction, 0.2, true);
-         this._action.play();
+         // this._action.crossFadeFrom(previousAction, 0.0, true);
+         // this._action.play();
       } else {
-         this._action.play();
-      }
+      } */
+
+
    }
 
 
@@ -600,40 +598,29 @@ export class RollState extends PlayerState {
    enter(prevState) {
       console.log('Enter State: Roll');
 
-      this._action         = this.parent.proxy._animations.get('roll').action;
+      const currentAction  = this.parent.proxy._animations.get('roll').action;
       const previousAction = this.parent.proxy.animations.get(prevState.name).action;
 
       if (prevState) {
 
       }
 
-      this._action.reset()
-      this._action.setLoop(LoopOnce, 1)
-      this._action.clampWhenFinished = false
-      this._action.crossFadeFrom(previousAction, 0.2, true)
-      this._action.play()
+      currentAction.reset()
+      currentAction.setLoop(LoopOnce, 1)
+      currentAction.clampWhenFinished = false
+      currentAction.crossFadeFrom(previousAction, 0.2, true)
+      currentAction.play()
 
-   }
-
-
-   cleanup() {
-      if (this._action) {
-         this._action.getMixer().removeEventListener('finished', this.finishedCallback);
-         this._action = null;
-      }
    }
 
 
    update(_, input, moving) {
 
-      return;
 
    }
 
 
-   exit() {
-      this.cleanup();
-   }
+   exit() {}
 
 }
 
