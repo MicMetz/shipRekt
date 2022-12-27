@@ -6,7 +6,7 @@ import * as THREE                    from 'three';
 import * as YUKA                     from 'yuka';
 import {GLTFLoader}                  from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {AssetManager}                from './AssetManager.js';
-import {VehicleControls}             from './VehicleControls.js';
+import {PlayerControls}              from '../player/PlayerControls.js';
 import {Player}                      from '../player/Player.js';
 import {Guard}                       from '../entities/Guard.js';
 import {Pursuer}                     from '../entities/Pursuer.js';
@@ -577,7 +577,7 @@ class World {
 
    _initControls() {
 
-      this.controls = new VehicleControls(this.player, this.camera);
+      this.controls = new PlayerControls(this.player, this.camera);
       this.controls.setPosition(new YUKA.Vector3(0, 0, 0));
 
       this.controls.addEventListener('lock', () => {
@@ -608,7 +608,7 @@ class World {
    _createGuard(type) {
       console.log(type);
       if (!type) {
-         type = GUARDTYPE.SWAT;
+         type = GUARDTYPE.ASSAULT;
       }
 
       const guardMesh = this.assetManager.models.get(type);

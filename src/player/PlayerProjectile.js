@@ -23,9 +23,8 @@ class PlayerProjectile extends Projectile {
 		this.position.y = 0.5; // slightly raise the projectile
 
 		target.copy( this.position ).add( this.velocity );
-		this.lookAt( target ); // ensure GameEntity.rotation is up to date
+		this.lookAt( target );
 
-		// set half sizes and orientation of OBB once (since projectiles will not change their shape and trajectory)
 
 		this.obb.halfSizes.set( 0.1, 0.1, 0.5 );
 		this.obb.rotation.fromQuaternion( this.rotation );

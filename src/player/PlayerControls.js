@@ -11,7 +11,7 @@ const target    = new Vector3();
 
 
 
-class VehicleControls extends EventDispatcher {
+class PlayerControls extends EventDispatcher {
 
    constructor(owner = null, camera = null) {
 
@@ -220,7 +220,7 @@ function onPointerlockChange() {
 
 function onPointerlockError() {
 
-   Logger.warn('YUKA.VehicleControls: Unable to use Pointer Lock API.');
+   Logger.warn('YUKA.PlayerControls: Unable to use Pointer Lock API.');
 
 }
 
@@ -289,4 +289,4 @@ function onKeyUp(event) {
 }
 
 
-export {VehicleControls};
+export {PlayerControls};

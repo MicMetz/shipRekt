@@ -13,12 +13,14 @@ import {MeleeAttackState} from './PlayerStates';
 import {RunBackState}     from './PlayerStates';
 import {RunLeftState}     from './PlayerStates';
 import {RunRightState}    from './PlayerStates';
+import {DieState}         from './PlayerStates';
 
 
 
 class PlayerProxy extends PlayerStateMachine {
    constructor(proxy) {
       super()
+
       this.proxy = proxy
 
       this.addState('idle', new IdleState(this));
@@ -29,8 +31,10 @@ class PlayerProxy extends PlayerStateMachine {
       this.addState('runRight', new RunRightState(this));
       this.addState('roll', new RollState(this));
       this.addState('stun', new StunState(this));
+      this.addState('die', new DieState(this));
       this.addState('shootAttack', new ShootAttackState(this));
       this.addState('meleeAttack', new MeleeAttackState(this));
+
    }
 }
 

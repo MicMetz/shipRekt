@@ -14,7 +14,7 @@ const q = new Quaternion();
 
 class Guard extends Vehicle {
 
-   constructor(world, type = GUARDTYPE.SWAT, body) {
+   constructor(world, type = GUARDTYPE.ASSAULT, body) {
       super();
 
       this.world      = world;

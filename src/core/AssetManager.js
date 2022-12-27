@@ -240,19 +240,11 @@ class AssetManager {
 
 
       // Pickup Health
-      gltfLoader.load('./models/pickups/PickupHealth.glb', (gltf) => {
-         const healthpackMesh            = gltf.scene.getObjectByName('Pickup_Health').children[0];
-         healthpackMesh.matrixAutoUpdate = false;
-         models.set('pickupHealth', healthpackMesh);
-      });
-
-
-      // Ship model
-      gltfLoader.load('./models/ship.glb', (gltf) => {
-         const shipMesh = gltf.scene.getObjectByName('Spaceship5').children[0];
-         shipMesh.name  = 'Spaceship';
-         models.set('Spaceship', shipMesh);
-      });
+      // gltfLoader.load('./models/pickups/PickupHealth.glb', (gltf) => {
+      //    const healthpackMesh            = gltf.scene.getObjectByName('Pickup_Health').children[0];
+      //    healthpackMesh.matrixAutoUpdate = false;
+      //    models.set('pickupHealth', healthpackMesh);
+      // });
 
 
       // Swat Officer model
@@ -275,15 +267,15 @@ class AssetManager {
          swat.userData.materials = meshes.map(m => m.material);
 
          const swatMesh = new THREE.Mesh(swat, new THREE.MeshStandardMaterial({color: 0x000000}));
-         swatMesh.name  = 'SwatOfficer';
+         swatMesh.name  = 'assault_guard';
 
          let swatAnimations = null
          if (model.animations.length > 0) {
             swatAnimations = model.animations;
          }
 
-         models.set('SwatOfficer', swatMesh);
-         animations.set('SwatOfficer', swatAnimations);
+         models.set('assault_guard', swatMesh);
+         animations.set('assault_guard', swatAnimations);
 
       });
 

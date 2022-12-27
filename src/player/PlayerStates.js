@@ -22,17 +22,27 @@ export class IdleState extends PlayerState {
 
 
    enter(prevState) {
+
       this._action = this.parent.proxy.animations.get('idle').action;
+
       if (prevState) {
-         const prevAction     = this.parent.proxy.animations.get(prevState.name).action;
+
+         const prevAction = this.parent.proxy.animations.get(prevState.name).action;
+
          this._action.time    = 0.0;
          this._action.enabled = true;
+
          this._action.setEffectiveTimeScale(1.0);
          this._action.setEffectiveWeight(1.0);
+
          this._action.crossFadeFrom(prevAction, 0.25, true);
+
          this._action.play();
+
       } else {
+
          this._action.play();
+         
       }
    }
 
@@ -62,15 +72,76 @@ export class IdleState extends PlayerState {
 
 
    cleanup() {
+
       this._action = null;
+
+   }
+
+
+   exit() { this.cleanup(); }
+
+}
+
+
+
+export class DieState extends PlayerState {
+   constructor(parent) {
+      super(parent);
+
+      this._action = null;
+
+   }
+
+
+   get name() {
+
+      return 'die';
+
+   }
+
+
+   Enter(prevState) {
+      this._action = this.parent.proxy.animations.get('die').action;
+
+      if (prevState) {
+         const previousAction = this.parent.proxy.animations.get(prevState.name).action;
+
+         this._action.reset();
+
+         this._action.setLoop(LoopOnce, 1);
+         this._action.clampWhenFinished = true;
+         this._action.crossFadeFrom(previousAction, 0.2, true);
+         this._action.play();
+
+      } else {
+
+         this._action.play();
+
+      }
+   }
+
+
+   cleanup() {
+
+      this._action = null;
+
+   }
+
+
+   update(_) {
+
+      return;
+
    }
 
 
    exit() {
+
       this.cleanup();
+
    }
 
-}
+};
 
 
 
@@ -84,36 +155,51 @@ export class WalkState extends PlayerState {
 
 
    get name() {
+
       return 'walk'
+
    }
 
 
    enter(prevState) {
+
       this._action = this.parent.proxy.animations.get('walk').action;
+
       if (prevState) {
+
          const previousAction = this.parent.proxy.animations.get(prevState.name).action;
 
          this._action.enabled = true;
 
          if (prevState.name === 'run') {
+
             const ratio       = this._action.getClip().duration / previousAction.getClip().duration;
             this._action.time = previousAction.time * ratio;
+
          } else {
+
             this._action.time = 0.0;
+
             this._action.setEffectiveTimeScale(1.0);
             this._action.setEffectiveWeight(1.0);
+
          }
 
          this._action.crossFadeFrom(previousAction, 0.1, true);
          this._action.play();
+
       } else {
+
          this._action.play();
+
       }
    }
 
 
    cleanup() {
+
       this._action = null;
+
    }
 
 
@@ -201,7 +287,9 @@ export class RunState extends PlayerState {
 
 
    cleanup() {
+
       this._action = null;
+
    }
 
 
@@ -277,7 +365,9 @@ export class RunLeftState extends PlayerState {
 
 
    cleanup() {
+
       this._action = null;
+
    }
 
 
@@ -353,7 +443,9 @@ export class RunRightState extends PlayerState {
 
 
    cleanup() {
+
       this._action = null;
+
    }
 
 
@@ -382,7 +474,7 @@ export class RunBackState extends PlayerState {
 
 
    enter(prevState) {
-      this._action      = this.parent.proxy.animations.get('runBack').action;
+      this._action         = this.parent.proxy.animations.get('runBack').action;
       const previousAction = this.parent.proxy.animations.get(prevState.name).action;
 
       if (prevState.name.includes('Attack')) {
@@ -429,7 +521,9 @@ export class RunBackState extends PlayerState {
 
 
    cleanup() {
+
       this._action = null;
+
    }
 
 
@@ -460,44 +554,55 @@ export class ShootAttackState extends PlayerState {
    enter(prevState) {
       this._action = this.parent.proxy.animations.get('shoot').action;
       const mixer  = this._action.getMixer();
+
       mixer.addEventListener('finished', this.finishedCallback);
 
       if (!prevState.name.includes('Attack')) {
+
          const previousAction = this.parent.proxy.animations.get(prevState.name).action;
 
          this._action.reset();
          this._action.setLoop(LoopOnce, 1);
          this._action.clampWhenFinished = true;
+
          this._action.crossFadeFrom(previousAction, 0.1, true);
+
          this._action.play();
+
       } else {
+
          this._action.play();
+
       }
    }
 
 
    finished() {
+
       this.cleanup();
       this.parent.changeTo('idle');
+
    }
 
 
    cleanup() {
       if (this._action) {
+
          this._action.getMixer().removeEventListener('finished', this.finishedCallback);
          this._action = null;
+
       }
    }
 
 
    update(_, input, moving) {
+
       return;
+
    }
 
 
-   exit() {
-      this.cleanup();
-   }
+   exit() { this.cleanup(); }
 
 }
 
@@ -517,49 +622,47 @@ export class MeleeAttackState extends PlayerState {
 
 
    get name() {
-      return 'meleeAttack'
+
+      return 'meleeAttack';
+
    }
 
 
    enter(prevState) {
-      this._action = this.parent.proxy.animations.get('slash').action;
+
+      this._action         = this.parent.proxy.animations.get('slash').action;
       const previousAction = this.parent.proxy.animations.get(prevState.name).action;
 
-      const mixer  = this._action.getMixer();
+      const mixer = this._action.getMixer();
       mixer.addEventListener('finished', this.finishedCallback);
 
       mixer.stopAllAction();
+
       this._action.reset();
       this._action.setLoop(LoopOnce, 1);
+
       this._action.clampWhenFinished = false;
-      this._action.enabled = true;
+      this._action.enabled           = true;
 
       this._action.play();
-
-      // this._action.reset();
-
-      /* if (!prevState.name.includes('Attack')) {
-         const previousAction = this.parent.proxy.animations.get(prevState.name).action;
-
-         // this._action.crossFadeFrom(previousAction, 0.0, true);
-         // this._action.play();
-      } else {
-      } */
-
 
    }
 
 
    finished() {
+
       this.cleanup();
       this.parent.changeTo('idle');
+
    }
 
 
    cleanup() {
       if (this._action) {
+
          this._action.getMixer().removeEventListener('finished', this.finishedCallback);
          this._action = null;
+
       }
    }
 
@@ -569,9 +672,7 @@ export class MeleeAttackState extends PlayerState {
    }
 
 
-   exit() {
-      this.cleanup();
-   }
+   exit() { this.cleanup(); }
 
 }
 
