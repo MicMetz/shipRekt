@@ -2,6 +2,52 @@
  * @author MicMetzger /
  */
 
+
+/**
+ *
+ * |----------------------------------|   |----------------------------------|
+ * |            Room Sizes            |   |            Map Sizes             |
+ * |----------------------------------|   |----------------------------------|
+ * |  Small | Normal | Large | Huge   |   |  Small | Normal | Large | Huge   |
+ * |----------------------------------|   |----------------------------------|
+ * |17.5x17.5| 35x35 | 70x70 | 140x140|   | 70x70 | 140x140| 280x280| 560x560|
+ *
+ * */
+const _HUGE_MAP_BOUNDRY_LIMIT_ = {
+   x             : {min: -560, max: 560},
+   z             : {min: -560, max: 560},
+   maxSmallRooms : 32,
+   maxNormalRooms: 16,
+   maxLargeRooms : 8,
+}
+
+const _LARGE_MAP_BOUNDRY_LIMIT_ = {
+   x             : {min: -280, max: 280},
+   z             : {min: -280, max: 280},
+   maxSmallRooms : 16,
+   maxNormalRooms: 8,
+   maxLargeRooms : 4,
+};
+
+const _SMALL_MAP_BOUNDRY_LIMIT_ = {
+   x             : {min: -70, max: 70},
+   z             : {min: -70, max: 70},
+   maxSmallRooms : 4,
+   maxNormalRooms: 2,
+   maxLargeRooms : 1,
+};
+
+const _NORMAL_MAP_BOUNDRY_LIMIT_ = {
+   x             : {min: -140, max: 140},
+   z             : {min: -140, max: 140},
+   maxSmallRooms : 8,
+   maxNormalRooms: 4,
+   maxLargeRooms : 2,
+}
+
+
+
+
 const GUARDTYPE = {
 
    DEFAULT: 'default_guard', HEAVY: 'heavy_guard', ASSAULT: 'assault_guard',
@@ -78,4 +124,6 @@ function randomExExcept(arr, exceptArr) {
 }
 
 
-export {dumpObject, randomString, randomInt, randomBool, randomExcept, randomExExcept, GUARDTYPE, PURSUERTYPE, TOWERTYPE, QUALITY, WEAPONTYPE};
+export {_SMALL_MAP_BOUNDRY_LIMIT_, _LARGE_MAP_BOUNDRY_LIMIT_, _HUGE_MAP_BOUNDRY_LIMIT_, _NORMAL_MAP_BOUNDRY_LIMIT_,
+   dumpObject, randomString, randomInt, randomBool, randomExcept, randomExExcept,
+   GUARDTYPE, PURSUERTYPE, TOWERTYPE, QUALITY, WEAPONTYPE};

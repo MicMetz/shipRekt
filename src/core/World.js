@@ -12,7 +12,7 @@ import {Guard}                       from '../entities/Guard.js';
 import {Pursuer}                     from '../entities/Pursuer.js';
 import {BufferGeometryUtils}         from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import {ProtectionShader, HitShader} from '../etc/Shaders.js';
-import {PursuerGeometry}             from '../etc/PursuerGeometry.js';
+import {PursuerGeometry}             from '../patterns/PursuerGeometry.js';
 import {AnimationSystem}             from './AnimationSystem.js';
 import {SceneManager}                from './SceneManager.js';
 import {Tower}                       from '../entities/Tower.js';
