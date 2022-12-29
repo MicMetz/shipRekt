@@ -60,11 +60,14 @@ class Player extends MovingEntity {
 
       this.boundingRadius = 0.5;
 
+      // TODO: pospone attack until roll animation is finished
+      this.attackPosponeTime = 0.5;
+
+      // TODO: Get this data from the weapon
       this.swipesPerSecond = 2;
       this.lastswipeTime   = 0;
-
-      this.shotsPerSecond = 10;
-      this.lastShotTime   = 0;
+      this.shotsPerSecond  = 10;
+      this.lastShotTime    = 0;
 
       this.obb = new OBB();
       this.obb.halfSizes.set(0.1, 0.1, 0.5);
@@ -166,43 +169,46 @@ class Player extends MovingEntity {
 
    slash() {
 
-      const world       = this.world;
-      const elapsedTime = world.time.getElapsed();
+      if (!this.stateMachine.currentState.name.includes('roll')) {
 
-      if (elapsedTime - this.lastswipeTime > (1 / this.swipesPerSecond)) {
+         const world       = this.world;
+         const elapsedTime = world.time.getElapsed();
 
-         this.lastswipeTime = elapsedTime;
+         if (elapsedTime - this.lastswipeTime > (1 / this.swipesPerSecond)) {
 
-         this.getDirection(direction);
+            this.lastswipeTime = elapsedTime;
 
-         this.stateMachine.changeTo('meleeAttack');
+            this.getDirection(direction);
 
-         // this.weapon.trigger = function () {}
+            this.stateMachine.changeTo('meleeAttack');
 
-         const swipe = new PlayerProjectile(this, direction);
+            // this.weapon.trigger = function () {}
 
-         // this.weapon.collisionDetected = function (nextPos) {
-         //    var vect             = nextPos.clone().sub(this.getPosition());
-         //    //check for collisions at foot level
-         //    var origin           = this.weapon.getPosition();
-         //    var ray              = new Raycaster(origin, vect.clone().normalize(), 0, vect.length());
-         //    var collisionResults = ray.intersectObjects(this.world.en, true);
-         //    if (collisionResults.length > 0) {
-         //       let t = collisionResults[0].object
-         //       if (t.trigger) t.trigger()
-         //    }
-         //    collisionResults = ray.intersectObjects(this.world.getEnemies([origin, nextPos]), true);
-         //    if (collisionResults.length > 0) {
-         //       return true;
-         //    }
-         //    return false;
-         // };
+            const swipe = new PlayerProjectile(this, direction);
 
-         world.addProjectile(swipe);
+            // this.weapon.collisionDetected = function (nextPos) {
+            //    var vect             = nextPos.clone().sub(this.getPosition());
+            //    //check for collisions at foot level
+            //    var origin           = this.weapon.getPosition();
+            //    var ray              = new Raycaster(origin, vect.clone().normalize(), 0, vect.length());
+            //    var collisionResults = ray.intersectObjects(this.world.en, true);
+            //    if (collisionResults.length > 0) {
+            //       let t = collisionResults[0].object
+            //       if (t.trigger) t.trigger()
+            //    }
+            //    collisionResults = ray.intersectObjects(this.world.getEnemies([origin, nextPos]), true);
+            //    if (collisionResults.length > 0) {
+            //       return true;
+            //    }
+            //    return false;
+            // };
 
-         // const audio = this.audios.get('playerSwing');
-         // world.playAudio(audio);
+            world.addProjectile(swipe);
 
+            // const audio = this.audios.get('playerSwing');
+            // world.playAudio(audio);
+
+         }
       }
 
       return this;
@@ -369,9 +375,12 @@ class Player extends MovingEntity {
                   switch (this.stateMachine.currentState.name) {
                      case 'idle':
                         break;
-                     case 'walk':
-                        break;
+                     case 'walk': {
 
+                        // new TWEEN.Tween(this.position).to( , ).start();
+
+                        break;
+                     }
                      case 'runRight': {
 
                         // new TWEEN.Tween(this.position).to( , ).start();
