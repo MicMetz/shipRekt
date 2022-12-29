@@ -121,6 +121,7 @@ class Player extends MovingEntity {
    _connect() {
 
       window.addEventListener('keypress', this._evaluate, false);
+      window.addEventListener('onclick', this._evaluate, false);
 
    }
 
@@ -128,6 +129,8 @@ class Player extends MovingEntity {
    _disconnect() {
 
       window.removeEventListener('keypress', this._evaluate, false);
+      window.removeEventListener('onclick', this._evaluate, false);
+
 
    }
 
@@ -366,53 +369,55 @@ class Player extends MovingEntity {
    _evaluateActions(event) {
       switch (event.keyCode) {
          case 32: {
-            if (this.stateMachine.currentState.name !== 'roll') {
-               if (this.stateMachine.currentState.name.includes('run') || this.stateMachine.currentState.name.includes('walk') || this.stateMachine.currentState.name.includes('idle')) {
+            /* if (this.stateMachine.currentState.name !== 'roll') {
+             if (this.stateMachine.currentState.name.includes('run') || this.stateMachine.currentState.name.includes('walk') || this.stateMachine.currentState.name.includes('idle')) {
 
-                  // TODO
-                  let currentpos = new Vector3();
-                  let nextpos    = new Vector3();
-                  switch (this.stateMachine.currentState.name) {
-                     case 'idle':
-                        break;
-                     case 'walk': {
+             // TODO
+             let currentpos = new Vector3();
+             let nextpos    = new Vector3();
+             switch (this.stateMachine.currentState.name) {
+             case 'idle':
+             break;
+             case 'walk': {
 
-                        // new TWEEN.Tween(this.position).to( , ).start();
+             // new TWEEN.Tween(this.position).to( , ).start();
 
-                        break;
-                     }
-                     case 'runRight': {
+             break;
+             }
+             case 'runRight': {
 
-                        // new TWEEN.Tween(this.position).to( , ).start();
+             // new TWEEN.Tween(this.position).to( , ).start();
 
-                        break;
-                     }
-                     case 'runLeft': {
+             break;
+             }
+             case 'runLeft': {
 
-                        // new TWEEN.Tween(this.position).to( , ).start();
+             // new TWEEN.Tween(this.position).to( , ).start();
 
-                        break;
-                     }
-                     case 'runBack': {
+             break;
+             }
+             case 'runBack': {
 
-                        // new TWEEN.Tween(this.position).to( , ).start();
+             // new TWEEN.Tween(this.position).to( , ).start();
 
-                        break;
-                     }
+             break;
+             }
 
-                     case 'run': {
+             case 'run': {
 
-                        // new TWEEN.Tween(this.position).to( , ).start();
+             // new TWEEN.Tween(this.position).to( , ).start();
 
-                        break;
-                     }
+             break;
+             }
 
-                  }
+             }
 
-               }
+             } */
 
-               this.stateMachine.changeTo('roll');
-            }
+            this.stateMachine.changeTo('roll');
+            // }
+            break;
+
          }
       }
    }

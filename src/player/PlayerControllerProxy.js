@@ -3,7 +3,7 @@
  */
 
 class PlayerControllerProxy {
-   constructor(animations, velocity) {
+   constructor(animations) {
       this._animations = animations
    }
 

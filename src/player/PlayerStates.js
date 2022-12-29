@@ -3,7 +3,6 @@
  */
 
 import {LoopOnce}  from "three";
-import {Vector3}   from "yuka";
 import PlayerState from "./PlayerState.js";
 
 
@@ -725,7 +724,7 @@ export class MeleeAttackState extends PlayerState {
    }
 
 
-   update(_) {
+   update(_, input, moving) {
       return;
    }
 
@@ -742,12 +741,6 @@ export class RollState extends PlayerState {
 
 
       this._action         = null;
-      this._velocity       = new Vector3();
-      this._velocityHolder = new Vector3();
-
-      this.finishedCallback = () => {
-         this.finished();
-      }
 
    }
 
@@ -761,13 +754,13 @@ export class RollState extends PlayerState {
 
       this._action         = this.parent.proxy.animations.get('roll').action;
       const previousAction = this.parent.proxy.animations.get(prevState.name).action;
-      const direction      = new Vector3();
-
-      const mixer = this._action.getMixer();
-      mixer.addEventListener('finished', this.finishedCallback);
 
       if (prevState) {
-
+         if (prevState.name === 'roll') {
+            if (previousAction.isRunning()) {
+               return;
+            }
+         }
       }
 
       this._action.reset()
@@ -780,23 +773,10 @@ export class RollState extends PlayerState {
    }
 
 
-   finished() {
-
-      // Reset the velocity of the player
-      // this.parent.proxy.velocity.copy(this._velocityHolder);
-      this.cleanup();
-      this.parent.changeTo('idle');
-
-   }
-
-
    cleanup() {
       if (this._action) {
 
-         this._action.getMixer().removeEventListener('finished', this.finishedCallback);
          this._action         = null;
-         this._velocity       = null;
-         this._velocityHolder = null;
 
       }
    }
@@ -805,6 +785,7 @@ export class RollState extends PlayerState {
    exit() {
 
       this.cleanup();
+      this.parent.changeTo('idle');
 
    }
 
