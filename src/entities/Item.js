@@ -2,13 +2,24 @@
  * @author MicMetzger /
  */
 
-
-
 import {Quaternion, Vector3} from "yuka";
 
 
 
 class Item {
+   /**
+    *
+    *
+    * @param world
+    * @param name
+    * @param type
+    * @param parent
+    * @param active
+    * @param triggers
+    * @param description
+    * @param position
+    * @param rotation
+    */
    constructor(world, name, type, parent, active, triggers, description, position, rotation) {
 
       this._world    = world;

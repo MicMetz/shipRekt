@@ -1,5 +1,6 @@
 /**
- * @author Mugen87 / https://github.com/Mugen87
+ * @author MicMetzger /
+ * original {@link https://github.com/Mugen87|Mugen87}
  */
 
 import { BoundingSphere, Vector3 } from 'yuka';
@@ -8,7 +9,12 @@ import { Projectile } from './Projectile.js';
 const target = new Vector3();
 
 class EnemyProjectile extends Projectile {
-
+	/**
+	 *
+	 *
+	 * @param owner
+	 * @param direction
+	 */
 	constructor( owner = null, direction ) {
 
 		super( owner );

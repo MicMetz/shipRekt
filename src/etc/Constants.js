@@ -1,3 +1,7 @@
+/**
+ * @author MicMetzger /
+ */
+
 export const WEAPON_TYPES_RANGE      = 'range';
 export const WEAPON_TYPES_MELEE      = 'melee';
 export const WEAPON_TYPES_ABILITY    = 'ability';

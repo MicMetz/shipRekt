@@ -1,65 +1,55 @@
+/**
+ * @author MicMetzger /
+ * original {@link https://github.com/Mugen87|Mugen87}
+ */
+
 import {GameEntity, MathUtils}                                                                      from 'yuka';
+import {Item}                                                                                       from "../entities/Item.js";
 import {WEAPON_STATUS_READY, WEAPON_STATUS_NOT_READY, WEAPON_STATUS_EQUIPPED, WEAPON_STATUS_HIDDEN} from '../etc/Constants.js';
 
 
 
-/**
- * Base class for all weapons.
- *
- * @author {@link https://github.com/Mugen87|Mugen87}
- */
-class Weapon {
+class Weapon extends Item {
 
-   /**
-    * Constructs a new weapon with the given values.
-    *
-    * @param {GameEntity} owner - The owner of this weapon.
-    */
    constructor(owner) {
+      super(owner);
 
-      this.owner = owner;
+      this._owner = owner;
 
-      this.canActivateTrigger = false;
+      this._canActivateTrigger = false;
 
-      this.type   = null;
-      this.status = WEAPON_STATUS_NOT_READY;
+      this._type   = null;
+      this._status = WEAPON_STATUS_NOT_READY;
 
       // use to restore the state after a weapon change
+      this._previousState = WEAPON_STATUS_READY;
 
-      this.previousState = WEAPON_STATUS_READY;
+      this._ammoRemaining = 0;
+      this._ammoPerLoad   = 0;
+      this._ammo          = 0;
+      this._maxAmmo       = 0;
 
-      // ammo related stuff
+      this._currentTime = 0;
 
-      this.ammoRemaining = 0;
-      this.ammoPerLoad   = 0;
-      this.ammo          = 0;
-      this.maxAmmo       = 0;
+      this._shotTime   = Infinity;
+      this._reloadTime = Infinity;
+      this._equipTime  = Infinity;
+      this._hideTime   = Infinity;
 
-      // times are in seconds
-
-      this.currentTime = 0;
-
-      this.shotTime   = Infinity;
-      this.reloadTime = Infinity;
-      this.equipTime  = Infinity;
-      this.hideTime   = Infinity;
-
-      this.endTimeShot       = Infinity;
-      this.endTimeReload     = Infinity;
-      this.endTimeEquip      = Infinity;
-      this.endTimeHide       = Infinity;
-      this.endTimeMuzzleFire = Infinity;
+      this._endTimeShot       = Infinity;
+      this._endTimeReload     = Infinity;
+      this._endTimeEquip      = Infinity;
+      this._endTimeHide       = Infinity;
+      this._endTimeMuzzleFire = Infinity;
 
       // used for weapon selection
-
-      this.fuzzyModule = null;
+      this._fuzzyModule = null;
 
       // render specific properties
-
-      this.muzzle     = null;
-      this.audios     = null;
-      this.mixer      = null;
-      this.animations = null;
+      this._muzzle     = null;
+      this._audios     = null;
+      this._mixer      = null;
+      this._animations = null;
 
    }
 
@@ -70,23 +60,18 @@ class Weapon {
     * @param {Number} rounds - The amount of ammo.
     * @return {Weapon} A reference to this weapon.
     */
-   addRounds(rounds) {
+   addAmmo(rounds) {
 
-      this.ammo = MathUtils.clamp(this.ammo + rounds, 0, this.maxAmmo);
+      this._ammo = MathUtils.clamp(this._ammo + rounds, 0, this._maxAmmo);
 
       return this;
 
    }
 
 
-   /**
-    * Returns the remaining rounds/ammo of this weapon.
-    *
-    * @return {Number} The reamining rounds/ammo for this weapon.
-    */
-   getRemainingRounds() {
+   getAmmoRemaining() {
 
-      return this.ammo;
+      return this._ammo;
 
    }
 
@@ -111,23 +96,23 @@ class Weapon {
     */
    equip() {
 
-      this.status       = WEAPON_STATUS_EQUIPPED;
-      this.endTimeEquip = this.currentTime + this.equipTime;
+      this._status       = WEAPON_STATUS_EQUIPPED;
+      this._endTimeEquip = this._currentTime + this._equipTime;
 
-      if (this.mixer) {
+      if (this._mixer) {
 
-         let animation = this.animations.get('hide');
+         let animation = this._animations.get('hide');
          animation.stop();
 
-         animation = this.animations.get('equip');
+         animation = this._animations.get('equip');
          animation.stop();
          animation.play();
 
       }
 
-      if (this.owner.isPlayer()) {
+      if (this._owner.isPlayer()) {
 
-         this.owner.world.uiManager.updateAmmoStatus();
+         this._owner.world.userInterface._updateAmmoStatus();
 
 
       }
@@ -144,13 +129,13 @@ class Weapon {
     */
    hide() {
 
-      this.previousState = this.status;
-      this.status        = WEAPON_STATUS_HIDDEN;
-      this.endTimeHide   = this.currentTime + this.hideTime;
+      this._previousState = this._status;
+      this._status        = WEAPON_STATUS_HIDDEN;
+      this._endTimeHide   = this._currentTime + this._hideTime;
 
-      if (this.mixer) {
+      if (this._mixer) {
 
-         const animation = this.animations.get('hide');
+         const animation = this._animations.get('hide');
          animation.stop();
          animation.play();
 
@@ -175,7 +160,7 @@ class Weapon {
     * @param {Vector3} targetPosition - The target position.
     * @return {Weapon} A reference to this weapon.
     */
-   shoot() {}
+   fire() {}
 
 
    /**
@@ -186,27 +171,27 @@ class Weapon {
     */
    update(delta) {
 
-      this.currentTime += delta;
+      this._currentTime += delta;
 
-      if (this.currentTime >= this.endTimeEquip) {
+      if (this._currentTime >= this._endTimeEquip) {
 
-         this.status       = this.previousState; // restore previous state
-         this.endTimeEquip = Infinity;
+         this._status       = this._previousState; // restore previous state
+         this._endTimeEquip = Infinity;
 
       }
 
-      if (this.currentTime >= this.endTimeHide) {
+      if (this._currentTime >= this._endTimeHide) {
 
-         this.status      = WEAPON_STATUS_NOT_READY;
-         this.endTimeHide = Infinity;
+         this._status      = WEAPON_STATUS_NOT_READY;
+         this._endTimeHide = Infinity;
 
       }
 
       // update animations
 
-      if (this.mixer) {
+      if (this._mixer) {
 
-         this.mixer.update(delta);
+         this._mixer.update(delta);
 
       }
 

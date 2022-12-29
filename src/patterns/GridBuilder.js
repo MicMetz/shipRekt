@@ -1,3 +1,7 @@
+/**
+ * @author MicMetzger /
+ */
+
 import {
    _LARGE_MAP_BOUNDRY_LIMIT_, _NORMAL_MAP_BOUNDRY_LIMIT_,
    _SMALL_MAP_BOUNDRY_LIMIT_, _HUGE_MAP_BOUNDRY_LIMIT_

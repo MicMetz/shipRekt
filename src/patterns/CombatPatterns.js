@@ -1,6 +1,6 @@
 /**
  * @author MicMetzger /
- * @original Mugen87 / https://github.com/Mugen87
+ * original Mugen87 / https://github.com/Mugen87
  */
 
 

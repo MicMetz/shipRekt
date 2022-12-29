@@ -26,7 +26,15 @@ const offset             = new Vector3();
 
 
 class Player extends MovingEntity {
-
+   /**
+    *
+    *
+    * @param world
+    * @param body
+    * @param mixer
+    * @param animations
+    * @param weapon
+    */
    constructor(world, body, mixer, animations, weapon) {
       super();
 

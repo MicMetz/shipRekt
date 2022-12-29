@@ -1,3 +1,7 @@
+/**
+ * @author MicMetzger /
+ */
+
 import {Scene}           from "three";
 import {EventDispatcher} from "yuka";
 import {CONFIG}          from "../etc/Utilities";
@@ -11,6 +15,7 @@ class InterfaceManager {
     * @param {World} world - A reference to the world.
     */
    constructor(world) {
+
       this.world       = world;
       this.currentTime = 0;
 

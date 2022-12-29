@@ -42,7 +42,7 @@ export class IdleState extends PlayerState {
       } else {
 
          this._action.play();
-         
+
       }
    }
 
@@ -79,6 +79,63 @@ export class IdleState extends PlayerState {
 
 
    exit() { this.cleanup(); }
+
+}
+
+
+
+export class RespawnState extends PlayerState {
+   constructor(parent) {
+      super(parent);
+
+      this._action = null;
+
+   }
+
+
+   get name() {
+      return 'respawn';
+   }
+
+
+   enter(prevState) {
+
+      this._action = this.parent.proxy.animations.get('respawn').action;
+
+      if (prevState) {
+
+         const prevAction = this.parent.proxy.animations.get(prevState.name).action;
+
+         this._action.time    = 0.0;
+         this._action.enabled = true;
+
+         this._action.setEffectiveTimeScale(1.0);
+         this._action.setEffectiveWeight(1.0);
+
+         this._action.crossFadeFrom(prevAction, 0.25, true);
+
+         this._action.play();
+
+      } else {
+
+         this._action.play();
+
+      }
+   }
+
+
+   update(_) {
+
+      return;
+
+   }
+
+
+   exit() {
+
+      this.cleanup();
+
+   }
 
 }
 
@@ -595,7 +652,7 @@ export class ShootAttackState extends PlayerState {
    }
 
 
-   update(_, input, moving) {
+   update(_) {
 
       return;
 
@@ -667,7 +724,7 @@ export class MeleeAttackState extends PlayerState {
    }
 
 
-   update(_, input, moving) {
+   update(_) {
       return;
    }
 
@@ -684,9 +741,9 @@ export class RollState extends PlayerState {
 
       this._action = null;
 
-      this.finishedCallback = () => {
-         this.finished();
-      }
+      // this.finishedCallback = () => {
+      //    this.finished();
+      // }
 
    }
 
@@ -697,31 +754,41 @@ export class RollState extends PlayerState {
 
 
    enter(prevState) {
-      console.log('Enter State: Roll');
+      // console.log('Enter State: Roll');
 
-      const currentAction  = this.parent.proxy._animations.get('roll').action;
+      this._action         = this.parent.proxy._animations.get('roll').action;
       const previousAction = this.parent.proxy.animations.get(prevState.name).action;
 
       if (prevState) {
-
+         if (prevState.name === 'roll') {
+            if (previousAction.isRunning()) {
+               return;
+            }
+         }
       }
 
-      currentAction.reset()
-      currentAction.setLoop(LoopOnce, 1)
-      currentAction.clampWhenFinished = false
-      currentAction.crossFadeFrom(previousAction, 0.2, true)
-      currentAction.play()
+      this._action.reset()
+      this._action.setDuration = 0.2;
+      this._action.setLoop(LoopOnce, 1)
+      this._action.clampWhenFinished = false
+      this._action.crossFadeFrom(previousAction, 0.2, true)
+      this._action.play()
 
    }
 
 
-   update(_, input, moving) {
+   update(_) {
 
+      return;
 
    }
 
 
-   exit() {}
+   exit() {
+
+      this.cleanup();
+
+   }
 
 }
 

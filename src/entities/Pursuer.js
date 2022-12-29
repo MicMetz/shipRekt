@@ -1,5 +1,6 @@
 /**
- * @author Mugen87 / https://github.com/Mugen87
+ * @author MicMetzger /
+ * original {@link https://github.com/Mugen87|Mugen87}
  */
 
 import {BoundingSphere, Vehicle, StateMachine} from 'yuka';
