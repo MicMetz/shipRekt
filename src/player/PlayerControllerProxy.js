@@ -3,14 +3,16 @@
  */
 
 class PlayerControllerProxy {
-   constructor(animations) {
+   constructor(animations, velocity) {
       this._animations = animations
    }
 
 
    get animations() {
-      return this._animations
+      return this._animations;
    }
+
+
 }
 
 

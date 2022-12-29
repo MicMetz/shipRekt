@@ -12,6 +12,7 @@ import PlayerControllerProxy        from "./PlayerControllerProxy.js";
 import {PlayerProjectile}           from './PlayerProjectile.js';
 import PlayerProxy                  from "./PlayerProxy.js";
 import {EventDispatcher, Raycaster} from 'three';
+import {TWEEN}                      from 'three/examples/jsm/libs/tween.module.min'
 
 
 
@@ -247,6 +248,8 @@ class Player extends MovingEntity {
 
    update(delta) {
 
+      // console.log(this.velocity);
+
       const world = this.world;
       this.currentTime += delta;
 
@@ -356,9 +359,52 @@ class Player extends MovingEntity {
 
    _evaluateActions(event) {
       switch (event.keyCode) {
-         case 32:
-            this.stateMachine.changeTo('roll');
-            break;
+         case 32: {
+            if (this.stateMachine.currentState.name !== 'roll') {
+               if (this.stateMachine.currentState.name.includes('run') || this.stateMachine.currentState.name.includes('walk') || this.stateMachine.currentState.name.includes('idle')) {
+
+                  // TODO
+                  let currentpos = new Vector3();
+                  let nextpos    = new Vector3();
+                  switch (this.stateMachine.currentState.name) {
+                     case 'idle':
+                        break;
+                     case 'walk':
+                        break;
+
+                     case 'runRight': {
+
+                        // new TWEEN.Tween(this.position).to( , ).start();
+
+                        break;
+                     }
+                     case 'runLeft': {
+
+                        // new TWEEN.Tween(this.position).to( , ).start();
+
+                        break;
+                     }
+                     case 'runBack': {
+
+                        // new TWEEN.Tween(this.position).to( , ).start();
+
+                        break;
+                     }
+
+                     case 'run': {
+
+                        // new TWEEN.Tween(this.position).to( , ).start();
+
+                        break;
+                     }
+
+                  }
+
+               }
+
+               this.stateMachine.changeTo('roll');
+            }
+         }
       }
    }
 
