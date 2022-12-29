@@ -46,7 +46,7 @@ class Player extends MovingEntity {
       this.maxSpeed          = 6;
       this.updateOrientation = false;
 
-      this.MAX_HEALTH_POINTS = 5;
+      this.MAX_HEALTH_POINTS = 100;
       this.healthPoints      = this.MAX_HEALTH_POINTS;
 
       this.boundingRadius = 0.5;
@@ -70,7 +70,7 @@ class Player extends MovingEntity {
       this.weaponSystem.currentWeapon = this.weapon;
 
       // this.offWeapon = this.offHand.children[0];
-      this.strategy  = 'melee';
+      this.strategy = 'melee';
       // this.equipment = {};
 
       // this.offHand.position.set(this.hand.position.x, this.hand.position.y, this.hand.position.z);
