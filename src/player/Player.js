@@ -6,6 +6,7 @@ import {AABB, MathUtils, MovingEntity, OBB, Ray, Vector3} from 'yuka';
 
 import {Particle, ParticleSystem}   from '../core/ParticleSystem.js';
 import {WeaponSystem}               from "../entities/WeaponSystem.js";
+import {Weapon}                     from "../weapons/Weapon.js";
 import PlayerStateMachine           from "./PlayerStateMachine.js";
 import PlayerControllerProxy        from "./PlayerControllerProxy.js";
 import {PlayerProjectile}           from './PlayerProjectile.js';
@@ -64,18 +65,20 @@ class Player extends MovingEntity {
       this.hand    = this.bodyMesh.getObjectByName('HandR');
       this.offHand = this.bodyMesh.getObjectByName('HandL');
 
-      this.weaponSystem = new WeaponSystem();
-      this.weapon       = this.hand.children[0];
-      this.offWeapon    = this.offHand.children[0];
-      this.strategy     = 'melee';
-      this.equipment    = {};
+      this.weaponSystem               = new WeaponSystem();
+      this.weapon                     = new Weapon(this);
+      this.weaponSystem.currentWeapon = this.weapon;
 
-      this.offHand.position.set(this.hand.position.x, this.hand.position.y, this.hand.position.z);
-      this.offHand.needsUpdate = true;
+      // this.offWeapon = this.offHand.children[0];
+      this.strategy  = 'melee';
+      // this.equipment = {};
 
-      console.log(this.hand);
-      console.log(this.offHand);
-      console.log(this.weapon);
+      // this.offHand.position.set(this.hand.position.x, this.hand.position.y, this.hand.position.z);
+      // this.offHand.needsUpdate = true;
+
+      // console.log(this.hand);
+      // console.log(this.offHand);
+      // console.log(this.weapon);
 
       // particles
       this.maxParticles   = 20;

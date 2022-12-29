@@ -95,7 +95,7 @@ button:focus {
 
 
 
-#menu.hidden {
+.hidden {
     display : none;
 }
 
@@ -249,4 +249,94 @@ button:focus {
     .dg {
         display : none;
     }
+}
+
+
+
+#uiAmmo {
+    position : absolute;
+    bottom   : 4%;
+    right    : 4%;
+}
+
+
+
+#uiHealth {
+    position : absolute;
+    bottom   : 4%;
+    left     : 4%;
+}
+
+
+
+#ammoRemaining {
+    font-weight : bold;
+    width       : 32px;
+}
+
+
+
+#ammo {
+    font-size : 20px;
+    opacity   : 0.5;
+    width     : 32px;
+}
+
+
+
+#health {
+    width : 64px;
+}
+
+
+
+#nades {
+    margin          : 0;
+    padding         : 0;
+    list-style-type : none;
+    font-size       : 16px;
+    text-align      : left;
+}
+
+
+
+#uiNadeList {
+    position : absolute;
+    top      : 4%;
+    left     : 4%;
+}
+
+
+
+.interfaceContainer {
+    background-color : #d1c9b6;
+    font-size        : 1.5em;
+    color            : #282828;
+    text-align       : center;
+    line-height      : 1em;
+    border-radius    : 0.5em;
+}
+
+
+
+.interfaceContainer > div {
+    padding : 0.8em;
+}
+
+
+
+.interfaceContainer > div > span {
+    display : inline-block;
+}
+
+
+
+.interfaceContainer > div > ul > li {
+    padding : 0.8em;
+}
+
+
+
+.interfaceContainer > div > ul > li:not(:first-child) {
+    border-top : 0.8em solid #282828;
 }

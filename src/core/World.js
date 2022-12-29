@@ -14,6 +14,7 @@ import {BufferGeometryUtils}         from 'three/examples/jsm/utils/BufferGeomet
 import {ProtectionShader, HitShader} from '../etc/Shaders.js';
 import {PursuerGeometry}             from '../patterns/PursuerGeometry.js';
 import {AnimationSystem}             from './AnimationSystem.js';
+import {InterfaceManager}            from "./InterfaceManager.js";
 import {SceneManager}                from './SceneManager.js';
 import {Tower}                       from '../entities/Tower.js';
 import {dumpObject, GUARDTYPE}       from '../etc/Utilities.js';
@@ -52,7 +53,7 @@ class World {
 
       this.stargeometry = new THREE.Geometry();
       this.stars        = new THREE.Points();
-      ;
+
 
       this.field     = new YUKA.Vector3(16, 1, 16);
       this.fieldMesh = null;
@@ -60,9 +61,10 @@ class World {
       this.wall        = new YUKA.Vector3(0.5, 1, 0.5);
       this.wallsMeshes = new THREE.Group();
 
-      this.camera   = null;
-      this.scene    = null;
-      this.renderer = null;
+      this.camera        = null;
+      this.scene         = null;
+      this.renderer      = null;
+      this.userInterface = null;
 
       this.player   = null;
       this.controls = null;
@@ -506,6 +508,8 @@ class World {
       this.ui.restartButtonMenu.addEventListener('click', this._onRestart, false);
       this.ui.restartButtonComplete.addEventListener('click', this._onRestart, false);
       this.ui.restartButtonGameOver.addEventListener('click', this._onRestart, false);
+
+      this.userInterface = new InterfaceManager(this);
 
    }
 
@@ -1086,6 +1090,7 @@ class World {
 
       this.active = true;
 
+      this.userInterface._showInterface();
    }
 
 
