@@ -18,7 +18,7 @@ You must fight your way through the ship to expropriate your enemy's ship and es
 * [x] Basic combat
 * [x] Basic enemy AI
 * [x] Basic level/scene generation
-* [ ] Basic UI
+* [x] Basic UI
 * [ ] Instructions
 * [ ] Basic inventory
 * [ ] Basic item generation
