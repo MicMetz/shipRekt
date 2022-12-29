@@ -4,10 +4,11 @@
 
 import {AABB, MathUtils, MovingEntity, OBB, Ray, Vector3} from 'yuka';
 
-import {Particle, ParticleSystem} from '../core/ParticleSystem.js';
-import PlayerStateMachine         from "./PlayerStateMachine.js";
-import PlayerControllerProxy      from "./PlayerControllerProxy.js";
-import {PlayerProjectile}         from './PlayerProjectile.js';
+import {Particle, ParticleSystem}   from '../core/ParticleSystem.js';
+import {WeaponSystem}               from "../entities/WeaponSystem.js";
+import PlayerStateMachine           from "./PlayerStateMachine.js";
+import PlayerControllerProxy        from "./PlayerControllerProxy.js";
+import {PlayerProjectile}           from './PlayerProjectile.js';
 import PlayerProxy                  from "./PlayerProxy.js";
 import {EventDispatcher, Raycaster} from 'three';
 
@@ -63,10 +64,11 @@ class Player extends MovingEntity {
       this.hand    = this.bodyMesh.getObjectByName('HandR');
       this.offHand = this.bodyMesh.getObjectByName('HandL');
 
-      this.weapon    = this.hand.children[0];
-      this.offWeapon = this.offHand.children[0];
-      this.strategy  = 'melee';
-      this.equipment = {};
+      this.weaponSystem = new WeaponSystem();
+      this.weapon       = this.hand.children[0];
+      this.offWeapon    = this.offHand.children[0];
+      this.strategy     = 'melee';
+      this.equipment    = {};
 
       this.offHand.position.set(this.hand.position.x, this.hand.position.y, this.hand.position.z);
       this.offHand.needsUpdate = true;
@@ -96,7 +98,7 @@ class Player extends MovingEntity {
 
    isPlayer() {
 
-        return true;
+      return true;
 
    }
 

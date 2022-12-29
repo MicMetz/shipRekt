@@ -3,6 +3,24 @@
  */
 
 
+export const CONFIG = {
+   UI: {
+      CROSSHAIR       : {
+         HIT_OUT_TIME: 0.3,
+         OPACITY     : 0.5,
+         SCALE       : 40
+      },
+      DAMAGE_INDICATOR: {
+         OPACITY    : 0.5,
+         SCALE      : 256,
+         HIT_IN_TIME: 0.5,
+      },
+      GRENADES        : {
+         TIME: 5,
+      }
+   },
+}
+
 /**
  *
  * |----------------------------------|   |----------------------------------|
@@ -44,7 +62,6 @@ const _NORMAL_MAP_BOUNDRY_LIMIT_ = {
    maxNormalRooms: 4,
    maxLargeRooms : 2,
 }
-
 
 
 
@@ -124,6 +141,8 @@ function randomExExcept(arr, exceptArr) {
 }
 
 
-export {_SMALL_MAP_BOUNDRY_LIMIT_, _LARGE_MAP_BOUNDRY_LIMIT_, _HUGE_MAP_BOUNDRY_LIMIT_, _NORMAL_MAP_BOUNDRY_LIMIT_,
+export {
+   _SMALL_MAP_BOUNDRY_LIMIT_, _LARGE_MAP_BOUNDRY_LIMIT_, _HUGE_MAP_BOUNDRY_LIMIT_, _NORMAL_MAP_BOUNDRY_LIMIT_,
    dumpObject, randomString, randomInt, randomBool, randomExcept, randomExExcept,
-   GUARDTYPE, PURSUERTYPE, TOWERTYPE, QUALITY, WEAPONTYPE};
+   GUARDTYPE, PURSUERTYPE, TOWERTYPE, QUALITY, WEAPONTYPE
+};
