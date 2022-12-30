@@ -33,7 +33,7 @@ You must fight your way through the ship to expropriate your enemy's ship and es
 * [ ] Scene artistic design
 
 
-## Recording
+## Recordings
 https://user-images.githubusercontent.com/47361643/210107541-0c8c7d19-e6aa-4d96-9fec-5da9b1c38ca6.mp4
 
 <br>
