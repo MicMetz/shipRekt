@@ -10,7 +10,10 @@ import {dumpObject}          from '../etc/Utilities.js';
 
 
 class AssetManager {
-
+   /**
+    *
+    *
+    */
    constructor() {
 
       this.loadingManager = new THREE.LoadingManager();
@@ -22,38 +25,30 @@ class AssetManager {
       this.textureLoader = new THREE.TextureLoader(this.loadingManager);
       this.listener      = new THREE.AudioListener();
 
-      this.animations  = new Map();
-      this.mixers      = new Map();
-      this.audios      = new Map();
-      this.textures    = new Map();
-      this.fonts       = new Map();
-      this.models      = new Map();
+      this.animations = new Map();
+      this.mixers     = new Map();
+      this.audios     = new Map();
+      this.textures   = new Map();
+      this.fonts      = new Map();
+
+      this.characterModels = new Map();
+      this.items           = new Map();
+      this.weapons         = new Map();
+      this.props           = new Map();
+
       this.descriptors = new Map();
-
-
-      // this.loadingManager.onProgress = (url, itemsLoaded, itemsTotal) => {
-      //    console.log(`Loading file: ${url}. ${itemsLoaded} of ${itemsTotal} files loaded.`);
-      // };
-      //
-      // this.loadingManager.onError = (url) => {
-      //    console.log(`There was an error loading ${url}`);
-      // };
-      //
-      // this.loadingManager.onLoad = () => { console.log('Loading complete!'); };
-      //
-      // this.loadingManager.onStart = (url, itemsLoaded, itemsTotal) => {
-      //    console.log(`Loading file: ${url}. ${itemsLoaded} of ${itemsTotal} files loaded.`);
-      // };
 
    }
 
 
    init() {
 
-      // this._itemsLoading();
       this._loadAudios();
-      this._loadModels();
-      // this._loadJSON();
+      this._loadFonts();
+      this._loadCharacterModels();
+      this._loadItemModels();
+      this._loadWeaponModels();
+      this._loadPropModels();
 
       const loadingManager = this.loadingManager;
 
@@ -75,7 +70,7 @@ class AssetManager {
    }
 
 
-   _itemsLoading() {
+   _assetsLoading() {
 
       console.log('Items Loading');
       document.getElementById('loading-screen').classList.remove('loaded');
@@ -84,7 +79,7 @@ class AssetManager {
    }
 
 
-   _itemsLoaded() {
+   _assetsLoaded() {
 
       console.log('Items Loaded');
       document.getElementById('loading-screen').classList.remove('loading');
@@ -123,7 +118,7 @@ class AssetManager {
 
    cloneModel(id) {
 
-      const source = this.models.get(id);
+      const source = this.characterModels.get(id);
 
       console.log(source);
 
@@ -227,36 +222,20 @@ class AssetManager {
    }
 
 
-   _loadModels() {
+   _loadCharacterModels() {
 
       const gltfLoader    = this.gltfLoader;
       const textureLoader = this.textureLoader;
-      const models        = this.models;
+      const models        = this.characterModels;
       const animations    = this.animations;
 
 
-      // Pickup Health
-      // gltfLoader.load('./models/pickups/PickupHealth.glb', (gltf) => {
-      //    const healthpackMesh            = gltf.scene.getObjectByName('Pickup_Health').children[0];
-      //    healthpackMesh.matrixAutoUpdate = false;
-      //    models.set('pickupHealth', healthpackMesh);
-      // });
-
-
       // Swat Officer model
-      gltfLoader.load('./models/swat.glb', (gltf) => {
-         // const skinnedMeshes = {};
+      gltfLoader.load('./models/npc/swat.glb', (gltf) => {
          const clone = {
             animations: gltf.animations,
             scene     : gltf.scene.clone(true)
          }
-         // gltf.scene.traverse(node => {
-         //    if (node.isSkinnedMesh) {
-         //       node.morphTargets = true;
-         //       node.material.skinning = true;
-         //       skinnedMeshes[node.name] = node;
-         //    }
-         // })
 
          const cloneBones         = {};
          const cloneSkinnedMeshes = {};
@@ -394,75 +373,13 @@ class AssetManager {
          clone.name = 'assault_guard';
          this.animations.set('assault_guard', animations);
          this.mixers.set('assault_guard', mixer);
-         this.models.set('assault_guard', clone.scene);
-
-      });
-
-
-      // Robot model
-      gltfLoader.load('./models/robot.glb', (gltf) => {
-         this.gltf = gltf
-         this.mesh = this.gltf.scene
-
-         this.mesh.traverse((child) => {
-            if (child.isMesh) {
-               child.castShadow    = true
-               child.receiveShadow = true
-            }
-         })
-
-         models.set('Robot', this.mesh);
-         this.mesh.scale.set(0.26, 0.26, 0.26)
-
-      });
-
-
-      gltfLoader.load('./models/yuka.glb', (gltf) => {
-         const avatar      = gltf.scene;
-         // const avatar      = gltf.scene.meshes[0];
-         avatar.animations = gltf.animations;
-
-         avatar.traverse((object) => {
-            // gltf.scene.traverse((object) => {
-
-            if (object.isMesh) {
-
-               object.material.transparent = true;
-               object.material.opacity     = 1;
-               object.material.alphaTest   = 0.7;
-               object.material.side        = THREE.DoubleSide;
-               object.castShadow           = true;
-
-            }
-
-         });
-         avatar.updateWorldMatrix(true, true);
-         avatar.rotation.set(0, 0, 0);
-
-         const mixer      = new THREE.AnimationMixer(gltf.scene);
-         const animations = new Map();
-
-         const idleAction = mixer.clipAction('Character_Idle');
-         idleAction.play();
-         idleAction.enabled = false;
-
-         const walkAction = mixer.clipAction('Character_Walk');
-         walkAction.play();
-         walkAction.enabled = false;
-
-         animations.set('IDLE', idleAction);
-         animations.set('WALK', walkAction);
-
-         avatar.name = 'Yuka';
-         this.animations.set('Avatar', animations);
-         this.mixers.set('Avatar', mixer);
-         this.models.set('Avatar', avatar);
+         this.characterModels.set('assault_guard', clone.scene);
 
       });
 
 
       // Alien model
-      gltfLoader.load('./models/alien.glb', (gltf) => {
+      gltfLoader.load('./models/npc/alien.glb', (gltf) => {
          const model   = gltf.scene;
          var geometry  = new THREE.Mesh();
          let geoms     = [];
@@ -587,7 +504,6 @@ class AssetManager {
          idleAction.play();
          idleAction.enabled = false;
 
-
          const idleGunAction = mixer.clipAction(clone.animations[5]);
          idleGunAction.play();
          idleGunAction.enabled = false;
@@ -662,25 +578,17 @@ class AssetManager {
 
          this.animations.set('Wanderer', animations);
          this.mixers.set('Wanderer', mixer);
-         this.models.set('Wanderer', clone.scene);
+         this.characterModels.set('Wanderer', clone.scene);
 
       });
 
 
       // Android Player model
       gltfLoader.load('./models/player/Android.gltf', (gltf) => {
-         // const skinnedMeshes = {};
          const clone = {
             animations: gltf.animations,
             scene     : gltf.scene.clone(true)
          }
-         // gltf.scene.traverse(node => {
-         //    if (node.isSkinnedMesh) {
-         //       node.morphTargets = true;
-         //       node.material.skinning = true;
-         //       skinnedMeshes[node.name] = node;
-         //    }
-         // })
 
          const cloneBones         = {};
          const cloneSkinnedMeshes = {};
@@ -696,7 +604,6 @@ class AssetManager {
          });
 
          for (let name in cloneSkinnedMeshes) {
-            // const SMesh      = skinnedMeshes[name];
             const cloneSMesh = cloneSkinnedMeshes[name];
             const skeleton   = cloneSMesh.skeleton;
 
@@ -715,7 +622,6 @@ class AssetManager {
 
          const mixer      = new THREE.AnimationMixer(clone.scene);
          const animations = new Map();
-         // const animations = {};
 
          const deathClip   = clone.animations[0];
          const deathAction = mixer.clipAction(deathClip);
@@ -797,24 +703,6 @@ class AssetManager {
          walkAction.play();
          walkAction.enabled = false;
 
-
-         // animations['idle']         = {idleClip, idleAction};
-         // animations['shoot']        = {shootClip, shootAction};
-         // animations['die']          = {deathClip, deathAction};
-         // animations['hit']          = {hitClip, hitAction};
-         // animations['idleGunPoint'] = {idleGunPointClip, idleGunPointAction};
-         // animations['idleGunShoot'] = {idleGunShootClip, idleGunShootAction};
-         // animations['idleMelee']    = {idleMeleeClip, idleMeleeAction};
-         // animations['interact']     = {interactClip, interactAction};
-         // animations['roll']         = {rollClip, rollAction};
-         // animations['run']          = {runClip, runAction};
-         // animations['runBack']      = {runBackClip, runBackAction};
-         // animations['runLeft']      = {runLeftClip, runLeftAction};
-         // animations['runRight']     = {runRightClip, runRightAction};
-         // animations['runShoot']     = {runShootClip, runShootAction};
-         // animations['slash']        = {slashClip, slashAction};
-         // animations['walk']         = {walkClip, walkAction};
-
          animations.set('idle', {clip: idleClip, action: idleAction});
          animations.set('shoot', {clip: shootClip, action: shootAction});
          animations.set('die', {clip: deathClip, action: deathAction});
@@ -835,12 +723,12 @@ class AssetManager {
          clone.name = 'Android';
          this.animations.set('Android', animations);
          this.mixers.set('Android', mixer);
-         this.models.set('Android', clone.scene);
+         this.characterModels.set('Android', clone.scene);
       })
 
 
       // Droid model
-      gltfLoader.load('./models/droid.glb', (gltf) => {
+      gltfLoader.load('./models/npc/droid.glb', (gltf) => {
          const model   = gltf.scene;
          var geometry  = new THREE.Mesh();
          let geoms     = [];
@@ -871,68 +759,163 @@ class AssetManager {
    }
 
 
-   _loadJSON() {
-      const jsonLoader = this.jsonLoader;
+   _loadItemModels() {
+      const gltfLoader = this.gltfLoader;
+      const items      = this.items;
 
-      // Data fetch
-      jsonLoader.load('./File/Data', (folders) => {
-         folders.forEach((folder) => {
-            this.descriptors.set(folder.name, folder);
-            folder.files.forEach((file) => {
+      // Pickup Health
+      gltfLoader.load('./models/pickups/PickupHealth.glb', (gltf) => {
+         const healthpackMesh            = gltf.scene;
+         healthpackMesh.matrixAutoUpdate = false;
+         items.set('pickupHealth', healthpackMesh);
+      });
 
-            });
-         });
+      // Pickup Heart
+      gltfLoader.load('./models/pickups/PickupHeart.glb', (gltf) => {
+         const heartMesh            = gltf.scene;
+         heartMesh.matrixAutoUpdate = false;
+         items.set('pickupHeart', heartMesh);
+      });
+
+      // Pickup Tank
+      gltfLoader.load('./models/pickups/PickupTank.glb', (gltf) => {
+         const tankMesh            = gltf.scene;
+         tankMesh.matrixAutoUpdate = false;
+         items.set('pickupTank', tankMesh);
       });
 
    }
+
+
+   _loadWeaponModels() {
+      const gltfLoader = this.gltfLoader;
+      const weapons    = this.weapons;
+
+      // Energy Pistol
+      gltfLoader.load('./models/weapons/EnergyPistol.glb', (gltf) => {
+         const pistolMesh            = gltf.scene;
+         pistolMesh.matrixAutoUpdate = false;
+         weapons.set('pistol', pistolMesh);
+      });
+
+      // Long Pistol
+      gltfLoader.load('./models/weapons/LongPistol.glb', (gltf) => {
+         const longPistolMesh            = gltf.scene;
+         longPistolMesh.matrixAutoUpdate = false;
+         weapons.set('longPistol', longPistolMesh);
+      });
+
+      // Lightning Gun
+      gltfLoader.load('./models/weapons/LightningGun.glb', (gltf) => {
+         const lightningGunMesh            = gltf.scene;
+         lightningGunMesh.matrixAutoUpdate = false;
+         weapons.set('lightningGun', lightningGunMesh);
+      });
+
+   }
+
+
+   _loadPropModels() {
+      const gltfLoader = this.gltfLoader;
+      const props      = this.props;
+
+      // Cockpit
+      gltfLoader.load('./models/environment/Cockpit.glb', (gltf) => {
+         const cockpitMesh            = gltf.scene;
+         cockpitMesh.matrixAutoUpdate = false;
+         props.set('cockpit', cockpitMesh);
+      });
+
+      // Platform
+      gltfLoader.load('./models/environment/Platform.glb', (gltf) => {
+         const platformMesh            = gltf.scene;
+         platformMesh.matrixAutoUpdate = false;
+         props.set('platform', platformMesh);
+      });
+
+      // Platform Mega
+      gltfLoader.load('./models/environment/Platform_mega.glb', (gltf) => {
+         const platformMegaMesh            = gltf.scene;
+         platformMegaMesh.matrixAutoUpdate = false;
+         props.set('platformMega', platformMegaMesh);
+      });
+
+      // Platform Mini
+      gltfLoader.load('./models/environment/Platform_mini.glb', (gltf) => {
+         const platformMiniMesh            = gltf.scene;
+         platformMiniMesh.matrixAutoUpdate = false;
+         props.set('platformMini', platformMiniMesh);
+      });
+
+      // Workstation
+      gltfLoader.load('./models/environment/Workstation.glb', (gltf) => {
+         const workstationMesh            = gltf.scene;
+         workstationMesh.matrixAutoUpdate = false;
+         props.set('workstation', workstationMesh);
+      });
+
+      // Gondola
+      gltfLoader.load('./models/environment/Gondola.glb', (gltf) => {
+         const gondolaMesh            = gltf.scene;
+         gondolaMesh.matrixAutoUpdate = false;
+         props.set('gondola', gondolaMesh);
+      });
+
+      // Space Station
+      gltfLoader.load('./models/environment/SpaceStation.glb', (gltf) => {
+         const spaceStationMesh            = gltf.scene;
+         spaceStationMesh.matrixAutoUpdate = false;
+         props.set('spaceStation', spaceStationMesh);
+      });
+
+
+   }
+
+
+   /*    _loadJSON() {
+    const jsonLoader = this.jsonLoader;
+
+    // Data fetch
+    jsonLoader.load('./File/Data', (folders) => {
+    folders.forEach((folder) => {
+    this.descriptors.set(folder.name, folder);
+    folder.files.forEach((file) => {
+
+    });
+    });
+    });
+
+    } */
 }
 
 
 
-//
-//    _loadAnimations() {
-//
-//       const animations = this.animations;
-//
-//       // manually create some keyframes for testing
-//
-//       let positionKeyframes, rotationKeyframes;
-//       let q0, q1, q2;
-//
-//
-//    }
-//
-//
-// }
-
-
-
-function MergeSkinnedGeometry(geo1, geo2) {
-   var attributes  = ['normal', 'position', 'skinIndex', 'skinWeight'];
-   var dataLengths = [3, 3, 4, 4];
-   var geo         = new THREE.BufferGeometry();
-   for (var attIndex = 0; attIndex < attributes.length; attIndex++) {
-      var currentAttribute = attributes[attIndex];
-      var geo1Att          = geo1.getAttribute(currentAttribute);
-      var geo2Att          = geo2.getAttribute(currentAttribute);
-      var currentArray     = null;
-      if (currentAttribute === 'skinIndex') currentArray = new Uint16Array(geo1Att.array.length + geo2Att.array.length);
-      else currentArray = new Float32Array(geo1Att.array.length + geo2Att.array.length);
-      var innerCount = 0;
-      geo1Att.array.map((item) => {
-         currentArray[innerCount] = item;
-         innerCount++;
-      });
-      geo2Att.array.map((item) => {
-         currentArray[innerCount] = item;
-         innerCount++;
-      });
-      geo1Att.array = currentArray;
-      geo1Att.count = currentArray.length / dataLengths[attIndex];
-      geo.setAttribute(currentAttribute, geo1Att);
-   }
-   return geo;
-}
+/* function MergeSkinnedGeometry(geo1, geo2) {
+ var attributes  = ['normal', 'position', 'skinIndex', 'skinWeight'];
+ var dataLengths = [3, 3, 4, 4];
+ var geo         = new THREE.BufferGeometry();
+ for (var attIndex = 0; attIndex < attributes.length; attIndex++) {
+ var currentAttribute = attributes[attIndex];
+ var geo1Att          = geo1.getAttribute(currentAttribute);
+ var geo2Att          = geo2.getAttribute(currentAttribute);
+ var currentArray     = null;
+ if (currentAttribute === 'skinIndex') currentArray = new Uint16Array(geo1Att.array.length + geo2Att.array.length);
+ else currentArray = new Float32Array(geo1Att.array.length + geo2Att.array.length);
+ var innerCount = 0;
+ geo1Att.array.map((item) => {
+ currentArray[innerCount] = item;
+ innerCount++;
+ });
+ geo2Att.array.map((item) => {
+ currentArray[innerCount] = item;
+ innerCount++;
+ });
+ geo1Att.array = currentArray;
+ geo1Att.count = currentArray.length / dataLengths[attIndex];
+ geo.setAttribute(currentAttribute, geo1Att);
+ }
+ return geo;
+ } */
 
 
 

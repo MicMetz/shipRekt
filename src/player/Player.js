@@ -11,7 +11,6 @@ import PlayerControllerProxy        from "./PlayerControllerProxy.js";
 import {PlayerProjectile}           from './PlayerProjectile.js';
 import PlayerProxy                  from "./PlayerProxy.js";
 import {EventDispatcher, Raycaster} from 'three';
-import {TWEEN}                      from 'three/examples/jsm/libs/tween.module.min'
 
 
 
@@ -82,14 +81,6 @@ class Player extends MovingEntity {
 
       // this.offWeapon = this.offHand.children[0];
       this.strategy = 'melee';
-      // this.equipment = {};
-
-      // this.offHand.position.set(this.hand.position.x, this.hand.position.y, this.hand.position.z);
-      // this.offHand.needsUpdate = true;
-
-      // console.log(this.hand);
-      // console.log(this.offHand);
-      // console.log(this.weapon);
 
       // particles
       this.maxParticles   = 20;

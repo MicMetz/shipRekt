@@ -5,7 +5,8 @@
 import {
    AmbientLight, BoxBufferGeometry, CameraHelper, Color, CylinderBufferGeometry, DirectionalLight,
    DynamicDrawUsage, Geometry, Group, InstancedMesh, Mesh, MeshBasicMaterial, MeshLambertMaterial, Object3D, PCFSoftShadowMap,
-   PerspectiveCamera, PlaneBufferGeometry, Points, PointsMaterial, Scene, ShaderMaterial, SphereBufferGeometry, sRGBEncoding, WebGLRenderer
+   PerspectiveCamera, PlaneBufferGeometry, Points, PointsMaterial, Scene, ShaderMaterial, SphereBufferGeometry, sRGBEncoding,
+   WebGLRenderer, MathUtils
 }                                    from "three";
 import * as THREE                    from 'three';
 import * as YUKA                     from 'yuka';
@@ -403,14 +404,10 @@ class World {
             }
          }
       }
-      // this.obstacles.push(this.wallsMeshes);
       this.scene.add(this.wallsMeshes);
 
       // player
-      // this.playerMesh = this.assetManager.models.get('Wanderer');
-      this.playerMesh = this.assetManager.models.get('Android');
-      // this.playerMesh.updateWorldMatrix(true, true);
-      // this.playerMesh.rotation.set(0,0,Math.PI/2);
+      this.playerMesh                  = this.assetManager.characterModels.get('Android');
       this.playerMesh.matrixAutoUpdate = false;
       this.scene.add(this.playerMesh);
 
@@ -489,7 +486,6 @@ class World {
       const hitMaterial             = new ShaderMaterial(HitShader);
       hitMaterial.transparent       = true;
       this.hitMesh                  = new Mesh(hitGeometry, hitMaterial);
-      this.hitMesh.matrixAutoUpdate = false;
       this.hitMesh.visible          = false;
 
       // renderer
@@ -519,9 +515,12 @@ class World {
 
       for (var i = 0; i < 8000; i++) {
          var star = new Object3D();
-         star.x   = THREE.Math.randFloat(-200, 200);
-         star.y   = THREE.Math.randFloat(-75, -50);
-         star.z   = THREE.Math.randFloat(-200, 200);
+         star.x   = MathUtils.randFloat(-200, 200);
+         star.y   = MathUtils.randFloat(-75, -50);
+         star.z   = MathUtils.randFloat(-200, 200);
+         // star.x   = THREE.Math.randFloat(-200, 200);
+         // star.y   = THREE.Math.randFloat(-75, -50);
+         // star.z   = THREE.Math.randFloat(-200, 200);
 
          star.scale.set(1, 1, 1).multiplyScalar(Math.random());
          // star.updateMatrix();
@@ -614,7 +613,7 @@ class World {
          type = GUARDTYPE.ASSAULT;
       }
 
-      const guardMesh = this.assetManager.models.get(type);
+      const guardMesh = this.assetManager.characterModels.get(type);
       const mixer     = this.assetManager.animations.get(type);
       const guard     = new Guard(this, type, guardMesh);
       console.log(guardMesh);

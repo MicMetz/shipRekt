@@ -32,6 +32,11 @@ You must fight your way through the ship to expropriate your enemy's ship and es
 * [ ] Bosses
 * [ ] Scene artistic design
 
+
+## Recording
+
+<video src="documentation/Animation0.mp4" height="400" controls preload></video>
+
 ## License
 
 [MIT licensed](./LICENSE).
