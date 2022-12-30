@@ -14,7 +14,7 @@ const q = new Quaternion();
 
 class Guard extends Vehicle {
    /**
-    *
+    * Guard Enemy type.
     *
     * @param world
     * @param type
@@ -23,10 +23,14 @@ class Guard extends Vehicle {
    constructor(world, type = GUARDTYPE.ASSAULT, body) {
       super();
 
-      this.world      = world;
-      this.bodyMesh   = body;
-      this.guardType  = type;
-      this.animations = new AnimationMixer(this.bodyMesh);
+      this.world     = world;
+      this.bodyMesh  = body;
+      this.guardType = type;
+
+      // Animations
+      this.animations   = new AnimationMixer(this.bodyMesh);
+      this.stateMachineMovement = new StateMachine(this);
+      this.stateMachineCombat   = new StateMachine(this);
 
       this.boundingRadius = 0.5;
 
@@ -35,9 +39,6 @@ class Guard extends Vehicle {
 
       this.boundingSphere        = new BoundingSphere();
       this.boundingSphere.radius = this.boundingRadius;
-
-      this.stateMachineMovement = new StateMachine(this);
-      this.stateMachineCombat   = new StateMachine(this);
 
       this.audios = new Map();
 
@@ -126,6 +127,9 @@ class Guard extends Vehicle {
       }
 
       if (this.hitted === true) {
+
+         // TODO: not finished
+         // this.stateMachine.changeTo('hit');
 
          q.copy(this.rotation).inverse(); // undo rotation of parent
          this.hitMesh.quaternion.copy(q).multiply(world.camera.quaternion);

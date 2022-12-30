@@ -141,7 +141,7 @@ export class RespawnState extends PlayerState {
 
 
 
-export class DieState extends PlayerState {
+export class DeathState extends PlayerState {
    constructor(parent) {
       super(parent);
 
@@ -297,13 +297,16 @@ export class RunState extends PlayerState {
 
 
    enter(prevState) {
-      this._action         = this.parent.proxy.animations.get('run').action;
-      const previousAction = this.parent.proxy.animations.get(prevState.name).action;
+      this._action = this.parent.proxy.animations.get('run').action;
 
-      if (prevState.name.includes('Attack')) {
-         this._action.time = 0.0;
+      if (prevState) {
+         const previousAction = this.parent.proxy.animations.get(prevState.name).action;
 
-         this._action.crossFadeFrom(previousAction, 0.7, true);
+         if (prevState.name.includes('Attack')) {
+            this._action.time = 0.0;
+
+            this._action.crossFadeFrom(previousAction, 0.7, true);
+         }
       }
 
       this._action.enabled = true;
@@ -343,10 +346,13 @@ export class RunState extends PlayerState {
    }
 
 
+
    cleanup() {
+      if (this._action) {
 
-      this._action = null;
+         this._action = null;
 
+      }
    }
 
 
@@ -375,13 +381,16 @@ export class RunLeftState extends PlayerState {
 
 
    enter(prevState) {
-      this._action         = this.parent.proxy.animations.get('runLeft').action;
-      const previousAction = this.parent.proxy.animations.get(prevState.name).action;
+      this._action = this.parent.proxy.animations.get('runLeft').action;
 
-      if (prevState.name.includes('Attack')) {
-         this._action.time = 0.0;
+      if (prevState) {
+         const previousAction = this.parent.proxy.animations.get(prevState.name).action;
 
-         this._action.crossFadeFrom(previousAction, 0.7, true);
+         if (prevState.name.includes('Attack')) {
+            this._action.time = 0.0;
+
+            this._action.crossFadeFrom(previousAction, 0.7, true);
+         }
       }
 
       this._action.enabled = true;
@@ -422,9 +431,11 @@ export class RunLeftState extends PlayerState {
 
 
    cleanup() {
+      if (this._action) {
 
-      this._action = null;
+         this._action = null;
 
+      }
    }
 
 
@@ -453,13 +464,16 @@ export class RunRightState extends PlayerState {
 
 
    enter(prevState) {
-      this._action         = this.parent.proxy.animations.get('runRight').action;
-      const previousAction = this.parent.proxy.animations.get(prevState.name).action;
+      this._action = this.parent.proxy.animations.get('runRight').action;
 
-      if (prevState.name.includes('Attack')) {
-         this._action.time = 0.0;
+      if (prevState) {
+         const previousAction = this.parent.proxy.animations.get(prevState.name).action;
 
-         this._action.crossFadeFrom(previousAction, 0.7, true);
+         if (prevState.name.includes('Attack')) {
+            this._action.time = 0.0;
+
+            this._action.crossFadeFrom(previousAction, 0.7, true);
+         }
       }
 
       this._action.enabled = true;
@@ -499,10 +513,13 @@ export class RunRightState extends PlayerState {
    }
 
 
+
    cleanup() {
+      if (this._action) {
 
-      this._action = null;
+         this._action = null;
 
+      }
    }
 
 
@@ -531,13 +548,16 @@ export class RunBackState extends PlayerState {
 
 
    enter(prevState) {
-      this._action         = this.parent.proxy.animations.get('runBack').action;
-      const previousAction = this.parent.proxy.animations.get(prevState.name).action;
+      this._action = this.parent.proxy.animations.get('runBack').action;
 
-      if (prevState.name.includes('Attack')) {
-         this._action.time = 0.0;
+      if (prevState) {
+         const previousAction = this.parent.proxy.animations.get(prevState.name).action;
 
-         this._action.crossFadeFrom(previousAction, 0.7, true);
+         if (prevState.name.includes('Attack')) {
+            this._action.time = 0.0;
+
+            this._action.crossFadeFrom(previousAction, 0.7, true);
+         }
       }
 
       this._action.enabled = true;
@@ -577,10 +597,13 @@ export class RunBackState extends PlayerState {
    }
 
 
+
    cleanup() {
+      if (this._action) {
 
-      this._action = null;
+         this._action = null;
 
+      }
    }
 
 
@@ -611,26 +634,37 @@ export class ShootAttackState extends PlayerState {
    enter(prevState) {
       this._action = this.parent.proxy.animations.get('shoot').action;
       const mixer  = this._action.getMixer();
-
       mixer.addEventListener('finished', this.finishedCallback);
 
-      if (!prevState.name.includes('Attack')) {
+      mixer.stopAllAction();
 
+      if (prevState) {
          const previousAction = this.parent.proxy.animations.get(prevState.name).action;
 
          this._action.reset();
          this._action.setLoop(LoopOnce, 1);
          this._action.clampWhenFinished = true;
-
-         this._action.crossFadeFrom(previousAction, 0.1, true);
-
+         this._action.crossFadeFrom(previousAction, 0.2, true);
          this._action.play();
-
       } else {
-
          this._action.play();
-
       }
+
+      /* const previousAction = this.parent.proxy.animations.get(prevState.name).action;
+       if (prevState) {
+       if (prevState.name === 'roll') {
+       if (previousAction.isRunning()) {
+       return;
+       }
+       }
+       }
+       this._action.reset()
+       this._action.setDuration = 0.2;
+       this._action.setLoop(LoopOnce, 1)
+       this._action.clampWhenFinished = false
+       this._action.crossFadeFrom(previousAction, 0.2, true)
+       this._action.play() */
+
    }
 
 
@@ -644,7 +678,6 @@ export class ShootAttackState extends PlayerState {
 
    cleanup() {
       if (this._action) {
-
          this._action.getMixer().removeEventListener('finished', this.finishedCallback);
          this._action = null;
 
@@ -652,14 +685,11 @@ export class ShootAttackState extends PlayerState {
    }
 
 
-   update(_) {
+   exit() {
 
-      return;
+      this.cleanup();
 
    }
-
-
-   exit() { this.cleanup(); }
 
 }
 
@@ -687,22 +717,23 @@ export class MeleeAttackState extends PlayerState {
 
    enter(prevState) {
 
-      this._action         = this.parent.proxy.animations.get('slash').action;
-      const previousAction = this.parent.proxy.animations.get(prevState.name).action;
-
-      const mixer = this._action.getMixer();
+      this._action = this.parent.proxy.animations.get('slash').action;
+      const mixer  = this._action.getMixer();
       mixer.addEventListener('finished', this.finishedCallback);
 
       mixer.stopAllAction();
 
-      this._action.reset();
-      this._action.setLoop(LoopOnce, 1);
+      if (prevState) {
+         const previousAction = this.parent.proxy.animations.get(prevState.name).action;
 
-      this._action.clampWhenFinished = false;
-      this._action.enabled           = true;
-
-      this._action.play();
-
+         this._action.reset();
+         this._action.setLoop(LoopOnce, 1);
+         this._action.clampWhenFinished = true;
+         this._action.crossFadeFrom(previousAction, 0.2, true);
+         this._action.play();
+      } else {
+         this._action.play();
+      }
    }
 
 
@@ -739,9 +770,11 @@ export class RollState extends PlayerState {
    constructor(parent) {
       super(parent);
 
+      this._action = null;
 
-      this._action         = null;
-
+      this.finishedCallback = () => {
+         this.finished();
+      }
    }
 
 
@@ -752,32 +785,46 @@ export class RollState extends PlayerState {
 
    enter(prevState) {
 
-      this._action         = this.parent.proxy.animations.get('roll').action;
-      const previousAction = this.parent.proxy.animations.get(prevState.name).action;
+      this._action = this.parent.proxy.animations.get('roll').action;
+      const mixer  = this._action.getMixer();
+      mixer.addEventListener('finished', this.finishedCallback);
+
+      mixer.stopAllAction();
 
       if (prevState) {
-         if (prevState.name === 'roll') {
-            if (previousAction.isRunning()) {
-               return;
-            }
-         }
+         const previousAction = this.parent.proxy.animations.get(prevState.name).action;
+
+         this._action.reset();
+         this._action.setLoop(LoopOnce, 1);
+         this._action.clampWhenFinished = true;
+         this._action.crossFadeFrom(previousAction, 0.2, true);
+         this._action.play();
+      } else {
+         this._action.play();
       }
 
-      this._action.reset()
-      this._action.setDuration = 0.2;
-      this._action.setLoop(LoopOnce, 1)
-      this._action.clampWhenFinished = false
-      this._action.crossFadeFrom(previousAction, 0.2, true)
-      this._action.play()
+      /* const previousAction = this.parent.proxy.animations.get(prevState.name).action;
+       if (prevState) {
+       if (prevState.name === 'roll') {
+       if (previousAction.isRunning()) {
+       return;
+       }
+       }
+       }
+       this._action.reset()
+       this._action.setDuration = 0.2;
+       this._action.setLoop(LoopOnce, 1)
+       this._action.clampWhenFinished = false
+       this._action.crossFadeFrom(previousAction, 0.2, true)
+       this._action.play() */
 
    }
 
 
    cleanup() {
       if (this._action) {
-
-         this._action         = null;
-
+         this._action.getMixer().removeEventListener('finished', this.finishedCallback);
+         this._action = null;
       }
    }
 
@@ -812,15 +859,54 @@ export class StunState extends PlayerState {
 
 
    enter(prevState) {
+      const mixer = this._action.getMixer();
+      mixer.addEventListener('finished', this.finishedCallback);
+
+      mixer.stopAllAction();
+
+      if (prevState) {
+         const previousAction = this.parent.proxy.animations.get(prevState.name).action;
+
+         this._action.reset();
+         this._action.setLoop(LoopOnce, 1);
+         this._action.clampWhenFinished = true;
+         this._action.crossFadeFrom(previousAction, 0.2, true);
+         this._action.play();
+      } else {
+         this._action.play();
+      }
+
+      /* const previousAction = this.parent.proxy.animations.get(prevState.name).action;
+       if (prevState) {
+       if (prevState.name === 'roll') {
+       if (previousAction.isRunning()) {
+       return;
+       }
+       }
+       }
+       this._action.reset()
+       this._action.setDuration = 0.2;
+       this._action.setLoop(LoopOnce, 1)
+       this._action.clampWhenFinished = false
+       this._action.crossFadeFrom(previousAction, 0.2, true)
+       this._action.play() */
 
    }
 
 
-   update(_, input, moving) {
+   cleanup() {
+      if (this._action) {
+         this._action.getMixer().removeEventListener('finished', this.finishedCallback);
 
+      }
    }
 
 
-   exit() {}
+   exit() {
+
+      this.cleanup();
+      this.parent.changeTo('idle');
+
+   }
 
 }

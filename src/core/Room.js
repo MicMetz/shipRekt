@@ -1,6 +1,6 @@
-import * as THREE                                      from "three";
-import {Group, Mesh, MeshBasicMaterial, PlaneGeometry} from "three";
-import * as YUKA                                       from "yuka";
+import * as THREE                                                                                                                             from "three";
+import {AmbientLight, BoxBufferGeometry, DirectionalLight, Group, InstancedMesh, Mesh, MeshBasicMaterial, MeshLambertMaterial, PlaneGeometry} from "three";
+import * as YUKA                                                                                                                              from "yuka";
 
 
 
@@ -46,7 +46,7 @@ class Room {
       this.fieldMesh = null;
 
       this.wall        = new YUKA.Vector3(0.5, 1, 0.5);
-      this.wallsMeshes = new THREE.Group();
+      this.wallsMeshes = new Group();
 
       this.obstacles    = [];
       this.obstacleMesh = null;
@@ -67,10 +67,10 @@ class Room {
 
    generateFloor() {
       // field
-      const fieldGeometry = new THREE.BoxBufferGeometry(this.field.x, this.field.y, this.field.z);
-      const fieldMaterial = new THREE.MeshLambertMaterial({color: 0x9da4b0});
+      const fieldGeometry = new BoxBufferGeometry(this.field.x, this.field.y, this.field.z);
+      const fieldMaterial = new MeshLambertMaterial({color: 0x9da4b0});
 
-      this.fieldMesh                  = new THREE.Mesh(fieldGeometry, fieldMaterial);
+      this.fieldMesh                  = new Mesh(fieldGeometry, fieldMaterial);
       this.fieldMesh.matrixAutoUpdate = false;
       this.fieldMesh.position.set(0, -0.5, 0);
       this.fieldMesh.updateMatrix();
@@ -80,14 +80,14 @@ class Room {
 
 
    generateWalls() {
-      const wallGeometry = new THREE.BoxBufferGeometry(1, 1, 1);
-      const wallMaterial = new THREE.MeshLambertMaterial({color: 0x8e8e8e});
+      const wallGeometry = new BoxBufferGeometry(1, 1, 1);
+      const wallMaterial = new MeshLambertMaterial({color: 0x8e8e8e});
       for (let x = -this.field.x / 2; x <= this.field.x / 2; x++) {
          if (x === -this.field.x / 2 || x === this.field.x / 2) {
             for (let z = -this.field.z / 2; z <= this.field.z / 2; z++) {
                if (z === -this.field.z / 2 || z === this.field.z / 2) {
                   for (let i = -this.field.x / 2; i <= this.field.x / 2; i++) {
-                     const wallMesh            = new THREE.Mesh(wallGeometry, wallMaterial);
+                     const wallMesh            = new Mesh(wallGeometry, wallMaterial);
                      wallMesh.matrixAutoUpdate = false;
                      wallMesh.position.set(i, 0.5, z);
                      wallMesh.updateMatrix();
@@ -96,7 +96,7 @@ class Room {
                      this.wallsMeshes.add(wallMesh);
                   }
                } else {
-                  const wallMesh            = new THREE.Mesh(wallGeometry, wallMaterial);
+                  const wallMesh            = new Mesh(wallGeometry, wallMaterial);
                   wallMesh.matrixAutoUpdate = false;
                   wallMesh.position.set(x, 0.5, z);
                   wallMesh.updateMatrix();
@@ -113,11 +113,11 @@ class Room {
 
    generateLights() {
       // lights
-      const ambientLight            = new THREE.AmbientLight(0xcccccc, 0.4);
+      const ambientLight            = new AmbientLight(0xcccccc, 0.4);
       ambientLight.matrixAutoUpdate = false;
       this._world.scene.add(ambientLight);
 
-      const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+      const dirLight = new DirectionalLight(0xffffff, 0.6);
       dirLight.position.set(1, 10, -1);
       dirLight.matrixAutoUpdate = false;
       dirLight.updateMatrix();
@@ -137,10 +137,10 @@ class Room {
 
    generateObstacles() {
       // obstacle
-      const obtacleGeometry = new THREE.BoxBufferGeometry(1, 1, 1);
-      const obtacleMaterial = new THREE.MeshLambertMaterial({color: 0xdedad3});
+      const obtacleGeometry = new BoxBufferGeometry(1, 1, 1);
+      const obtacleMaterial = new MeshLambertMaterial({color: 0xdedad3});
 
-      this.obstacleMesh               = new THREE.InstancedMesh(obtacleGeometry, obtacleMaterial, this.maxObstacles);
+      this.obstacleMesh               = new InstancedMesh(obtacleGeometry, obtacleMaterial, this.maxObstacles);
       this.obstacleMesh.frustumCulled = false;
       this.obstacleMesh.castShadow    = true;
       this._world.scene.add(this.obstacleMesh);

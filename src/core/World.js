@@ -2,6 +2,11 @@
  * @author MicMetzger /
  */
 
+import {
+   AmbientLight, BoxBufferGeometry, CameraHelper, Color, CylinderBufferGeometry, DirectionalLight,
+   DynamicDrawUsage, Geometry, Group, InstancedMesh, Mesh, MeshBasicMaterial, MeshLambertMaterial, Object3D, PCFSoftShadowMap,
+   PerspectiveCamera, PlaneBufferGeometry, Points, PointsMaterial, Scene, ShaderMaterial, SphereBufferGeometry, sRGBEncoding, WebGLRenderer
+}                                    from "three";
 import * as THREE                    from 'three';
 import * as YUKA                     from 'yuka';
 import {GLTFLoader}                  from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -51,15 +56,15 @@ class World {
       this.currentStage = 1;
       this.maxStage     = 14;
 
-      this.stargeometry = new THREE.Geometry();
-      this.stars        = new THREE.Points();
+      this.stargeometry = new Geometry();
+      this.stars        = new Points();
 
 
       this.field     = new YUKA.Vector3(16, 1, 16);
       this.fieldMesh = null;
 
       this.wall        = new YUKA.Vector3(0.5, 1, 0.5);
-      this.wallsMeshes = new THREE.Group();
+      this.wallsMeshes = new Group();
 
       this.camera        = null;
       this.scene         = null;
@@ -328,18 +333,18 @@ class World {
    _initScene(callback) {
 
       // camera
-      this.camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 200);
+      this.camera = new PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 200);
       this.camera.add(this.assetManager.listener);
 
       // scene
-      this.scene = new THREE.Scene();
+      this.scene = new Scene();
 
       // lights
-      const ambientLight            = new THREE.AmbientLight(0xcccccc, 0.4);
+      const ambientLight            = new AmbientLight(0xcccccc, 0.4);
       ambientLight.matrixAutoUpdate = false;
       this.scene.add(ambientLight);
 
-      const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+      const dirLight = new DirectionalLight(0xffffff, 0.6);
       dirLight.position.set(1, 10, -1);
       dirLight.matrixAutoUpdate = false;
       dirLight.updateMatrix();
@@ -357,28 +362,28 @@ class World {
 
       /* TODO: DEBUG */
       if (_DEBUG_) {
-         this.scene.add(new THREE.CameraHelper(dirLight.shadow.camera));
+         this.scene.add(new CameraHelper(dirLight.shadow.camera));
       }
 
       // field
-      const fieldGeometry = new THREE.BoxBufferGeometry(this.field.x, this.field.y, this.field.z);
-      const fieldMaterial = new THREE.MeshLambertMaterial({color: 0x9da4b0});
+      const fieldGeometry = new BoxBufferGeometry(this.field.x, this.field.y, this.field.z);
+      const fieldMaterial = new MeshLambertMaterial({color: 0x9da4b0});
 
-      this.fieldMesh                  = new THREE.Mesh(fieldGeometry, fieldMaterial);
+      this.fieldMesh                  = new Mesh(fieldGeometry, fieldMaterial);
       this.fieldMesh.matrixAutoUpdate = false;
       this.fieldMesh.position.set(0, -0.5, 0);
       this.fieldMesh.updateMatrix();
       this.fieldMesh.receiveShadow = true;
       this.scene.add(this.fieldMesh);
 
-      const wallGeometry = new THREE.BoxBufferGeometry(1, 1, 1);
-      const wallMaterial = new THREE.MeshLambertMaterial({color: 0x8e8e8e});
+      const wallGeometry = new BoxBufferGeometry(1, 1, 1);
+      const wallMaterial = new MeshLambertMaterial({color: 0x8e8e8e});
       for (let x = -this.field.x / 2; x <= this.field.x / 2; x++) {
          if (x === -this.field.x / 2 || x === this.field.x / 2) {
             for (let z = -this.field.z / 2; z <= this.field.z / 2; z++) {
                if (z === -this.field.z / 2 || z === this.field.z / 2) {
                   for (let i = -this.field.x / 2; i <= this.field.x / 2; i++) {
-                     const wallMesh            = new THREE.Mesh(wallGeometry, wallMaterial);
+                     const wallMesh            = new Mesh(wallGeometry, wallMaterial);
                      wallMesh.matrixAutoUpdate = false;
                      wallMesh.position.set(i, 0.5, z);
                      wallMesh.updateMatrix();
@@ -387,7 +392,7 @@ class World {
                      this.wallsMeshes.add(wallMesh);
                   }
                } else {
-                  const wallMesh            = new THREE.Mesh(wallGeometry, wallMaterial);
+                  const wallMesh            = new Mesh(wallGeometry, wallMaterial);
                   wallMesh.matrixAutoUpdate = false;
                   wallMesh.position.set(x, 0.5, z);
                   wallMesh.updateMatrix();
@@ -410,99 +415,92 @@ class World {
       this.scene.add(this.playerMesh);
 
       // player projectiles
-      const playerProjectileGeometry = new THREE.PlaneBufferGeometry(0.2, 1);
+      const playerProjectileGeometry = new PlaneBufferGeometry(0.2, 1);
       playerProjectileGeometry.rotateX(Math.PI * -0.5);
-      const playerProjectileMaterial = new THREE.MeshBasicMaterial({color: 0xfff9c2});
+      const playerProjectileMaterial = new MeshBasicMaterial({color: 0xfff9c2});
 
-      this.playerProjectileMesh = new THREE.InstancedMesh(playerProjectileGeometry, playerProjectileMaterial, this.maxPlayerProjectiles);
-      this.playerProjectileMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      this.playerProjectileMesh = new InstancedMesh(playerProjectileGeometry, playerProjectileMaterial, this.maxPlayerProjectiles);
+      this.playerProjectileMesh.instanceMatrix.setUsage(DynamicDrawUsage);
       this.playerProjectileMesh.frustumCulled = false;
       this.scene.add(this.playerProjectileMesh);
 
       // enemy projectile
-
-      const enemyProjectileGeometry = new THREE.SphereBufferGeometry(0.4, 16, 16);
+      const enemyProjectileGeometry = new SphereBufferGeometry(0.4, 16, 16);
       enemyProjectileGeometry.rotateX(Math.PI * -0.5);
-      const enemyProjectileMaterial = new THREE.MeshLambertMaterial({color: 0x43254d});
+      const enemyProjectileMaterial = new MeshLambertMaterial({color: 0x43254d});
 
-      this.enemyProjectileMesh = new THREE.InstancedMesh(enemyProjectileGeometry, enemyProjectileMaterial, this.maxEnemyProjectiles);
-      this.enemyProjectileMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      this.enemyProjectileMesh = new InstancedMesh(enemyProjectileGeometry, enemyProjectileMaterial, this.maxEnemyProjectiles);
+      this.enemyProjectileMesh.instanceMatrix.setUsage(DynamicDrawUsage);
       this.enemyProjectileMesh.frustumCulled = false;
       this.scene.add(this.enemyProjectileMesh);
 
       // enemy destructible projectile
-
-      const enemyDestructibleProjectileGeometry = new THREE.SphereBufferGeometry(0.4, 16, 16);
+      const enemyDestructibleProjectileGeometry = new SphereBufferGeometry(0.4, 16, 16);
       enemyDestructibleProjectileGeometry.rotateX(Math.PI * -0.5);
-      const enemyDestructibleProjectileMaterial = new THREE.MeshLambertMaterial({color: 0xf34d08});
+      const enemyDestructibleProjectileMaterial = new MeshLambertMaterial({color: 0xf34d08});
 
-      this.enemyDestructibleProjectileMesh = new THREE.InstancedMesh(enemyDestructibleProjectileGeometry, enemyDestructibleProjectileMaterial, this.maxEnemyProjectiles);
-      this.enemyDestructibleProjectileMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      this.enemyDestructibleProjectileMesh = new InstancedMesh(enemyDestructibleProjectileGeometry, enemyDestructibleProjectileMaterial, this.maxEnemyProjectiles);
+      this.enemyDestructibleProjectileMesh.instanceMatrix.setUsage(DynamicDrawUsage);
       this.enemyDestructibleProjectileMesh.frustumCulled = false;
       this.scene.add(this.enemyDestructibleProjectileMesh);
 
       // obstacle
+      const obtacleGeometry = new BoxBufferGeometry(1, 1, 1);
+      const obtacleMaterial = new MeshLambertMaterial({color: 0xdedad3});
 
-      const obtacleGeometry = new THREE.BoxBufferGeometry(1, 1, 1);
-      const obtacleMaterial = new THREE.MeshLambertMaterial({color: 0xdedad3});
-
-      this.obstacleMesh               = new THREE.InstancedMesh(obtacleGeometry, obtacleMaterial, this.maxObstacles);
+      this.obstacleMesh               = new InstancedMesh(obtacleGeometry, obtacleMaterial, this.maxObstacles);
       this.obstacleMesh.frustumCulled = false;
       this.obstacleMesh.castShadow    = true;
       this.scene.add(this.obstacleMesh);
 
       // pursuer enemy
-
       const pursuerGeometry = new PursuerGeometry();
-      const pursuerMaterial = new THREE.MeshLambertMaterial({color: 0x333132});
+      const pursuerMaterial = new MeshLambertMaterial({color: 0x333132});
 
-      this.pursuerMesh                  = new THREE.Mesh(pursuerGeometry, pursuerMaterial);
+      this.pursuerMesh                  = new Mesh(pursuerGeometry, pursuerMaterial);
       this.pursuerMesh.matrixAutoUpdate = false;
       this.pursuerMesh.castShadow       = true;
 
       // tower enemy
+      const towerGeometry = new CylinderBufferGeometry(0.5, 0.5, 1, 16);
+      const towerMaterial = new MeshLambertMaterial({color: 0x333132});
 
-      const towerGeometry = new THREE.CylinderBufferGeometry(0.5, 0.5, 1, 16);
-      const towerMaterial = new THREE.MeshLambertMaterial({color: 0x333132});
-
-      this.towerMesh                  = new THREE.Mesh(towerGeometry, towerMaterial);
+      this.towerMesh                  = new Mesh(towerGeometry, towerMaterial);
       this.towerMesh.matrixAutoUpdate = false;
       this.towerMesh.castShadow       = true;
 
 
-      const guardGeometry             = new THREE.SphereBufferGeometry(0.5, 16, 16);
-      const guardMaterial             = new THREE.MeshLambertMaterial({color: 0x333132});
-      this.guardMesh                  = new THREE.Mesh(guardGeometry, guardMaterial);
+      const guardGeometry             = new SphereBufferGeometry(0.5, 16, 16);
+      const guardMaterial             = new MeshLambertMaterial({color: 0x333132});
+      this.guardMesh                  = new Mesh(guardGeometry, guardMaterial);
       this.guardMesh.matrixAutoUpdate = false;
       this.guardMesh.castShadow       = true;
 
       // this.guardMesh.add(this.assetManager.cloneModel('guard'));
 
-      const protectionGeometry             = new THREE.SphereBufferGeometry(0.75, 16, 16);
-      const protectionMaterial             = new THREE.ShaderMaterial(ProtectionShader);
+      const protectionGeometry             = new SphereBufferGeometry(0.75, 16, 16);
+      const protectionMaterial             = new ShaderMaterial(ProtectionShader);
       protectionMaterial.transparent       = true;
-      this.protectionMesh                  = new THREE.Mesh(protectionGeometry, protectionMaterial);
+      this.protectionMesh                  = new Mesh(protectionGeometry, protectionMaterial);
       this.protectionMesh.matrixAutoUpdate = false;
       this.protectionMesh.visible          = false;
 
-      const hitGeometry             = new THREE.PlaneBufferGeometry(2.5, 2.5);
-      const hitMaterial             = new THREE.ShaderMaterial(HitShader);
+      const hitGeometry             = new PlaneBufferGeometry(2.5, 2.5);
+      const hitMaterial             = new ShaderMaterial(HitShader);
       hitMaterial.transparent       = true;
-      this.hitMesh                  = new THREE.Mesh(hitGeometry, hitMaterial);
+      this.hitMesh                  = new Mesh(hitGeometry, hitMaterial);
       this.hitMesh.matrixAutoUpdate = false;
       this.hitMesh.visible          = false;
 
       // renderer
-
-      this.renderer = new THREE.WebGLRenderer({antialias: true});
+      this.renderer = new WebGLRenderer({antialias: true});
       this.renderer.setSize(window.innerWidth, window.innerHeight);
-      this.renderer.outputEncoding    = THREE.sRGBEncoding;
+      this.renderer.outputEncoding    = sRGBEncoding;
       this.renderer.shadowMap.enabled = true;
-      this.renderer.shadowMap.type    = THREE.PCFSoftShadowMap;
+      this.renderer.shadowMap.type    = PCFSoftShadowMap;
       document.body.appendChild(this.renderer.domElement);
 
       // listeners
-
       window.addEventListener('resize', this._onWindowResize, false);
       this.ui.continueButton.addEventListener('click', this._onContinueButtonClick, false);
       this.ui.restartButtonMenu.addEventListener('click', this._onRestart, false);
@@ -517,10 +515,10 @@ class World {
 
    _initBackground() {
 
-      this.scene.background = new THREE.Color(0x030303);
+      this.scene.background = new Color(0x030303);
 
       for (var i = 0; i < 8000; i++) {
-         var star = new THREE.Object3D();
+         var star = new Object3D();
          star.x   = THREE.Math.randFloat(-200, 200);
          star.y   = THREE.Math.randFloat(-75, -50);
          star.z   = THREE.Math.randFloat(-200, 200);
@@ -535,12 +533,12 @@ class World {
       }
 
       let sprite       = this.assetManager.textures.get('star');
-      let starMaterial = new THREE.PointsMaterial({
+      let starMaterial = new PointsMaterial({
          color: 0xaaaaaa,
          size : 0.7,
          map  : sprite,
       });
-      this.stars       = new THREE.Points(this.stargeometry, starMaterial);
+      this.stars       = new Points(this.stargeometry, starMaterial);
 
       this.scene.add(this.stars);
 
@@ -554,7 +552,8 @@ class World {
 
       this.playerMesh.add(protectionMesh)
       // this.player                = new Player(this, this.playerMesh, this.assetManager.mixers.get('Wanderer'), this.assetManager.animations.get('Wanderer'));
-      this.player                = new Player(this, this.playerMesh, this.assetManager.mixers.get('Android'), this.assetManager.animations.get('Android'));
+      this.player                = new Player(this, this.playerMesh, this.assetManager.mixers.get('Android'),
+        this.assetManager.animations.get('Android'));
       this.player.protectionMesh = protectionMesh
 
       // particle system
@@ -1100,7 +1099,7 @@ class World {
       this.field.set(x, y, z);
 
       this.fieldMesh.geometry.dispose();
-      this.fieldMesh.geometry = new THREE.BoxBufferGeometry(x, y, z);
+      this.fieldMesh.geometry = new BoxBufferGeometry(x, y, z);
 
       this._updateWalls();
    }
@@ -1126,8 +1125,8 @@ class World {
 
    _updateWalls() {
 
-      const wallGeometry = new THREE.BoxBufferGeometry(1, 1, 1);
-      const wallMaterial = new THREE.MeshLambertMaterial({color: 0x8e8e8e});
+      const wallGeometry = new BoxBufferGeometry(1, 1, 1);
+      const wallMaterial = new MeshLambertMaterial({color: 0x8e8e8e});
 
       this.wallsMeshes.clear();
       for (let x = -this.field.x / 2; x <= this.field.x / 2; x++) {
@@ -1135,7 +1134,7 @@ class World {
             for (let z = -this.field.z / 2; z <= this.field.z / 2; z++) {
                if (z === -this.field.z / 2 || z === this.field.z / 2) {
                   for (let i = -this.field.x / 2; i <= this.field.x / 2; i++) {
-                     const wallMesh            = new THREE.Mesh(wallGeometry, wallMaterial);
+                     const wallMesh            = new Mesh(wallGeometry, wallMaterial);
                      wallMesh.matrixAutoUpdate = false;
                      wallMesh.position.set(i, 0.5, z);
                      wallMesh.updateMatrix();
@@ -1144,7 +1143,7 @@ class World {
                      this.wallsMeshes.add(wallMesh);
                   }
                } else {
-                  const wallMesh            = new THREE.Mesh(wallGeometry, wallMaterial);
+                  const wallMesh            = new Mesh(wallGeometry, wallMaterial);
                   wallMesh.matrixAutoUpdate = false;
                   wallMesh.position.set(x, 0.5, z);
                   wallMesh.updateMatrix();
@@ -1452,7 +1451,7 @@ function sync(entity, renderComponent) {
 //
 //     this.controls.connect();
 //
-//     const context = THREE.AudioContext.getContext();
+//     const context = AudioContext.getContext();
 //
 //     if ( context.state === 'suspended' ) context.resume();
 //

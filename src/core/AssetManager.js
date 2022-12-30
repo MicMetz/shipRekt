@@ -245,33 +245,156 @@ class AssetManager {
 
       // Swat Officer model
       gltfLoader.load('./models/swat.glb', (gltf) => {
-         const model  = gltf.scene;
-         var geometry = new THREE.Mesh();
-         let geoms    = [];
-         let meshes   = [];
-         let mats     = [];
+         // const skinnedMeshes = {};
+         const clone = {
+            animations: gltf.animations,
+            scene     : gltf.scene.clone(true)
+         }
+         // gltf.scene.traverse(node => {
+         //    if (node.isSkinnedMesh) {
+         //       node.morphTargets = true;
+         //       node.material.skinning = true;
+         //       skinnedMeshes[node.name] = node;
+         //    }
+         // })
 
+         const cloneBones         = {};
+         const cloneSkinnedMeshes = {};
 
-         model.updateMatrixWorld();
-         model.traverse(e => e.isMesh && meshes.push(e) && (geoms.push((e.geometry.index) ? e.geometry.toNonIndexed() : e.geometry().clone())));
-         geoms.forEach((g, i) => g.applyMatrix4(meshes[i].matrixWorld));
+         clone.scene.traverse(node => {
+            if (node.isBone) {
+               cloneBones[node.name] = node;
+            }
 
+            if (node.isSkinnedMesh) {
+               cloneSkinnedMeshes[node.name] = node;
+            }
+         });
 
-         let swat = BufferGeometryUtils.mergeBufferGeometries(geoms);
-         swat.computeVertexNormals();
-         swat.applyMatrix4(model.matrix.clone().invert());
-         swat.userData.materials = meshes.map(m => m.material);
+         for (let name in cloneSkinnedMeshes) {
+            // const SMesh      = skinnedMeshes[name];
+            const cloneSMesh = cloneSkinnedMeshes[name];
+            const skeleton   = cloneSMesh.skeleton;
 
-         const swatMesh = new THREE.Mesh(swat, new THREE.MeshStandardMaterial({color: 0x000000}));
-         swatMesh.name  = 'assault_guard';
+            const orderedCloneBone = [];
 
-         let swatAnimations = null
-         if (model.animations.length > 0) {
-            swatAnimations = model.animations;
+            for (let i = 0; i < skeleton.bones.length; i++) {
+               const cloneBone = cloneBones[skeleton.bones[i].name];
+               orderedCloneBone.push(cloneBone);
+            }
+
+            cloneSMesh.bind(
+              new THREE.Skeleton(orderedCloneBone, skeleton.boneInverses),
+              cloneSMesh.matrixWorld
+            );
          }
 
-         models.set('assault_guard', swatMesh);
-         animations.set('assault_guard', swatAnimations);
+         const mixer      = new THREE.AnimationMixer(clone.scene);
+         const animations = new Map();
+         // const animations = {};
+
+         const deathClip   = clone.animations[0];
+         const deathAction = mixer.clipAction(deathClip);
+         deathAction.play();
+         deathAction.enabled = false;
+
+         const shootClip   = clone.animations[1];
+         const shootAction = mixer.clipAction(shootClip);
+         shootAction.play();
+         shootAction.enabled = false;
+
+         const hitClip   = clone.animations[2];
+         const hitAction = mixer.clipAction(hitClip);
+         hitAction.play();
+         hitAction.enabled = false;
+
+         const idleClip   = clone.animations[4];
+         const idleAction = mixer.clipAction(idleClip);
+         idleAction.play();
+         idleAction.enabled = false;
+
+         const idleGunPointClip   = clone.animations[6];
+         const idleGunPointAction = mixer.clipAction(idleGunPointClip);
+         idleGunPointAction.play();
+         idleGunPointAction.enabled = false;
+
+         const idleGunShootClip   = clone.animations[7];
+         const idleGunShootAction = mixer.clipAction(idleGunShootClip);
+         idleGunShootAction.play();
+         idleGunShootAction.enabled = false;
+
+         const idleMeleeClip   = clone.animations[9];
+         const idleMeleeAction = mixer.clipAction(idleMeleeClip);
+         idleMeleeAction.play();
+         idleMeleeAction.enabled = false;
+
+         const interactClip   = clone.animations[10];
+         const interactAction = mixer.clipAction(interactClip);
+         interactAction.play();
+         interactAction.enabled = false;
+
+         const rollClip   = clone.animations[15];
+         const rollAction = mixer.clipAction(rollClip);
+         rollAction.play();
+         rollAction.enabled = false;
+
+         const runClip   = clone.animations[16];
+         const runAction = mixer.clipAction(runClip);
+         runAction.play();
+         runAction.enabled = false;
+
+         const runBackClip   = clone.animations[17];
+         const runBackAction = mixer.clipAction(runBackClip);
+         runBackAction.play();
+         runBackAction.enabled = false;
+
+         const runLeftClip   = clone.animations[18];
+         const runLeftAction = mixer.clipAction(runLeftClip);
+         runLeftAction.play();
+         runLeftAction.enabled = false;
+
+         const runRightClip   = clone.animations[19];
+         const runRightAction = mixer.clipAction(runRightClip);
+         runRightAction.play();
+         runRightAction.enabled = false;
+
+         const runShootClip   = clone.animations[20];
+         const runShootAction = mixer.clipAction(runShootClip);
+         runShootAction.play();
+         runShootAction.enabled = false;
+
+         const slashClip   = clone.animations[21];
+         const slashAction = mixer.clipAction(slashClip);
+         slashAction.play();
+         slashAction.enabled = false;
+
+         const walkClip   = clone.animations[22];
+         const walkAction = mixer.clipAction(walkClip);
+         walkAction.play();
+         walkAction.enabled = false;
+
+         animations.set('idle', {clip: idleClip, action: idleAction});
+         animations.set('shoot', {clip: shootClip, action: shootAction});
+         animations.set('die', {clip: deathClip, action: deathAction});
+         animations.set('hit', {clip: hitClip, action: hitAction});
+         animations.set('idleGunPoint', {clip: idleGunPointClip, action: idleGunPointAction});
+         animations.set('idleGunShoot', {clip: idleGunShootClip, action: idleGunShootAction});
+         animations.set('idleMelee', {clip: idleMeleeClip, action: idleMeleeAction});
+         animations.set('interact', {clip: interactClip, action: interactAction});
+         animations.set('roll', {clip: rollClip, action: rollAction});
+         animations.set('run', {clip: runClip, action: runAction});
+         animations.set('runBack', {clip: runBackClip, action: runBackAction});
+         animations.set('runLeft', {clip: runLeftClip, action: runLeftAction});
+         animations.set('runRight', {clip: runRightClip, action: runRightAction});
+         animations.set('runShoot', {clip: runShootClip, action: runShootAction});
+         animations.set('slash', {clip: slashClip, action: slashAction});
+         animations.set('walk', {clip: walkClip, action: walkAction});
+
+
+         clone.name = 'assault_guard';
+         this.animations.set('assault_guard', animations);
+         this.mixers.set('assault_guard', mixer);
+         this.models.set('assault_guard', clone.scene);
 
       });
 

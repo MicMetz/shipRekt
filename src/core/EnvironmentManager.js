@@ -1,5 +1,4 @@
-import * as THREE from "three";
-import {Group}    from "three";
+import {Color, Geometry, Group, Object3D, Points, PointsMaterial} from "three";
 
 
 
@@ -13,8 +12,8 @@ class EnvironmentManager {
 
       this._rooms = new Group();
 
-      this._stargeometry = new THREE.Geometry();
-      this._stars        = new THREE.Points();
+      this._stargeometry = new Geometry();
+      this._stars        = new Points();
 
       this._options = {
          type       : 'default',
@@ -40,13 +39,13 @@ class EnvironmentManager {
 
 
    generateBackground() {
-      this._world.scene.background = new THREE.Color(0x030303);
+      this._world.scene.background = new Color(0x030303);
 
       for (var i = 0; i < 8000; i++) {
-         var star = new THREE.Object3D();
-         star.x   = THREE.Math.randFloat(-200, 200);
-         star.y   = THREE.Math.randFloat(-75, -50);
-         star.z   = THREE.Math.randFloat(-200, 200);
+         var star = new Object3D();
+         star.x   = Math.randFloat(-200, 200);
+         star.y   = Math.randFloat(-75, -50);
+         star.z   = Math.randFloat(-200, 200);
 
          star.scale.set(1, 1, 1).multiplyScalar(Math.random());
          // star.updateMatrix();
@@ -58,12 +57,12 @@ class EnvironmentManager {
       }
 
       let sprite       = this._world.assetManager.textures.get('star');
-      let starMaterial = new THREE.PointsMaterial({
+      let starMaterial = new PointsMaterial({
          color: 0xaaaaaa,
          size : 0.7,
          map  : sprite,
       });
-      this.stars       = new THREE.Points(this._stargeometry, starMaterial);
+      this.stars       = new Points(this._stargeometry, starMaterial);
 
       this._world.scene.add(this.stars);
    }
