@@ -139,11 +139,10 @@ button:focus {
 
 
 #start-button {
-    font-size   : 2em;
-    font-weight : 600;
-    color       : #fff700;
-    text-align  : center;
-    font-family : Cyber, sans-serif;
+    font-size    : 2em;
+    --label-size : 0.4em;
+    text-align   : center;
+    font-family  : Cyber, sans-serif;
 }
 
 
@@ -160,9 +159,9 @@ body .cybr-btn + .cybr-btn {
     --primary-hue          : 0;
     --primary-lightness    : 50;
     --color                : hsl(0, 0%, 100%);
-    --font-size            : 26px;
+    --font-size            : 1.4em;
     --shadow-primary-hue   : 180;
-    --label-size           : 9px;
+    --label-size           : 0.7em;
     --shadow-secondary-hue : 60;
     --shadow-secondary     : hsl(var(--shadow-secondary-hue), 90%, 60%);
     --clip                 : polygon(0 0, 100% 0, 100% 100%, 95% 100%, 95% 90%, 85% 90%, 85% 100%, 8% 100%, 0 70%);
@@ -176,7 +175,7 @@ body .cybr-btn + .cybr-btn {
     --clip-six             : polygon(0 40%, 100% 40%, 100% 85%, 95% 85%, 95% 85%, 85% 85%, 85% 85%, 8% 85%, 0 70%);
     --clip-seven           : polygon(0 63%, 100% 63%, 100% 80%, 95% 80%, 95% 80%, 85% 80%, 85% 80%, 8% 80%, 0 70%);
     font-family            : "Cyber", sans-serif;
-    color                  : var(--color);
+    color                  : #fff700;
     cursor                 : pointer;
     background             : transparent;
     text-transform         : uppercase;
@@ -184,7 +183,7 @@ body .cybr-btn + .cybr-btn {
     outline                : transparent;
     letter-spacing         : 2px;
     position               : relative;
-    font-weight            : 700;
+    font-weight            : 600;
     border                 : 0;
     min-width              : 300px;
     height                 : 75px;
@@ -269,7 +268,7 @@ body .cybr-btn + .cybr-btn {
 
 
 .cybr-btn_glitch:before {
-    content    : "";
+    content    : "■";
     position   : absolute;
     top        : calc(var(--border) * 1);
     right      : calc(var(--border) * 1);
