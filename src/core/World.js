@@ -114,12 +114,16 @@ class World {
       this._onContinueButtonClick = onContinueButtonClick.bind(this);
       this._onWindowResize        = onWindowResize.bind(this);
       this._onRestart             = onRestart.bind(this);
+      this._onQuit                = onQuit.bind(this);
 
       this.ui = {
          continueButton       : document.getElementById('menu-continue'),
          restartButtonMenu    : document.getElementById('menu-restart'),
          restartButtonComplete: document.getElementById('complete-restart'),
          restartButtonGameOver: document.getElementById('gameover-restart'),
+         quitButtonMenu       : document.getElementById('menu-quit'),
+         quitButtonComplete   : document.getElementById('complete-quit'),
+         quitButtonGameOver   : document.getElementById('gameover-quit'),
          menu                 : document.getElementById('menu'),
          levelComplete        : document.getElementById('level-complete'),
          gameComplete         : document.getElementById('game-complete'),
@@ -482,11 +486,11 @@ class World {
       this.protectionMesh.matrixAutoUpdate = false;
       this.protectionMesh.visible          = false;
 
-      const hitGeometry             = new PlaneBufferGeometry(2.5, 2.5);
-      const hitMaterial             = new ShaderMaterial(HitShader);
-      hitMaterial.transparent       = true;
-      this.hitMesh                  = new Mesh(hitGeometry, hitMaterial);
-      this.hitMesh.visible          = false;
+      const hitGeometry       = new PlaneBufferGeometry(2.5, 2.5);
+      const hitMaterial       = new ShaderMaterial(HitShader);
+      hitMaterial.transparent = true;
+      this.hitMesh            = new Mesh(hitGeometry, hitMaterial);
+      this.hitMesh.visible    = false;
 
       // renderer
       this.renderer = new WebGLRenderer({antialias: true});
@@ -502,6 +506,9 @@ class World {
       this.ui.restartButtonMenu.addEventListener('click', this._onRestart, false);
       this.ui.restartButtonComplete.addEventListener('click', this._onRestart, false);
       this.ui.restartButtonGameOver.addEventListener('click', this._onRestart, false);
+      this.ui.quitButtonMenu.addEventListener('click', this._onQuit, false);
+      this.ui.quitButtonComplete.addEventListener('click', this._onQuit, false);
+      this.ui.quitButtonGameOver.addEventListener('click', this._onQuit, false);
 
       this.userInterface = new InterfaceManager(this);
 
@@ -1162,13 +1169,23 @@ class World {
 
       if (currentStage > 1) {
 
-         this.ui.continueButton.textContent      = '■ Continue';
-         this.ui.restartButtonMenu.style.display = 'inline-block';
+         this.ui.continueButton.textContent = '■ Continue';
+
+         this.ui.continueButton.classList.remove('hidden');
+         this.ui.restartButtonMenu.classList.add('show-inline');
+
+         this.ui.quitButtonMenu.classList.remove('hidden');
+         this.ui.quitButtonMenu.classList.add('show-inline');
 
       } else {
 
-         this.ui.continueButton.textContent      = '■ Start';
-         this.ui.restartButtonMenu.style.display = 'none';
+         this.ui.continueButton.textContent = '■ Start';
+
+         this.ui.continueButton.classList.remove('show-inline');
+         this.ui.restartButtonMenu.classList.add('hidden');
+
+         this.ui.quitButtonMenu.classList.remove('show-inline');
+         this.ui.quitButtonMenu.classList.add('hidden');
 
       }
 
@@ -1476,6 +1493,36 @@ function onRestart() {
 
    const audio = this.assetManager.audios.get('buttonClick');
    this.playAudio(audio);
+
+}
+
+
+function onQuit() {
+
+   this._stopAnimation();
+
+   this.controls.disconnect();
+
+   this.player                       = null;
+   this.enemies                      = null;
+   this.projectiles                  = null;
+   this.obstacles                    = null;
+   this.towers                       = null;
+   this.guards                       = null;
+   this.pursuers                     = null;
+   this.playerProjectiles            = null;
+   this.enemyProjectiles             = null;
+   this.enemyDestructibleProjectiles = null;
+   this.assetManager.dispose();
+
+   this.gameOver = false;
+
+   this.currentStage = -1;
+
+
+   this.ui.gameComplete.classList.add('hidden');
+   this.ui.gameOver.classList.add('hidden');
+   this.ui.intro.classList.remove('hidden');
 
 }
 
