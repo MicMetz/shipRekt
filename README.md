@@ -9,7 +9,7 @@ You must fight your way through the ship to expropriate your enemy's ship and es
 ## Inspiration
 
 * [Binding of Isaac](https://store.steampowered.com/app/113200/The_Binding_of_Isaac/)
-* [Void Bastards](https://store.steampowered.com/app/1057090/Void_Bastards/)
+* [Void Bastards](https://store.steampowered.com/app/857980/Void_Bastards/)
 * [Enter the Gungeon](https://store.steampowered.com/app/311690/Enter_the_Gungeon/)
 
 ## Roadmap
