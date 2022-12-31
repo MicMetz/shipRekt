@@ -18,12 +18,14 @@ class AssetManager {
 
       this.loadingManager = new THREE.LoadingManager();
 
-      this.gltfLoader    = new GLTFLoader(this.loadingManager);
-      this.jsonLoader    = new THREE.FileLoader(this.loadingManager);
-      this.audioLoader   = new THREE.AudioLoader(this.loadingManager);
-      this.fontLoader    = new THREE.FontLoader(this.loadingManager);
-      this.textureLoader = new THREE.TextureLoader(this.loadingManager);
-      this.listener      = new THREE.AudioListener();
+      this.objectLoader   = new THREE.ObjectLoader(this.loadingManager);
+      this.materialLoader = new THREE.MaterialLoader(this.loadingManager);
+      this.gltfLoader     = new GLTFLoader(this.loadingManager);
+      this.jsonLoader     = new THREE.FileLoader(this.loadingManager);
+      this.audioLoader    = new THREE.AudioLoader(this.loadingManager);
+      this.fontLoader     = new THREE.FontLoader(this.loadingManager);
+      this.textureLoader  = new THREE.TextureLoader(this.loadingManager);
+      this.listener       = new THREE.AudioListener();
 
       this.animations = new Map();
       this.mixers     = new Map();
@@ -35,6 +37,7 @@ class AssetManager {
       this.items           = new Map();
       this.weapons         = new Map();
       this.props           = new Map();
+      this.interiors       = new Map();
 
       this.descriptors = new Map();
 
@@ -49,6 +52,7 @@ class AssetManager {
       this._loadItemModels();
       this._loadWeaponModels();
       this._loadPropModels();
+      this._loadInteriorModels();
 
       const loadingManager = this.loadingManager;
 
@@ -872,50 +876,128 @@ class AssetManager {
    }
 
 
-   /*    _loadJSON() {
-    const jsonLoader = this.jsonLoader;
+   _loadInteriorModels() {
+      const objectLoader   = this.objectLoader;
+      const materialLoader = this.materialLoader;
+      const interiors      = this.interiors;
 
-    // Data fetch
-    jsonLoader.load('./File/Data', (folders) => {
-    folders.forEach((folder) => {
-    this.descriptors.set(folder.name, folder);
-    folder.files.forEach((file) => {
+      const floorPath = './models/interiors/floor/FloorTile_';
 
-    });
-    });
-    });
+      // Floors 1
+      objectLoader.load(floorPath + 'Basic.obj', (object) => {
+         materialLoader.load(floorPath + 'Basic.mtl', (materials) => {
+            object.traverse((child) => {
+               if (child instanceof THREE.Mesh) {
+                  child.material = materials;
+               }
+            });
+            object.matrixAutoUpdate = false;
+            interiors.set('floorBasic', object);
+         });
+      });
 
-    } */
+      // Floors 2
+      objectLoader.load(floorPath + 'Basic2.obj', (object) => {
+         materialLoader.load(floorPath + 'Basic2.mtl', (materials) => {
+            object.traverse((child) => {
+               if (child instanceof THREE.Mesh) {
+                  child.material = materials;
+               }
+            });
+            object.matrixAutoUpdate = false;
+            interiors.set('floorBasic2', object);
+         });
+      });
+
+      // Floors Empty
+      objectLoader.load(floorPath + 'Empty.obj', (object) => {
+         materialLoader.load(floorPath + 'Empty.mtl', (materials) => {
+            object.traverse((child) => {
+               if (child instanceof THREE.Mesh) {
+                  child.material = materials;
+               }
+            });
+            object.matrixAutoUpdate = false;
+            interiors.set('floorEmpty', object);
+         });
+      });
+
+      // Floors Corner
+      objectLoader.load(floorPath + 'Corner.obj', (object) => {
+         materialLoader.load(floorPath + 'Corner.mtl', (materials) => {
+            object.traverse((child) => {
+               if (child instanceof THREE.Mesh) {
+                  child.material = materials;
+               }
+            });
+            object.matrixAutoUpdate = false;
+            interiors.set('floorCorner', object);
+         });
+      });
+
+      // Floors Inner Corner
+      objectLoader.load(floorPath + 'InnerCorner.obj', (object) => {
+         materialLoader.load(floorPath + 'InnerCorner.mtl', (materials) => {
+            object.traverse((child) => {
+               if (child instanceof THREE.Mesh) {
+                  child.material = materials;
+               }
+            });
+            object.matrixAutoUpdate = false;
+            interiors.set('floorInnerCorner', object);
+         });
+      });
+
+      // Floors Double Hallway
+      objectLoader.load(floorPath + 'Double_Hallway.obj', (object) => {
+         materialLoader.load(floorPath + 'Double_Hallway.mtl', (materials) => {
+            object.traverse((child) => {
+               if (child instanceof THREE.Mesh) {
+                  child.material = materials;
+               }
+            });
+            object.matrixAutoUpdate = false;
+            interiors.set('floorDoubleHallway', object);
+         });
+      });
+
+
+      // Walls
+      const wallPath = './materials/wall/Wall_';
+
+      let i = 1;
+      for (i; i <= 5; i++) {
+         objectLoader.load(wallPath + i + '.obj', (object) => {
+            materialLoader.load(wallPath + i + '.mtl', (materials) => {
+               object.traverse((child) => {
+                  if (child instanceof THREE.Mesh) {
+                     child.material = materials;
+                  }
+               });
+               object.matrixAutoUpdate = false;
+               interiors.set('wall' + i, object);
+            });
+         });
+      }
+
+      // Wall Empty
+      objectLoader.load(wallPath + 'Empty.obj', (object) => {
+         materialLoader.load(wallPath + 'Empty.mtl', (materials) => {
+            object.traverse((child) => {
+               if (child instanceof THREE.Mesh) {
+                  child.material = materials;
+               }
+            });
+            object.matrixAutoUpdate = false;
+            interiors.set('wallEmpty', object);
+         });
+      });
+
+   }
+
+
+
 }
-
-
-
-/* function MergeSkinnedGeometry(geo1, geo2) {
- var attributes  = ['normal', 'position', 'skinIndex', 'skinWeight'];
- var dataLengths = [3, 3, 4, 4];
- var geo         = new THREE.BufferGeometry();
- for (var attIndex = 0; attIndex < attributes.length; attIndex++) {
- var currentAttribute = attributes[attIndex];
- var geo1Att          = geo1.getAttribute(currentAttribute);
- var geo2Att          = geo2.getAttribute(currentAttribute);
- var currentArray     = null;
- if (currentAttribute === 'skinIndex') currentArray = new Uint16Array(geo1Att.array.length + geo2Att.array.length);
- else currentArray = new Float32Array(geo1Att.array.length + geo2Att.array.length);
- var innerCount = 0;
- geo1Att.array.map((item) => {
- currentArray[innerCount] = item;
- innerCount++;
- });
- geo2Att.array.map((item) => {
- currentArray[innerCount] = item;
- innerCount++;
- });
- geo1Att.array = currentArray;
- geo1Att.count = currentArray.length / dataLengths[attIndex];
- geo.setAttribute(currentAttribute, geo1Att);
- }
- return geo;
- } */
 
 
 
