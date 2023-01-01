@@ -162,6 +162,7 @@ class World {
          this.animationSystem.update(delta);
          this.controls.update(delta);
          this.entityManager.update(delta);
+         this.userInterface.update(delta);
 
          this._enforceNonPenetrationConstraint();
          this._checkPlayerCollision();

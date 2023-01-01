@@ -2,7 +2,7 @@
  * @author MicMetzger /
   */
 
-import {WEAPON_TYPES_ABILITY, WEAPON_TYPES_MELEE, WEAPON_TYPES_RANGE} from "../etc/Constants.js";
+import {WEAPON_TYPES_ABILITY, WEAPON_TYPES_MELEE, WEAPON_TYPES_RANGE}       from "../etc/Constants.js";
 import { WEAPON_STATUS_EMPTY, WEAPON_STATUS_READY, WEAPON_STATUS_NOT_READY} from "../etc/Constants.js";
 
 

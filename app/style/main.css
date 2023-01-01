@@ -483,6 +483,17 @@ body .cybr-btn + .cybr-btn {
 
 
 
+#uiTimer {
+    position   : absolute;
+    background : none;
+    top        : 0;
+    text-align : center;
+    right      : 4%;
+    width      : fit-content;
+}
+
+
+
 #uiAmmo {
     position : absolute;
     bottom   : 4%;

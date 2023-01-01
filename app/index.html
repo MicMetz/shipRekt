@@ -26,20 +26,23 @@
 			</div>
 			<div class="row content">
 				
-					<button id="menu-continue" class="cybr-btn">■ Play<span>_</span>
-						<span class="cybr-btn_glitch">Play_</span>
-						<span class="cybr-btn_tag">01</span>
-					</button>
+				<button id="menu-continue" class="cybr-btn">■ Play
+					<span>_</span>
+					<span class="cybr-btn_glitch">Play_</span>
+					<span class="cybr-btn_tag">01</span>
+				</button>
 				
-					<button id="menu-restart" class="cybr-btn hidden">■ Restart<span>_</span>
-						<span class="cybr-btn_glitch">Restart_</span>
-						<span class="cybr-btn_tag">02</span>
-					</button>
-
-					<button id="menu-quit" class="cybr-btn hidden">■ Quit<span>_</span>
-						<span class="cybr-btn_glitch">Quit_</span>
-						<span class="cybr-btn_tag">03</span>
-					</button>
+				<button id="menu-restart" class="cybr-btn hidden">■ Restart
+					<span>_</span>
+					<span class="cybr-btn_glitch">Restart_</span>
+					<span class="cybr-btn_tag">02</span>
+				</button>
+				
+				<button id="menu-quit" class="cybr-btn hidden">■ Quit
+					<span>_</span>
+					<span class="cybr-btn_glitch">Quit_</span>
+					<span class="cybr-btn_tag">03</span>
+				</button>
 			</div>
 			<div class="row footer">
 				<div id="stage-counter">Total Stages Cleared:
@@ -48,24 +51,35 @@
 			</div>
 		</section>
 		
-		<section id="uiAmmo" class="interfaceContainer hidden">
-			<div>
-				<span id="ammoRemaining"></span>
-				<span>|</span>
-				<span id="ammo"></span>
-			</div>
-		</section>
 		
-		<section id="uiHealth" class="interfaceContainer hidden">
-			<div id="health-bar">
-				<div id="health"></div>
-			</div>
-		</section>
+		<section id="user-interface" class="interfaceContainer hidden">
+			
+			<section id="uiAmmo" class="interfaceContainer ">
+				<div>
+					<span id="ammoRemaining"></span>
+					<span>|</span>
+					<span id="ammo"></span>
+				</div>
+			</section>
+			
+			<section id="uiHealth" class="interfaceContainer ">
+				<div id="health-bar">
+					<div id="health"></div>
+				</div>
+			</section>
+			
+			<section id="uiTimer" class="interfaceContainer ">
+				<div>
+					<span id="timer">00:00</span>
+				</div>
+			</section>
+			
+			<section id="uiNadeList" class="interfaceContainer ">
+				<div>
+					<ul id="nades"></ul>
+				</div>
+			</section>
 		
-		<section id="uiNadeList" class="interfaceContainer hidden">
-			<div>
-				<ul id="nades"></ul>
-			</div>
 		</section>
 		
 		<section id="level-complete" class="hidden full-screen info">

@@ -2,9 +2,9 @@
  * @author MicMetzger /
  */
 
-import {Scene}           from "three";
-import {EventDispatcher} from "yuka";
-import {CONFIG}          from "../etc/Utilities";
+import {Scene}                              from "three";
+import {EventDispatcher}                    from "yuka";
+import {CONFIG}                             from "../etc/Utilities";
 
 
 
@@ -26,9 +26,12 @@ class InterfaceManager {
       this.endTimeInDamageIndication = Infinity;
 
       this.ui = {
+         userInterface: document.getElementById("user-interface"),
+         uiTimer      : document.getElementById("uiTimer"),
          uiHealth     : document.getElementById("uiHealth"),
          uiAmmo       : document.getElementById("uiAmmo"),
          uiNade       : document.getElementById("uiNadeList"),
+         timer        : document.getElementById("timer"),
          ammo         : document.getElementById("ammo"),
          ammoRemaining: document.getElementById("ammoRemaining"),
          health       : document.getElementById("health"),
@@ -49,18 +52,23 @@ class InterfaceManager {
    /**
     * Updates the UI.
     *
-    * @param {number} delta - The time delta.
-    * @return {UIManager} A reference to this UI manager.
+    * @param {number} time - The time delta.
     */
-   update(delta) {
+   update(time) {
 
-      this.currentTime += delta;
+      this.currentTime += time;
+
+      this._updateHealthStatus();
+      this._updateAmmoStatus();
+      this._updateTimerStatus();
 
       if (this.currentTime >= this.endTimeOutDamageIndication) {
 
          this._hideOutDamageIndication();
 
       }
+
+
 
    }
 
@@ -147,15 +155,21 @@ class InterfaceManager {
    }
 
 
+   _updateTimerStatus() {
+
+      var min     = Math.floor(this.currentTime / 60);
+      var seconds = Math.floor(this.currentTime % 60);
+
+      this.ui.timer.textContent = min + ":" + seconds
+
+      return this;
+
+   }
+
+
    _hideInterface() {
 
-      this.ui.uiHealth.classList.add("hidden");
-      this.ui.uiAmmo.classList.add("hidden");
-      this.ui.uiNade.classList.add("hidden");
-
-      this.sprites.crosshair.visible = false;
-      this.sprites.indicator.visible = false;
-
+      this.ui.userInterface.classList.add("hidden");
       return this;
 
    }
@@ -163,14 +177,9 @@ class InterfaceManager {
 
    _showInterface() {
 
-      this.ui.uiHealth.classList.remove("hidden");
-      this.ui.uiAmmo.classList.remove("hidden");
-      this.ui.uiNade.classList.remove("hidden");
+      this.ui.userInterface.classList.remove("hidden");
 
       // this.sprites.crosshair.visible = true;
-
-      this._updateHealthStatus();
-      this._updateAmmoStatus();
 
       return this;
 

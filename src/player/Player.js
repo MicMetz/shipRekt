@@ -3,9 +3,9 @@
  */
 
 import {AABB, MathUtils, MovingEntity, OBB, Ray, Vector3} from 'yuka';
-import {Particle, ParticleSystem}   from '../core/ParticleSystem.js';
-import {WeaponSystem}               from "../entities/WeaponSystem.js";
-import {Weapon}                     from "../weapons/Weapon.js";
+import {Particle, ParticleSystem} from '../core/ParticleSystem.js';
+import {WeaponSystem}             from "../weapons/WeaponSystem.js";
+import {Weapon}                   from "../weapons/Weapon.js";
 import PlayerStateMachine           from "./PlayerStateMachine.js";
 import PlayerControllerProxy        from "./PlayerControllerProxy.js";
 import {PlayerProjectile}           from './PlayerProjectile.js';
