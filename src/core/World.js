@@ -978,7 +978,7 @@ class World {
             // second more expensive test (only performed if objects are close enough)
             if (playerProjectile.obb.intersectsBoundingSphere(tower.boundingSphere) === true) {
 
-               playerProjectile.sendMessage(tower, 'hit');
+               playerProjectile.sendMessage(tower, 'hit', 0, playerProjectile);
                this.removeProjectile(playerProjectile);
                return;
 

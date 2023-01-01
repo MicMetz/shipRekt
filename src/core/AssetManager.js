@@ -3,6 +3,7 @@
  */
 
 import * as THREE            from 'three';
+import {OBJLoader}           from "three/examples/jsm/loaders/OBJLoader.js";
 import {BufferGeometryUtils} from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import {GLTFLoader}          from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {dumpObject}          from '../etc/Utilities.js';
@@ -18,14 +19,13 @@ class AssetManager {
 
       this.loadingManager = new THREE.LoadingManager();
 
-      this.objectLoader   = new THREE.ObjectLoader(this.loadingManager);
-      this.materialLoader = new THREE.MaterialLoader(this.loadingManager);
-      this.gltfLoader     = new GLTFLoader(this.loadingManager);
-      this.jsonLoader     = new THREE.FileLoader(this.loadingManager);
-      this.audioLoader    = new THREE.AudioLoader(this.loadingManager);
-      this.fontLoader     = new THREE.FontLoader(this.loadingManager);
-      this.textureLoader  = new THREE.TextureLoader(this.loadingManager);
-      this.listener       = new THREE.AudioListener();
+      this.objectLoader  = new OBJLoader(this.loadingManager);
+      this.gltfLoader    = new GLTFLoader(this.loadingManager);
+      this.jsonLoader    = new THREE.FileLoader(this.loadingManager);
+      this.audioLoader   = new THREE.AudioLoader(this.loadingManager);
+      this.fontLoader    = new THREE.FontLoader(this.loadingManager);
+      this.textureLoader = new THREE.TextureLoader(this.loadingManager);
+      this.listener      = new THREE.AudioListener();
 
       this.animations = new Map();
       this.mixers     = new Map();
@@ -877,88 +877,51 @@ class AssetManager {
 
 
    _loadInteriorModels() {
-      const objectLoader   = this.objectLoader;
-      const materialLoader = this.materialLoader;
-      const interiors      = this.interiors;
+      const objectLoader = this.objectLoader;
+      const interiors    = this.interiors;
 
-      const floorPath = './models/interiors/floor/FloorTile_';
+      const floorPath = './materials/floor/FloorTile_';
 
       // Floors 1
-      objectLoader.load(floorPath + 'Basic.obj', (object) => {
-         materialLoader.load(floorPath + 'Basic.mtl', (materials) => {
-            object.traverse((child) => {
-               if (child instanceof THREE.Mesh) {
-                  child.material = materials;
-               }
-            });
-            object.matrixAutoUpdate = false;
-            interiors.set('floorBasic', object);
-         });
+      objectLoader.load('./materials/floor/FloorTile_Basic.obj', (object) => {
+
+         object.matrixAutoUpdate = false;
+         interiors.set('BasicFloor', object);
       });
 
       // Floors 2
       objectLoader.load(floorPath + 'Basic2.obj', (object) => {
-         materialLoader.load(floorPath + 'Basic2.mtl', (materials) => {
-            object.traverse((child) => {
-               if (child instanceof THREE.Mesh) {
-                  child.material = materials;
-               }
-            });
-            object.matrixAutoUpdate = false;
-            interiors.set('floorBasic2', object);
-         });
+
+         object.matrixAutoUpdate = false;
+         interiors.set('BasicFloor2', object);
       });
 
       // Floors Empty
       objectLoader.load(floorPath + 'Empty.obj', (object) => {
-         materialLoader.load(floorPath + 'Empty.mtl', (materials) => {
-            object.traverse((child) => {
-               if (child instanceof THREE.Mesh) {
-                  child.material = materials;
-               }
-            });
-            object.matrixAutoUpdate = false;
-            interiors.set('floorEmpty', object);
-         });
+
+         object.matrixAutoUpdate = false;
+         interiors.set('EmptyFloor', object);
       });
 
       // Floors Corner
       objectLoader.load(floorPath + 'Corner.obj', (object) => {
-         materialLoader.load(floorPath + 'Corner.mtl', (materials) => {
-            object.traverse((child) => {
-               if (child instanceof THREE.Mesh) {
-                  child.material = materials;
-               }
-            });
-            object.matrixAutoUpdate = false;
-            interiors.set('floorCorner', object);
-         });
+
+         object.matrixAutoUpdate = false;
+         interiors.set('CornerFloor', object);
       });
 
       // Floors Inner Corner
       objectLoader.load(floorPath + 'InnerCorner.obj', (object) => {
-         materialLoader.load(floorPath + 'InnerCorner.mtl', (materials) => {
-            object.traverse((child) => {
-               if (child instanceof THREE.Mesh) {
-                  child.material = materials;
-               }
-            });
-            object.matrixAutoUpdate = false;
-            interiors.set('floorInnerCorner', object);
-         });
+
+         object.matrixAutoUpdate = false;
+         interiors.set('InnerCornerFloor', object);
       });
 
       // Floors Double Hallway
       objectLoader.load(floorPath + 'Double_Hallway.obj', (object) => {
-         materialLoader.load(floorPath + 'Double_Hallway.mtl', (materials) => {
-            object.traverse((child) => {
-               if (child instanceof THREE.Mesh) {
-                  child.material = materials;
-               }
-            });
-            object.matrixAutoUpdate = false;
-            interiors.set('floorDoubleHallway', object);
-         });
+
+         object.matrixAutoUpdate = false;
+         interiors.set('DoubleHallwayFloor', object);
       });
 
 
@@ -968,29 +931,18 @@ class AssetManager {
       let i = 1;
       for (i; i <= 5; i++) {
          objectLoader.load(wallPath + i + '.obj', (object) => {
-            materialLoader.load(wallPath + i + '.mtl', (materials) => {
-               object.traverse((child) => {
-                  if (child instanceof THREE.Mesh) {
-                     child.material = materials;
-                  }
-               });
-               object.matrixAutoUpdate = false;
-               interiors.set('wall' + i, object);
-            });
+
+            object.matrixAutoUpdate = false;
+            interiors.set('BasicWall' + i, object);
          });
       }
 
       // Wall Empty
       objectLoader.load(wallPath + 'Empty.obj', (object) => {
-         materialLoader.load(wallPath + 'Empty.mtl', (materials) => {
-            object.traverse((child) => {
-               if (child instanceof THREE.Mesh) {
-                  child.material = materials;
-               }
-            });
-            object.matrixAutoUpdate = false;
-            interiors.set('wallEmpty', object);
-         });
+
+
+         object.matrixAutoUpdate = false;
+         interiors.set('EmptyWall', object);
       });
 
    }

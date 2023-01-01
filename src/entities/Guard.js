@@ -5,6 +5,7 @@
 import {AnimationMixer}                                    from "three";
 import {BoundingSphere, Vehicle, StateMachine, Quaternion} from 'yuka';
 import {GUARDTYPE}                                         from "../etc/Utilities.js";
+import Enemy                                               from "./enemies/Enemy.js";
 
 
 
@@ -12,7 +13,7 @@ const q = new Quaternion();
 
 
 
-class Guard extends Vehicle {
+class Guard extends Enemy {
    /**
     * Guard Enemy type.
     *
@@ -21,21 +22,21 @@ class Guard extends Vehicle {
     * @param body
     */
    constructor(world, type = GUARDTYPE.ASSAULT, body) {
-      super();
+      super(type);
 
       this.world     = world;
       this.bodyMesh  = body;
       this.guardType = type;
 
       // Animations
-      this.animations   = new AnimationMixer(this.bodyMesh);
+      this.animations           = new AnimationMixer(this.bodyMesh);
       this.stateMachineMovement = new StateMachine(this);
       this.stateMachineCombat   = new StateMachine(this);
 
       this.boundingRadius = 0.5;
 
-      this.MAX_HEALTH_POINTS = 8;
-      this.healthPoints      = this.MAX_HEALTH_POINTS;
+      // this.MAX_HEALTH_POINTS = 8;
+      // this.healthPoints      = this.MAX_HEALTH_POINTS;
 
       this.boundingSphere        = new BoundingSphere();
       this.boundingSphere.radius = this.boundingRadius;
@@ -51,13 +52,6 @@ class Guard extends Vehicle {
       this.hitEffectDuration    = 0.25;
       this.hitEffectMinDuration = 0.15;
       this._hideHitEffectTime   = -Infinity;
-
-   }
-
-
-   isPlayer() {
-
-      return false;
 
    }
 
@@ -162,7 +156,8 @@ class Guard extends Vehicle {
 
             if (this.protected === false) {
 
-               this.healthPoints--;
+               // this.healthPoints--;
+               this.takeDamage(telegram.data);
 
                if (this.hitted === true) {
 
@@ -187,7 +182,8 @@ class Guard extends Vehicle {
                const audio = this.audios.get('enemyHit');
                world.playAudio(audio);
 
-               if (this.healthPoints === 0) {
+               // if (this.healthPoints === 0) {
+               if (!this.isAlive) {
 
                   const audio = this.audios.get('coreExplode');
                   world.playAudio(audio);
