@@ -66414,6 +66414,7 @@
         this.endTimeInDamageIndication = Infinity;
         this.ui = {
           userInterface: document.getElementById("user-interface"),
+          uiMinimap: document.getElementById("uiMinimap").getContext("2d"),
           uiTimer: document.getElementById("uiTimer"),
           uiHealth: document.getElementById("uiHealth"),
           uiAmmo: document.getElementById("uiAmmo"),

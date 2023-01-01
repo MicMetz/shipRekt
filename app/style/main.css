@@ -482,6 +482,17 @@ body .cybr-btn + .cybr-btn {
 }
 
 
+#uiMinimap {
+     fill: #000;
+     background-color: #ffffff0d;
+     position: absolute;
+     bottom   : 4%;
+     right    : 2%;
+     z-index: 1;
+     filter: blur(0.4px);
+ }
+
+
 
 #uiTimer {
     position   : absolute;
@@ -497,7 +508,7 @@ body .cybr-btn + .cybr-btn {
 #uiAmmo {
     position : absolute;
     bottom   : 4%;
-    right    : 4%;
+    right    : 5%;
 }
 
 

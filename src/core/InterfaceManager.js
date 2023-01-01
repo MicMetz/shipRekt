@@ -2,9 +2,9 @@
  * @author MicMetzger /
  */
 
-import {Scene}                              from "three";
-import {EventDispatcher}                    from "yuka";
-import {CONFIG}                             from "../etc/Utilities";
+import {Scene}           from "three";
+import {EventDispatcher} from "yuka";
+import {CONFIG}          from "../etc/Utilities";
 
 
 
@@ -27,6 +27,7 @@ class InterfaceManager {
 
       this.ui = {
          userInterface: document.getElementById("user-interface"),
+         uiMinimap    : document.getElementById("uiMinimap").getContext("2d"),
          uiTimer      : document.getElementById("uiTimer"),
          uiHealth     : document.getElementById("uiHealth"),
          uiAmmo       : document.getElementById("uiAmmo"),
