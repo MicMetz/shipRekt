@@ -9,7 +9,7 @@ class Room {
       this._world   = world;
       this._tiles   = new Group();
       this._props   = [];
-      this._pickups = [];
+      this._collectibles = [];
       this._enemies = [];
       this.bossRoom = false;
       this.exitRoom = false;

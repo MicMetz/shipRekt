@@ -767,21 +767,21 @@ class AssetManager {
       const gltfLoader = this.gltfLoader;
       const items      = this.items;
 
-      // Pickup Health
+      // Collectible Health
       gltfLoader.load('./models/pickups/PickupHealth.glb', (gltf) => {
          const healthpackMesh            = gltf.scene;
          healthpackMesh.matrixAutoUpdate = false;
          items.set('pickupHealth', healthpackMesh);
       });
 
-      // Pickup Heart
+      // Collectible Heart
       gltfLoader.load('./models/pickups/PickupHeart.glb', (gltf) => {
          const heartMesh            = gltf.scene;
          heartMesh.matrixAutoUpdate = false;
          items.set('pickupHeart', heartMesh);
       });
 
-      // Pickup Tank
+      // Collectible Tank
       gltfLoader.load('./models/pickups/PickupTank.glb', (gltf) => {
          const tankMesh            = gltf.scene;
          tankMesh.matrixAutoUpdate = false;

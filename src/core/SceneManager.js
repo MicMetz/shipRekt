@@ -26,6 +26,7 @@ class SceneManager {
       switch (id) {
 
          case 1:
+            // this._loadStage11();
             this._loadStage01();
             break;
 
@@ -94,7 +95,7 @@ class SceneManager {
       const world = this.world;
 
       // field
-      world.updateField(15, 1, 15);
+      world.environmentManager.update(15, 1, 15);
 
       // controls
       world.controls.setPosition(0, 0.5, 5);
@@ -102,7 +103,7 @@ class SceneManager {
 
       // enemies
       const guard = world._createGuard(GUARDTYPE.ASSAULT);
-      console.log(dumpObject(guard));
+      // console.log(dumpObject(guard));
       // console.log(guard);
       guard.position.set(0, 0.5, -4);
       guard.setCombatPattern(new DefaultCombatPattern());
@@ -118,8 +119,8 @@ class SceneManager {
 
       // field
 
-      // world.updateField(15, 1, 15);
-      world.updateField(30, 1, 30);
+      // world.environmentManager.update(15, 1, 15);
+      world.environmentManager.update(30, 1, 30);
 
       // controls
 
@@ -146,7 +147,7 @@ class SceneManager {
 
       // field
 
-      world.updateField(15, 1, 15);
+      world.environmentManager.update(15, 1, 15);
 
       // controls
 
@@ -171,7 +172,7 @@ class SceneManager {
 
       // field
 
-      world.updateField(15, 1, 15);
+      world.environmentManager.update(15, 1, 15);
 
       // controls
 
@@ -199,7 +200,7 @@ class SceneManager {
 
       // field
 
-      world.updateField(15, 1, 15);
+      world.environmentManager.update(15, 1, 15);
 
       // controls
 
@@ -254,7 +255,7 @@ class SceneManager {
 
       // field
 
-      world.updateField(15, 1, 15);
+      world.environmentManager.update(15, 1, 15);
 
       // controls
 
@@ -305,7 +306,7 @@ class SceneManager {
 
       // field
 
-      world.updateField(15, 1, 15);
+      world.environmentManager.update(15, 1, 15);
 
       // controls
 
@@ -357,7 +358,7 @@ class SceneManager {
 
       // field
 
-      world.updateField(15, 1, 15);
+      world.environmentManager.update(15, 1, 15);
 
       // controls
 
@@ -408,7 +409,7 @@ class SceneManager {
 
       // field
 
-      world.updateField(25, 1, 25);
+      world.environmentManager.update(25, 1, 25);
 
       // controls
 
@@ -472,7 +473,7 @@ class SceneManager {
 
       // field
 
-      world.updateField(25, 1, 25);
+      world.environmentManager.update(25, 1, 25);
 
       // controls
 
@@ -607,7 +608,7 @@ class SceneManager {
 
       // field
 
-      world.updateField(20, 1, 20);
+      world.environmentManager.update(20, 1, 20);
 
       // controls
 
@@ -706,7 +707,7 @@ class SceneManager {
 
       // field
 
-      world.updateField(20, 1, 20);
+      world.environmentManager.update(20, 1, 20);
 
       // controls
 
@@ -814,7 +815,7 @@ class SceneManager {
 
       // field
 
-      world.updateField(20, 1, 20);
+      world.environmentManager.update(20, 1, 20);
 
       // controls
 

@@ -6,20 +6,19 @@ import {
    AmbientLight, BoxBufferGeometry, CameraHelper, Color, CylinderBufferGeometry, DirectionalLight,
    DynamicDrawUsage, Geometry, Group, InstancedMesh, Mesh, MeshBasicMaterial, MeshLambertMaterial, Object3D, PCFSoftShadowMap,
    PerspectiveCamera, PlaneBufferGeometry, Points, PointsMaterial, Scene, ShaderMaterial, SphereBufferGeometry, sRGBEncoding,
-   WebGLRenderer, MathUtils
+   WebGLRenderer, MathUtils, BufferGeometry
 }                                    from "three";
 import * as THREE                    from 'three';
 import * as YUKA                     from 'yuka';
-import {GLTFLoader}                  from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {AssetManager}                from './AssetManager.js';
 import {PlayerControls}              from '../player/PlayerControls.js';
 import {Player}                      from '../player/Player.js';
 import {Guard}                       from '../entities/Guard.js';
 import {Pursuer}                     from '../entities/Pursuer.js';
-import {BufferGeometryUtils}         from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import {ProtectionShader, HitShader} from '../etc/Shaders.js';
 import {PursuerGeometry}             from '../patterns/PursuerGeometry.js';
 import {AnimationSystem}             from './AnimationSystem.js';
+import {EnvironmentManager}          from "./EnvironmentManager.js";
 import {InterfaceManager}            from "./InterfaceManager.js";
 import {SceneManager}                from './SceneManager.js';
 import {Tower}                       from '../entities/Tower.js';
@@ -57,12 +56,11 @@ class World {
       this.currentStage = 1;
       this.maxStage     = 14;
 
-      this.stargeometry = new Geometry();
-      this.stars        = new Points();
+      this.environmentManager = new EnvironmentManager(this);
+      this.stargeometry       = new Geometry();
+      this.stars              = new Points();
 
-
-      this.field     = new YUKA.Vector3(16, 1, 16);
-      this.fieldMesh = null;
+      this.field = new YUKA.Vector3(16, 1, 16);
 
       this.wall        = new YUKA.Vector3(0.5, 1, 0.5);
       this.wallsMeshes = new Group();
@@ -141,7 +139,7 @@ class World {
       this.assetManager = new AssetManager();
       this.assetManager.init().then(() => {
 
-         this._initScene();
+         this._initEnvironment();
          this._initBackground();
          this._initPlayer();
          this._initControls();
@@ -172,7 +170,6 @@ class World {
 
          this._updateObstaclesMeshes();
          this._updateProjectileMeshes();
-         this._updateBackground(delta);
 
          this.stars.rotation.y += 0.01;
 
@@ -326,7 +323,7 @@ class World {
    }
 
 
-   _initUI() {
+   #_initUI() {
 
       const loadingScreen = this.ui.loadingScreen;
 
@@ -336,7 +333,7 @@ class World {
    }
 
 
-   _initScene(callback) {
+   _initEnvironment(callback) {
 
       // camera
       this.camera = new PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 200);
@@ -345,71 +342,7 @@ class World {
       // scene
       this.scene = new Scene();
 
-      // lights
-      const ambientLight            = new AmbientLight(0xcccccc, 0.4);
-      ambientLight.matrixAutoUpdate = false;
-      this.scene.add(ambientLight);
 
-      const dirLight = new DirectionalLight(0xffffff, 0.6);
-      dirLight.position.set(1, 10, -1);
-      dirLight.matrixAutoUpdate = false;
-      dirLight.updateMatrix();
-      dirLight.castShadow           = true;
-      dirLight.shadow.camera.top    = 15;
-      dirLight.shadow.camera.bottom = -15;
-      dirLight.shadow.camera.left   = -15;
-      dirLight.shadow.camera.right  = 15;
-      dirLight.shadow.camera.near   = 1;
-      dirLight.shadow.camera.far    = 20;
-      dirLight.shadow.mapSize.x     = 2048;
-      dirLight.shadow.mapSize.y     = 2048;
-      dirLight.shadow.bias          = 0.01;
-      this.scene.add(dirLight);
-
-      /* TODO: DEBUG */
-      if (_DEBUG_) {
-         this.scene.add(new CameraHelper(dirLight.shadow.camera));
-      }
-
-      // field
-      const fieldGeometry = new BoxBufferGeometry(this.field.x, this.field.y, this.field.z);
-      const fieldMaterial = new MeshLambertMaterial({color: 0x9da4b0});
-
-      this.fieldMesh                  = new Mesh(fieldGeometry, fieldMaterial);
-      this.fieldMesh.matrixAutoUpdate = false;
-      this.fieldMesh.position.set(0, -0.5, 0);
-      this.fieldMesh.updateMatrix();
-      this.fieldMesh.receiveShadow = true;
-      this.scene.add(this.fieldMesh);
-
-      const wallGeometry = new BoxBufferGeometry(1, 1, 1);
-      const wallMaterial = new MeshLambertMaterial({color: 0x8e8e8e});
-      for (let x = -this.field.x / 2; x <= this.field.x / 2; x++) {
-         if (x === -this.field.x / 2 || x === this.field.x / 2) {
-            for (let z = -this.field.z / 2; z <= this.field.z / 2; z++) {
-               if (z === -this.field.z / 2 || z === this.field.z / 2) {
-                  for (let i = -this.field.x / 2; i <= this.field.x / 2; i++) {
-                     const wallMesh            = new Mesh(wallGeometry, wallMaterial);
-                     wallMesh.matrixAutoUpdate = false;
-                     wallMesh.position.set(i, 0.5, z);
-                     wallMesh.updateMatrix();
-                     wallMesh.castShadow    = true;
-                     wallMesh.receiveShadow = true;
-                     this.wallsMeshes.add(wallMesh);
-                  }
-               } else {
-                  const wallMesh            = new Mesh(wallGeometry, wallMaterial);
-                  wallMesh.matrixAutoUpdate = false;
-                  wallMesh.position.set(x, 0.5, z);
-                  wallMesh.updateMatrix();
-                  wallMesh.castShadow    = true;
-                  wallMesh.receiveShadow = true;
-                  this.wallsMeshes.add(wallMesh);
-               }
-            }
-         }
-      }
-      this.scene.add(this.wallsMeshes);
 
       // player
       this.playerMesh                  = this.assetManager.characterModels.get('Android');
@@ -511,44 +444,16 @@ class World {
       this.ui.quitButtonComplete.addEventListener('click', this._onQuit, false);
       this.ui.quitButtonGameOver.addEventListener('click', this._onQuit, false);
 
+      this.environmentManager.init();
       this.userInterface = new InterfaceManager(this);
 
    }
 
 
 
-   _initBackground() {
-
-      this.scene.background = new Color(0x030303);
-
-      for (var i = 0; i < 8000; i++) {
-         var star = new Object3D();
-         star.x   = MathUtils.randFloat(-200, 200);
-         star.y   = MathUtils.randFloat(-75, -50);
-         star.z   = MathUtils.randFloat(-200, 200);
-         // star.x   = THREE.Math.randFloat(-200, 200);
-         // star.y   = THREE.Math.randFloat(-75, -50);
-         // star.z   = THREE.Math.randFloat(-200, 200);
-
-         star.scale.set(1, 1, 1).multiplyScalar(Math.random());
-         // star.updateMatrix();
-         star.updateMatrixWorld();
-
-         star.velocity     = 0;
-         star.acceleration = 0.002;
-         this.stargeometry.vertices.push(star);
-      }
-
-      let sprite       = this.assetManager.textures.get('star');
-      let starMaterial = new PointsMaterial({
-         color: 0xaaaaaa,
-         size : 0.7,
-         map  : sprite,
-      });
-      this.stars       = new Points(this.stargeometry, starMaterial);
-
-      this.scene.add(this.stars);
-
+   _initBackground(params) {
+      const background_color = new Color(0x030303);
+      this.environmentManager.generateBackground(background_color, true);
    }
 
 
@@ -1102,31 +1007,8 @@ class World {
 
 
    updateField(x, y, z) {
-
       this.field.set(x, y, z);
-
-      this.fieldMesh.geometry.dispose();
-      this.fieldMesh.geometry = new BoxBufferGeometry(x, y, z);
-
-      this._updateWalls();
-   }
-
-
-   _updateBackground(delta) {
-      this.stargeometry.vertices.forEach((vertex) => {
-
-         vertex.velocity += vertex.acceleration * (delta * 0.01);
-         vertex.y -= vertex.velocity;
-
-         if (vertex.y <= -80) {
-
-            vertex.y        = -45;
-            vertex.velocity = 0;
-
-         }
-
-      });
-      this.stargeometry.verticesNeedUpdate = true;
+      this.environmentManager.update(x, y, z);
    }
 
 
@@ -1136,9 +1018,9 @@ class World {
       const wallMaterial = new MeshLambertMaterial({color: 0x8e8e8e});
 
       this.wallsMeshes.clear();
-      for (let x = -this.field.x / 2; x <= this.field.x / 2; x++) {
+      for (let x = -this.field.x; x <= this.field.x; x++) {
          if (x === -this.field.x / 2 || x === this.field.x / 2) {
-            for (let z = -this.field.z / 2; z <= this.field.z / 2; z++) {
+            for (let z = -this.field.z; z <= this.field.z; z++) {
                if (z === -this.field.z / 2 || z === this.field.z / 2) {
                   for (let i = -this.field.x / 2; i <= this.field.x / 2; i++) {
                      const wallMesh            = new Mesh(wallGeometry, wallMaterial);

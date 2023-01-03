@@ -57911,6 +57911,1691 @@
     new LineSegment();
     new Vector3();
 
+    var OBJLoader = ( function () {
+
+    	// o object_name | g group_name
+    	var object_pattern = /^[og]\s*(.+)?/;
+    	// mtllib file_reference
+    	var material_library_pattern = /^mtllib /;
+    	// usemtl material_name
+    	var material_use_pattern = /^usemtl /;
+    	// usemap map_name
+    	var map_use_pattern = /^usemap /;
+
+    	var vA = new Vector3$1();
+    	var vB = new Vector3$1();
+    	var vC = new Vector3$1();
+
+    	var ab = new Vector3$1();
+    	var cb = new Vector3$1();
+
+    	function ParserState() {
+
+    		var state = {
+    			objects: [],
+    			object: {},
+
+    			vertices: [],
+    			normals: [],
+    			colors: [],
+    			uvs: [],
+
+    			materials: {},
+    			materialLibraries: [],
+
+    			startObject: function ( name, fromDeclaration ) {
+
+    				// If the current object (initial from reset) is not from a g/o declaration in the parsed
+    				// file. We need to use it for the first parsed g/o to keep things in sync.
+    				if ( this.object && this.object.fromDeclaration === false ) {
+
+    					this.object.name = name;
+    					this.object.fromDeclaration = ( fromDeclaration !== false );
+    					return;
+
+    				}
+
+    				var previousMaterial = ( this.object && typeof this.object.currentMaterial === 'function' ? this.object.currentMaterial() : undefined );
+
+    				if ( this.object && typeof this.object._finalize === 'function' ) {
+
+    					this.object._finalize( true );
+
+    				}
+
+    				this.object = {
+    					name: name || '',
+    					fromDeclaration: ( fromDeclaration !== false ),
+
+    					geometry: {
+    						vertices: [],
+    						normals: [],
+    						colors: [],
+    						uvs: [],
+    						hasUVIndices: false
+    					},
+    					materials: [],
+    					smooth: true,
+
+    					startMaterial: function ( name, libraries ) {
+
+    						var previous = this._finalize( false );
+
+    						// New usemtl declaration overwrites an inherited material, except if faces were declared
+    						// after the material, then it must be preserved for proper MultiMaterial continuation.
+    						if ( previous && ( previous.inherited || previous.groupCount <= 0 ) ) {
+
+    							this.materials.splice( previous.index, 1 );
+
+    						}
+
+    						var material = {
+    							index: this.materials.length,
+    							name: name || '',
+    							mtllib: ( Array.isArray( libraries ) && libraries.length > 0 ? libraries[ libraries.length - 1 ] : '' ),
+    							smooth: ( previous !== undefined ? previous.smooth : this.smooth ),
+    							groupStart: ( previous !== undefined ? previous.groupEnd : 0 ),
+    							groupEnd: - 1,
+    							groupCount: - 1,
+    							inherited: false,
+
+    							clone: function ( index ) {
+
+    								var cloned = {
+    									index: ( typeof index === 'number' ? index : this.index ),
+    									name: this.name,
+    									mtllib: this.mtllib,
+    									smooth: this.smooth,
+    									groupStart: 0,
+    									groupEnd: - 1,
+    									groupCount: - 1,
+    									inherited: false
+    								};
+    								cloned.clone = this.clone.bind( cloned );
+    								return cloned;
+
+    							}
+    						};
+
+    						this.materials.push( material );
+
+    						return material;
+
+    					},
+
+    					currentMaterial: function () {
+
+    						if ( this.materials.length > 0 ) {
+
+    							return this.materials[ this.materials.length - 1 ];
+
+    						}
+
+    						return undefined;
+
+    					},
+
+    					_finalize: function ( end ) {
+
+    						var lastMultiMaterial = this.currentMaterial();
+    						if ( lastMultiMaterial && lastMultiMaterial.groupEnd === - 1 ) {
+
+    							lastMultiMaterial.groupEnd = this.geometry.vertices.length / 3;
+    							lastMultiMaterial.groupCount = lastMultiMaterial.groupEnd - lastMultiMaterial.groupStart;
+    							lastMultiMaterial.inherited = false;
+
+    						}
+
+    						// Ignore objects tail materials if no face declarations followed them before a new o/g started.
+    						if ( end && this.materials.length > 1 ) {
+
+    							for ( var mi = this.materials.length - 1; mi >= 0; mi -- ) {
+
+    								if ( this.materials[ mi ].groupCount <= 0 ) {
+
+    									this.materials.splice( mi, 1 );
+
+    								}
+
+    							}
+
+    						}
+
+    						// Guarantee at least one empty material, this makes the creation later more straight forward.
+    						if ( end && this.materials.length === 0 ) {
+
+    							this.materials.push( {
+    								name: '',
+    								smooth: this.smooth
+    							} );
+
+    						}
+
+    						return lastMultiMaterial;
+
+    					}
+    				};
+
+    				// Inherit previous objects material.
+    				// Spec tells us that a declared material must be set to all objects until a new material is declared.
+    				// If a usemtl declaration is encountered while this new object is being parsed, it will
+    				// overwrite the inherited material. Exception being that there was already face declarations
+    				// to the inherited material, then it will be preserved for proper MultiMaterial continuation.
+
+    				if ( previousMaterial && previousMaterial.name && typeof previousMaterial.clone === 'function' ) {
+
+    					var declared = previousMaterial.clone( 0 );
+    					declared.inherited = true;
+    					this.object.materials.push( declared );
+
+    				}
+
+    				this.objects.push( this.object );
+
+    			},
+
+    			finalize: function () {
+
+    				if ( this.object && typeof this.object._finalize === 'function' ) {
+
+    					this.object._finalize( true );
+
+    				}
+
+    			},
+
+    			parseVertexIndex: function ( value, len ) {
+
+    				var index = parseInt( value, 10 );
+    				return ( index >= 0 ? index - 1 : index + len / 3 ) * 3;
+
+    			},
+
+    			parseNormalIndex: function ( value, len ) {
+
+    				var index = parseInt( value, 10 );
+    				return ( index >= 0 ? index - 1 : index + len / 3 ) * 3;
+
+    			},
+
+    			parseUVIndex: function ( value, len ) {
+
+    				var index = parseInt( value, 10 );
+    				return ( index >= 0 ? index - 1 : index + len / 2 ) * 2;
+
+    			},
+
+    			addVertex: function ( a, b, c ) {
+
+    				var src = this.vertices;
+    				var dst = this.object.geometry.vertices;
+
+    				dst.push( src[ a + 0 ], src[ a + 1 ], src[ a + 2 ] );
+    				dst.push( src[ b + 0 ], src[ b + 1 ], src[ b + 2 ] );
+    				dst.push( src[ c + 0 ], src[ c + 1 ], src[ c + 2 ] );
+
+    			},
+
+    			addVertexPoint: function ( a ) {
+
+    				var src = this.vertices;
+    				var dst = this.object.geometry.vertices;
+
+    				dst.push( src[ a + 0 ], src[ a + 1 ], src[ a + 2 ] );
+
+    			},
+
+    			addVertexLine: function ( a ) {
+
+    				var src = this.vertices;
+    				var dst = this.object.geometry.vertices;
+
+    				dst.push( src[ a + 0 ], src[ a + 1 ], src[ a + 2 ] );
+
+    			},
+
+    			addNormal: function ( a, b, c ) {
+
+    				var src = this.normals;
+    				var dst = this.object.geometry.normals;
+
+    				dst.push( src[ a + 0 ], src[ a + 1 ], src[ a + 2 ] );
+    				dst.push( src[ b + 0 ], src[ b + 1 ], src[ b + 2 ] );
+    				dst.push( src[ c + 0 ], src[ c + 1 ], src[ c + 2 ] );
+
+    			},
+
+    			addFaceNormal: function ( a, b, c ) {
+
+    				var src = this.vertices;
+    				var dst = this.object.geometry.normals;
+
+    				vA.fromArray( src, a );
+    				vB.fromArray( src, b );
+    				vC.fromArray( src, c );
+
+    				cb.subVectors( vC, vB );
+    				ab.subVectors( vA, vB );
+    				cb.cross( ab );
+
+    				cb.normalize();
+
+    				dst.push( cb.x, cb.y, cb.z );
+    				dst.push( cb.x, cb.y, cb.z );
+    				dst.push( cb.x, cb.y, cb.z );
+
+    			},
+
+    			addColor: function ( a, b, c ) {
+
+    				var src = this.colors;
+    				var dst = this.object.geometry.colors;
+
+    				if ( src[ a ] !== undefined ) dst.push( src[ a + 0 ], src[ a + 1 ], src[ a + 2 ] );
+    				if ( src[ b ] !== undefined ) dst.push( src[ b + 0 ], src[ b + 1 ], src[ b + 2 ] );
+    				if ( src[ c ] !== undefined ) dst.push( src[ c + 0 ], src[ c + 1 ], src[ c + 2 ] );
+
+    			},
+
+    			addUV: function ( a, b, c ) {
+
+    				var src = this.uvs;
+    				var dst = this.object.geometry.uvs;
+
+    				dst.push( src[ a + 0 ], src[ a + 1 ] );
+    				dst.push( src[ b + 0 ], src[ b + 1 ] );
+    				dst.push( src[ c + 0 ], src[ c + 1 ] );
+
+    			},
+
+    			addDefaultUV: function () {
+
+    				var dst = this.object.geometry.uvs;
+
+    				dst.push( 0, 0 );
+    				dst.push( 0, 0 );
+    				dst.push( 0, 0 );
+
+    			},
+
+    			addUVLine: function ( a ) {
+
+    				var src = this.uvs;
+    				var dst = this.object.geometry.uvs;
+
+    				dst.push( src[ a + 0 ], src[ a + 1 ] );
+
+    			},
+
+    			addFace: function ( a, b, c, ua, ub, uc, na, nb, nc ) {
+
+    				var vLen = this.vertices.length;
+
+    				var ia = this.parseVertexIndex( a, vLen );
+    				var ib = this.parseVertexIndex( b, vLen );
+    				var ic = this.parseVertexIndex( c, vLen );
+
+    				this.addVertex( ia, ib, ic );
+    				this.addColor( ia, ib, ic );
+
+    				// normals
+
+    				if ( na !== undefined && na !== '' ) {
+
+    					var nLen = this.normals.length;
+
+    					ia = this.parseNormalIndex( na, nLen );
+    					ib = this.parseNormalIndex( nb, nLen );
+    					ic = this.parseNormalIndex( nc, nLen );
+
+    					this.addNormal( ia, ib, ic );
+
+    				} else {
+
+    					this.addFaceNormal( ia, ib, ic );
+
+    				}
+
+    				// uvs
+
+    				if ( ua !== undefined && ua !== '' ) {
+
+    					var uvLen = this.uvs.length;
+
+    					ia = this.parseUVIndex( ua, uvLen );
+    					ib = this.parseUVIndex( ub, uvLen );
+    					ic = this.parseUVIndex( uc, uvLen );
+
+    					this.addUV( ia, ib, ic );
+
+    					this.object.geometry.hasUVIndices = true;
+
+    				} else {
+
+    					// add placeholder values (for inconsistent face definitions)
+
+    					this.addDefaultUV();
+
+    				}
+
+    			},
+
+    			addPointGeometry: function ( vertices ) {
+
+    				this.object.geometry.type = 'Points';
+
+    				var vLen = this.vertices.length;
+
+    				for ( var vi = 0, l = vertices.length; vi < l; vi ++ ) {
+
+    					var index = this.parseVertexIndex( vertices[ vi ], vLen );
+
+    					this.addVertexPoint( index );
+    					this.addColor( index );
+
+    				}
+
+    			},
+
+    			addLineGeometry: function ( vertices, uvs ) {
+
+    				this.object.geometry.type = 'Line';
+
+    				var vLen = this.vertices.length;
+    				var uvLen = this.uvs.length;
+
+    				for ( var vi = 0, l = vertices.length; vi < l; vi ++ ) {
+
+    					this.addVertexLine( this.parseVertexIndex( vertices[ vi ], vLen ) );
+
+    				}
+
+    				for ( var uvi = 0, l = uvs.length; uvi < l; uvi ++ ) {
+
+    					this.addUVLine( this.parseUVIndex( uvs[ uvi ], uvLen ) );
+
+    				}
+
+    			}
+
+    		};
+
+    		state.startObject( '', false );
+
+    		return state;
+
+    	}
+
+    	//
+
+    	function OBJLoader( manager ) {
+
+    		Loader.call( this, manager );
+
+    		this.materials = null;
+
+    	}
+
+    	OBJLoader.prototype = Object.assign( Object.create( Loader.prototype ), {
+
+    		constructor: OBJLoader,
+
+    		load: function ( url, onLoad, onProgress, onError ) {
+
+    			var scope = this;
+
+    			var loader = new FileLoader( this.manager );
+    			loader.setPath( this.path );
+    			loader.setRequestHeader( this.requestHeader );
+    			loader.setWithCredentials( this.withCredentials );
+    			loader.load( url, function ( text ) {
+
+    				try {
+
+    					onLoad( scope.parse( text ) );
+
+    				} catch ( e ) {
+
+    					if ( onError ) {
+
+    						onError( e );
+
+    					} else {
+
+    						console.error( e );
+
+    					}
+
+    					scope.manager.itemError( url );
+
+    				}
+
+    			}, onProgress, onError );
+
+    		},
+
+    		setMaterials: function ( materials ) {
+
+    			this.materials = materials;
+
+    			return this;
+
+    		},
+
+    		parse: function ( text ) {
+
+    			var state = new ParserState();
+
+    			if ( text.indexOf( '\r\n' ) !== - 1 ) {
+
+    				// This is faster than String.split with regex that splits on both
+    				text = text.replace( /\r\n/g, '\n' );
+
+    			}
+
+    			if ( text.indexOf( '\\\n' ) !== - 1 ) {
+
+    				// join lines separated by a line continuation character (\)
+    				text = text.replace( /\\\n/g, '' );
+
+    			}
+
+    			var lines = text.split( '\n' );
+    			var line = '', lineFirstChar = '';
+    			var lineLength = 0;
+    			var result = [];
+
+    			// Faster to just trim left side of the line. Use if available.
+    			var trimLeft = ( typeof ''.trimLeft === 'function' );
+
+    			for ( var i = 0, l = lines.length; i < l; i ++ ) {
+
+    				line = lines[ i ];
+
+    				line = trimLeft ? line.trimLeft() : line.trim();
+
+    				lineLength = line.length;
+
+    				if ( lineLength === 0 ) continue;
+
+    				lineFirstChar = line.charAt( 0 );
+
+    				// @todo invoke passed in handler if any
+    				if ( lineFirstChar === '#' ) continue;
+
+    				if ( lineFirstChar === 'v' ) {
+
+    					var data = line.split( /\s+/ );
+
+    					switch ( data[ 0 ] ) {
+
+    						case 'v':
+    							state.vertices.push(
+    								parseFloat( data[ 1 ] ),
+    								parseFloat( data[ 2 ] ),
+    								parseFloat( data[ 3 ] )
+    							);
+    							if ( data.length >= 7 ) {
+
+    								state.colors.push(
+    									parseFloat( data[ 4 ] ),
+    									parseFloat( data[ 5 ] ),
+    									parseFloat( data[ 6 ] )
+
+    								);
+
+    							} else {
+
+    								// if no colors are defined, add placeholders so color and vertex indices match
+
+    								state.colors.push( undefined, undefined, undefined );
+
+    							}
+
+    							break;
+    						case 'vn':
+    							state.normals.push(
+    								parseFloat( data[ 1 ] ),
+    								parseFloat( data[ 2 ] ),
+    								parseFloat( data[ 3 ] )
+    							);
+    							break;
+    						case 'vt':
+    							state.uvs.push(
+    								parseFloat( data[ 1 ] ),
+    								parseFloat( data[ 2 ] )
+    							);
+    							break;
+
+    					}
+
+    				} else if ( lineFirstChar === 'f' ) {
+
+    					var lineData = line.substr( 1 ).trim();
+    					var vertexData = lineData.split( /\s+/ );
+    					var faceVertices = [];
+
+    					// Parse the face vertex data into an easy to work with format
+
+    					for ( var j = 0, jl = vertexData.length; j < jl; j ++ ) {
+
+    						var vertex = vertexData[ j ];
+
+    						if ( vertex.length > 0 ) {
+
+    							var vertexParts = vertex.split( '/' );
+    							faceVertices.push( vertexParts );
+
+    						}
+
+    					}
+
+    					// Draw an edge between the first vertex and all subsequent vertices to form an n-gon
+
+    					var v1 = faceVertices[ 0 ];
+
+    					for ( var j = 1, jl = faceVertices.length - 1; j < jl; j ++ ) {
+
+    						var v2 = faceVertices[ j ];
+    						var v3 = faceVertices[ j + 1 ];
+
+    						state.addFace(
+    							v1[ 0 ], v2[ 0 ], v3[ 0 ],
+    							v1[ 1 ], v2[ 1 ], v3[ 1 ],
+    							v1[ 2 ], v2[ 2 ], v3[ 2 ]
+    						);
+
+    					}
+
+    				} else if ( lineFirstChar === 'l' ) {
+
+    					var lineParts = line.substring( 1 ).trim().split( ' ' );
+    					var lineVertices = [], lineUVs = [];
+
+    					if ( line.indexOf( '/' ) === - 1 ) {
+
+    						lineVertices = lineParts;
+
+    					} else {
+
+    						for ( var li = 0, llen = lineParts.length; li < llen; li ++ ) {
+
+    							var parts = lineParts[ li ].split( '/' );
+
+    							if ( parts[ 0 ] !== '' ) lineVertices.push( parts[ 0 ] );
+    							if ( parts[ 1 ] !== '' ) lineUVs.push( parts[ 1 ] );
+
+    						}
+
+    					}
+
+    					state.addLineGeometry( lineVertices, lineUVs );
+
+    				} else if ( lineFirstChar === 'p' ) {
+
+    					var lineData = line.substr( 1 ).trim();
+    					var pointData = lineData.split( ' ' );
+
+    					state.addPointGeometry( pointData );
+
+    				} else if ( ( result = object_pattern.exec( line ) ) !== null ) {
+
+    					// o object_name
+    					// or
+    					// g group_name
+
+    					// WORKAROUND: https://bugs.chromium.org/p/v8/issues/detail?id=2869
+    					// var name = result[ 0 ].substr( 1 ).trim();
+    					var name = ( ' ' + result[ 0 ].substr( 1 ).trim() ).substr( 1 );
+
+    					state.startObject( name );
+
+    				} else if ( material_use_pattern.test( line ) ) {
+
+    					// material
+
+    					state.object.startMaterial( line.substring( 7 ).trim(), state.materialLibraries );
+
+    				} else if ( material_library_pattern.test( line ) ) {
+
+    					// mtl file
+
+    					state.materialLibraries.push( line.substring( 7 ).trim() );
+
+    				} else if ( map_use_pattern.test( line ) ) {
+
+    					// the line is parsed but ignored since the loader assumes textures are defined MTL files
+    					// (according to https://www.okino.com/conv/imp_wave.htm, 'usemap' is the old-style Wavefront texture reference method)
+
+    					console.warn( 'THREE.OBJLoader: Rendering identifier "usemap" not supported. Textures must be defined in MTL files.' );
+
+    				} else if ( lineFirstChar === 's' ) {
+
+    					result = line.split( ' ' );
+
+    					// smooth shading
+
+    					// @todo Handle files that have varying smooth values for a set of faces inside one geometry,
+    					// but does not define a usemtl for each face set.
+    					// This should be detected and a dummy material created (later MultiMaterial and geometry groups).
+    					// This requires some care to not create extra material on each smooth value for "normal" obj files.
+    					// where explicit usemtl defines geometry groups.
+    					// Example asset: examples/models/obj/cerberus/Cerberus.obj
+
+    					/*
+    					 * http://paulbourke.net/dataformats/obj/
+    					 * or
+    					 * http://www.cs.utah.edu/~boulos/cs3505/obj_spec.pdf
+    					 *
+    					 * From chapter "Grouping" Syntax explanation "s group_number":
+    					 * "group_number is the smoothing group number. To turn off smoothing groups, use a value of 0 or off.
+    					 * Polygonal elements use group numbers to put elements in different smoothing groups. For free-form
+    					 * surfaces, smoothing groups are either turned on or off; there is no difference between values greater
+    					 * than 0."
+    					 */
+    					if ( result.length > 1 ) {
+
+    						var value = result[ 1 ].trim().toLowerCase();
+    						state.object.smooth = ( value !== '0' && value !== 'off' );
+
+    					} else {
+
+    						// ZBrush can produce "s" lines #11707
+    						state.object.smooth = true;
+
+    					}
+
+    					var material = state.object.currentMaterial();
+    					if ( material ) material.smooth = state.object.smooth;
+
+    				} else {
+
+    					// Handle null terminated files without exception
+    					if ( line === '\0' ) continue;
+
+    					console.warn( 'THREE.OBJLoader: Unexpected line: "' + line + '"' );
+
+    				}
+
+    			}
+
+    			state.finalize();
+
+    			var container = new Group();
+    			container.materialLibraries = [].concat( state.materialLibraries );
+
+    			var hasPrimitives = ! ( state.objects.length === 1 && state.objects[ 0 ].geometry.vertices.length === 0 );
+
+    			if ( hasPrimitives === true ) {
+
+    				for ( var i = 0, l = state.objects.length; i < l; i ++ ) {
+
+    					var object = state.objects[ i ];
+    					var geometry = object.geometry;
+    					var materials = object.materials;
+    					var isLine = ( geometry.type === 'Line' );
+    					var isPoints = ( geometry.type === 'Points' );
+    					var hasVertexColors = false;
+
+    					// Skip o/g line declarations that did not follow with any faces
+    					if ( geometry.vertices.length === 0 ) continue;
+
+    					var buffergeometry = new BufferGeometry();
+
+    					buffergeometry.setAttribute( 'position', new Float32BufferAttribute( geometry.vertices, 3 ) );
+
+    					if ( geometry.normals.length > 0 ) {
+
+    						buffergeometry.setAttribute( 'normal', new Float32BufferAttribute( geometry.normals, 3 ) );
+
+    					}
+
+    					if ( geometry.colors.length > 0 ) {
+
+    						hasVertexColors = true;
+    						buffergeometry.setAttribute( 'color', new Float32BufferAttribute( geometry.colors, 3 ) );
+
+    					}
+
+    					if ( geometry.hasUVIndices === true ) {
+
+    						buffergeometry.setAttribute( 'uv', new Float32BufferAttribute( geometry.uvs, 2 ) );
+
+    					}
+
+    					// Create materials
+
+    					var createdMaterials = [];
+
+    					for ( var mi = 0, miLen = materials.length; mi < miLen; mi ++ ) {
+
+    						var sourceMaterial = materials[ mi ];
+    						var materialHash = sourceMaterial.name + '_' + sourceMaterial.smooth + '_' + hasVertexColors;
+    						var material = state.materials[ materialHash ];
+
+    						if ( this.materials !== null ) {
+
+    							material = this.materials.create( sourceMaterial.name );
+
+    							// mtl etc. loaders probably can't create line materials correctly, copy properties to a line material.
+    							if ( isLine && material && ! ( material instanceof LineBasicMaterial ) ) {
+
+    								var materialLine = new LineBasicMaterial();
+    								Material.prototype.copy.call( materialLine, material );
+    								materialLine.color.copy( material.color );
+    								material = materialLine;
+
+    							} else if ( isPoints && material && ! ( material instanceof PointsMaterial ) ) {
+
+    								var materialPoints = new PointsMaterial( { size: 10, sizeAttenuation: false } );
+    								Material.prototype.copy.call( materialPoints, material );
+    								materialPoints.color.copy( material.color );
+    								materialPoints.map = material.map;
+    								material = materialPoints;
+
+    							}
+
+    						}
+
+    						if ( material === undefined ) {
+
+    							if ( isLine ) {
+
+    								material = new LineBasicMaterial();
+
+    							} else if ( isPoints ) {
+
+    								material = new PointsMaterial( { size: 1, sizeAttenuation: false } );
+
+    							} else {
+
+    								material = new MeshPhongMaterial();
+
+    							}
+
+    							material.name = sourceMaterial.name;
+    							material.flatShading = sourceMaterial.smooth ? false : true;
+    							material.vertexColors = hasVertexColors;
+
+    							state.materials[ materialHash ] = material;
+
+    						}
+
+    						createdMaterials.push( material );
+
+    					}
+
+    					// Create mesh
+
+    					var mesh;
+
+    					if ( createdMaterials.length > 1 ) {
+
+    						for ( var mi = 0, miLen = materials.length; mi < miLen; mi ++ ) {
+
+    							var sourceMaterial = materials[ mi ];
+    							buffergeometry.addGroup( sourceMaterial.groupStart, sourceMaterial.groupCount, mi );
+
+    						}
+
+    						if ( isLine ) {
+
+    							mesh = new LineSegments( buffergeometry, createdMaterials );
+
+    						} else if ( isPoints ) {
+
+    							mesh = new Points( buffergeometry, createdMaterials );
+
+    						} else {
+
+    							mesh = new Mesh( buffergeometry, createdMaterials );
+
+    						}
+
+    					} else {
+
+    						if ( isLine ) {
+
+    							mesh = new LineSegments( buffergeometry, createdMaterials[ 0 ] );
+
+    						} else if ( isPoints ) {
+
+    							mesh = new Points( buffergeometry, createdMaterials[ 0 ] );
+
+    						} else {
+
+    							mesh = new Mesh( buffergeometry, createdMaterials[ 0 ] );
+
+    						}
+
+    					}
+
+    					mesh.name = object.name;
+
+    					container.add( mesh );
+
+    				}
+
+    			} else {
+
+    				// if there is only the default parser state object with no geometry data, interpret data as point cloud
+
+    				if ( state.vertices.length > 0 ) {
+
+    					var material = new PointsMaterial( { size: 1, sizeAttenuation: false } );
+
+    					var buffergeometry = new BufferGeometry();
+
+    					buffergeometry.setAttribute( 'position', new Float32BufferAttribute( state.vertices, 3 ) );
+
+    					if ( state.colors.length > 0 && state.colors[ 0 ] !== undefined ) {
+
+    						buffergeometry.setAttribute( 'color', new Float32BufferAttribute( state.colors, 3 ) );
+    						material.vertexColors = true;
+
+    					}
+
+    					var points = new Points( buffergeometry, material );
+    					container.add( points );
+
+    				}
+
+    			}
+
+    			return container;
+
+    		}
+
+    	} );
+
+    	return OBJLoader;
+
+    } )();
+
+    var BufferGeometryUtils = {
+
+    	computeTangents: function ( geometry ) {
+
+    		var index = geometry.index;
+    		var attributes = geometry.attributes;
+
+    		// based on http://www.terathon.com/code/tangent.html
+    		// (per vertex tangents)
+
+    		if ( index === null ||
+    			 attributes.position === undefined ||
+    			 attributes.normal === undefined ||
+    			 attributes.uv === undefined ) {
+
+    			console.error( 'THREE.BufferGeometryUtils: .computeTangents() failed. Missing required attributes (index, position, normal or uv)' );
+    			return;
+
+    		}
+
+    		var indices = index.array;
+    		var positions = attributes.position.array;
+    		var normals = attributes.normal.array;
+    		var uvs = attributes.uv.array;
+
+    		var nVertices = positions.length / 3;
+
+    		if ( attributes.tangent === undefined ) {
+
+    			geometry.setAttribute( 'tangent', new BufferAttribute( new Float32Array( 4 * nVertices ), 4 ) );
+
+    		}
+
+    		var tangents = attributes.tangent.array;
+
+    		var tan1 = [], tan2 = [];
+
+    		for ( var i = 0; i < nVertices; i ++ ) {
+
+    			tan1[ i ] = new Vector3$1();
+    			tan2[ i ] = new Vector3$1();
+
+    		}
+
+    		var vA = new Vector3$1(),
+    			vB = new Vector3$1(),
+    			vC = new Vector3$1(),
+
+    			uvA = new Vector2(),
+    			uvB = new Vector2(),
+    			uvC = new Vector2(),
+
+    			sdir = new Vector3$1(),
+    			tdir = new Vector3$1();
+
+    		function handleTriangle( a, b, c ) {
+
+    			vA.fromArray( positions, a * 3 );
+    			vB.fromArray( positions, b * 3 );
+    			vC.fromArray( positions, c * 3 );
+
+    			uvA.fromArray( uvs, a * 2 );
+    			uvB.fromArray( uvs, b * 2 );
+    			uvC.fromArray( uvs, c * 2 );
+
+    			vB.sub( vA );
+    			vC.sub( vA );
+
+    			uvB.sub( uvA );
+    			uvC.sub( uvA );
+
+    			var r = 1.0 / ( uvB.x * uvC.y - uvC.x * uvB.y );
+
+    			// silently ignore degenerate uv triangles having coincident or colinear vertices
+
+    			if ( ! isFinite( r ) ) return;
+
+    			sdir.copy( vB ).multiplyScalar( uvC.y ).addScaledVector( vC, - uvB.y ).multiplyScalar( r );
+    			tdir.copy( vC ).multiplyScalar( uvB.x ).addScaledVector( vB, - uvC.x ).multiplyScalar( r );
+
+    			tan1[ a ].add( sdir );
+    			tan1[ b ].add( sdir );
+    			tan1[ c ].add( sdir );
+
+    			tan2[ a ].add( tdir );
+    			tan2[ b ].add( tdir );
+    			tan2[ c ].add( tdir );
+
+    		}
+
+    		var groups = geometry.groups;
+
+    		if ( groups.length === 0 ) {
+
+    			groups = [ {
+    				start: 0,
+    				count: indices.length
+    			} ];
+
+    		}
+
+    		for ( var i = 0, il = groups.length; i < il; ++ i ) {
+
+    			var group = groups[ i ];
+
+    			var start = group.start;
+    			var count = group.count;
+
+    			for ( var j = start, jl = start + count; j < jl; j += 3 ) {
+
+    				handleTriangle(
+    					indices[ j + 0 ],
+    					indices[ j + 1 ],
+    					indices[ j + 2 ]
+    				);
+
+    			}
+
+    		}
+
+    		var tmp = new Vector3$1(), tmp2 = new Vector3$1();
+    		var n = new Vector3$1(), n2 = new Vector3$1();
+    		var w, t, test;
+
+    		function handleVertex( v ) {
+
+    			n.fromArray( normals, v * 3 );
+    			n2.copy( n );
+
+    			t = tan1[ v ];
+
+    			// Gram-Schmidt orthogonalize
+
+    			tmp.copy( t );
+    			tmp.sub( n.multiplyScalar( n.dot( t ) ) ).normalize();
+
+    			// Calculate handedness
+
+    			tmp2.crossVectors( n2, t );
+    			test = tmp2.dot( tan2[ v ] );
+    			w = ( test < 0.0 ) ? - 1.0 : 1.0;
+
+    			tangents[ v * 4 ] = tmp.x;
+    			tangents[ v * 4 + 1 ] = tmp.y;
+    			tangents[ v * 4 + 2 ] = tmp.z;
+    			tangents[ v * 4 + 3 ] = w;
+
+    		}
+
+    		for ( var i = 0, il = groups.length; i < il; ++ i ) {
+
+    			var group = groups[ i ];
+
+    			var start = group.start;
+    			var count = group.count;
+
+    			for ( var j = start, jl = start + count; j < jl; j += 3 ) {
+
+    				handleVertex( indices[ j + 0 ] );
+    				handleVertex( indices[ j + 1 ] );
+    				handleVertex( indices[ j + 2 ] );
+
+    			}
+
+    		}
+
+    	},
+
+    	/**
+    	 * @param  {Array<BufferGeometry>} geometries
+    	 * @param  {Boolean} useGroups
+    	 * @return {BufferGeometry}
+    	 */
+    	mergeBufferGeometries: function ( geometries, useGroups ) {
+
+    		var isIndexed = geometries[ 0 ].index !== null;
+
+    		var attributesUsed = new Set( Object.keys( geometries[ 0 ].attributes ) );
+    		var morphAttributesUsed = new Set( Object.keys( geometries[ 0 ].morphAttributes ) );
+
+    		var attributes = {};
+    		var morphAttributes = {};
+
+    		var morphTargetsRelative = geometries[ 0 ].morphTargetsRelative;
+
+    		var mergedGeometry = new BufferGeometry();
+
+    		var offset = 0;
+
+    		for ( var i = 0; i < geometries.length; ++ i ) {
+
+    			var geometry = geometries[ i ];
+    			var attributesCount = 0;
+
+    			// ensure that all geometries are indexed, or none
+
+    			if ( isIndexed !== ( geometry.index !== null ) ) {
+
+    				console.error( 'THREE.BufferGeometryUtils: .mergeBufferGeometries() failed with geometry at index ' + i + '. All geometries must have compatible attributes; make sure index attribute exists among all geometries, or in none of them.' );
+    				return null;
+
+    			}
+
+    			// gather attributes, exit early if they're different
+
+    			for ( var name in geometry.attributes ) {
+
+    				if ( ! attributesUsed.has( name ) ) {
+
+    					console.error( 'THREE.BufferGeometryUtils: .mergeBufferGeometries() failed with geometry at index ' + i + '. All geometries must have compatible attributes; make sure "' + name + '" attribute exists among all geometries, or in none of them.' );
+    					return null;
+
+    				}
+
+    				if ( attributes[ name ] === undefined ) attributes[ name ] = [];
+
+    				attributes[ name ].push( geometry.attributes[ name ] );
+
+    				attributesCount ++;
+
+    			}
+
+    			// ensure geometries have the same number of attributes
+
+    			if ( attributesCount !== attributesUsed.size ) {
+
+    				console.error( 'THREE.BufferGeometryUtils: .mergeBufferGeometries() failed with geometry at index ' + i + '. Make sure all geometries have the same number of attributes.' );
+    				return null;
+
+    			}
+
+    			// gather morph attributes, exit early if they're different
+
+    			if ( morphTargetsRelative !== geometry.morphTargetsRelative ) {
+
+    				console.error( 'THREE.BufferGeometryUtils: .mergeBufferGeometries() failed with geometry at index ' + i + '. .morphTargetsRelative must be consistent throughout all geometries.' );
+    				return null;
+
+    			}
+
+    			for ( var name in geometry.morphAttributes ) {
+
+    				if ( ! morphAttributesUsed.has( name ) ) {
+
+    					console.error( 'THREE.BufferGeometryUtils: .mergeBufferGeometries() failed with geometry at index ' + i + '.  .morphAttributes must be consistent throughout all geometries.' );
+    					return null;
+
+    				}
+
+    				if ( morphAttributes[ name ] === undefined ) morphAttributes[ name ] = [];
+
+    				morphAttributes[ name ].push( geometry.morphAttributes[ name ] );
+
+    			}
+
+    			// gather .userData
+
+    			mergedGeometry.userData.mergedUserData = mergedGeometry.userData.mergedUserData || [];
+    			mergedGeometry.userData.mergedUserData.push( geometry.userData );
+
+    			if ( useGroups ) {
+
+    				var count;
+
+    				if ( isIndexed ) {
+
+    					count = geometry.index.count;
+
+    				} else if ( geometry.attributes.position !== undefined ) {
+
+    					count = geometry.attributes.position.count;
+
+    				} else {
+
+    					console.error( 'THREE.BufferGeometryUtils: .mergeBufferGeometries() failed with geometry at index ' + i + '. The geometry must have either an index or a position attribute' );
+    					return null;
+
+    				}
+
+    				mergedGeometry.addGroup( offset, count, i );
+
+    				offset += count;
+
+    			}
+
+    		}
+
+    		// merge indices
+
+    		if ( isIndexed ) {
+
+    			var indexOffset = 0;
+    			var mergedIndex = [];
+
+    			for ( var i = 0; i < geometries.length; ++ i ) {
+
+    				var index = geometries[ i ].index;
+
+    				for ( var j = 0; j < index.count; ++ j ) {
+
+    					mergedIndex.push( index.getX( j ) + indexOffset );
+
+    				}
+
+    				indexOffset += geometries[ i ].attributes.position.count;
+
+    			}
+
+    			mergedGeometry.setIndex( mergedIndex );
+
+    		}
+
+    		// merge attributes
+
+    		for ( var name in attributes ) {
+
+    			var mergedAttribute = this.mergeBufferAttributes( attributes[ name ] );
+
+    			if ( ! mergedAttribute ) {
+
+    				console.error( 'THREE.BufferGeometryUtils: .mergeBufferGeometries() failed while trying to merge the ' + name + ' attribute.' );
+    				return null;
+
+    			}
+
+    			mergedGeometry.setAttribute( name, mergedAttribute );
+
+    		}
+
+    		// merge morph attributes
+
+    		for ( var name in morphAttributes ) {
+
+    			var numMorphTargets = morphAttributes[ name ][ 0 ].length;
+
+    			if ( numMorphTargets === 0 ) break;
+
+    			mergedGeometry.morphAttributes = mergedGeometry.morphAttributes || {};
+    			mergedGeometry.morphAttributes[ name ] = [];
+
+    			for ( var i = 0; i < numMorphTargets; ++ i ) {
+
+    				var morphAttributesToMerge = [];
+
+    				for ( var j = 0; j < morphAttributes[ name ].length; ++ j ) {
+
+    					morphAttributesToMerge.push( morphAttributes[ name ][ j ][ i ] );
+
+    				}
+
+    				var mergedMorphAttribute = this.mergeBufferAttributes( morphAttributesToMerge );
+
+    				if ( ! mergedMorphAttribute ) {
+
+    					console.error( 'THREE.BufferGeometryUtils: .mergeBufferGeometries() failed while trying to merge the ' + name + ' morphAttribute.' );
+    					return null;
+
+    				}
+
+    				mergedGeometry.morphAttributes[ name ].push( mergedMorphAttribute );
+
+    			}
+
+    		}
+
+    		return mergedGeometry;
+
+    	},
+
+    	/**
+    	 * @param {Array<BufferAttribute>} attributes
+    	 * @return {BufferAttribute}
+    	 */
+    	mergeBufferAttributes: function ( attributes ) {
+
+    		var TypedArray;
+    		var itemSize;
+    		var normalized;
+    		var arrayLength = 0;
+
+    		for ( var i = 0; i < attributes.length; ++ i ) {
+
+    			var attribute = attributes[ i ];
+
+    			if ( attribute.isInterleavedBufferAttribute ) {
+
+    				console.error( 'THREE.BufferGeometryUtils: .mergeBufferAttributes() failed. InterleavedBufferAttributes are not supported.' );
+    				return null;
+
+    			}
+
+    			if ( TypedArray === undefined ) TypedArray = attribute.array.constructor;
+    			if ( TypedArray !== attribute.array.constructor ) {
+
+    				console.error( 'THREE.BufferGeometryUtils: .mergeBufferAttributes() failed. BufferAttribute.array must be of consistent array types across matching attributes.' );
+    				return null;
+
+    			}
+
+    			if ( itemSize === undefined ) itemSize = attribute.itemSize;
+    			if ( itemSize !== attribute.itemSize ) {
+
+    				console.error( 'THREE.BufferGeometryUtils: .mergeBufferAttributes() failed. BufferAttribute.itemSize must be consistent across matching attributes.' );
+    				return null;
+
+    			}
+
+    			if ( normalized === undefined ) normalized = attribute.normalized;
+    			if ( normalized !== attribute.normalized ) {
+
+    				console.error( 'THREE.BufferGeometryUtils: .mergeBufferAttributes() failed. BufferAttribute.normalized must be consistent across matching attributes.' );
+    				return null;
+
+    			}
+
+    			arrayLength += attribute.array.length;
+
+    		}
+
+    		var array = new TypedArray( arrayLength );
+    		var offset = 0;
+
+    		for ( var i = 0; i < attributes.length; ++ i ) {
+
+    			array.set( attributes[ i ].array, offset );
+
+    			offset += attributes[ i ].array.length;
+
+    		}
+
+    		return new BufferAttribute( array, itemSize, normalized );
+
+    	},
+
+    	/**
+    	 * @param {Array<BufferAttribute>} attributes
+    	 * @return {Array<InterleavedBufferAttribute>}
+    	 */
+    	interleaveAttributes: function ( attributes ) {
+
+    		// Interleaves the provided attributes into an InterleavedBuffer and returns
+    		// a set of InterleavedBufferAttributes for each attribute
+    		var TypedArray;
+    		var arrayLength = 0;
+    		var stride = 0;
+
+    		// calculate the the length and type of the interleavedBuffer
+    		for ( var i = 0, l = attributes.length; i < l; ++ i ) {
+
+    			var attribute = attributes[ i ];
+
+    			if ( TypedArray === undefined ) TypedArray = attribute.array.constructor;
+    			if ( TypedArray !== attribute.array.constructor ) {
+
+    				console.error( 'AttributeBuffers of different types cannot be interleaved' );
+    				return null;
+
+    			}
+
+    			arrayLength += attribute.array.length;
+    			stride += attribute.itemSize;
+
+    		}
+
+    		// Create the set of buffer attributes
+    		var interleavedBuffer = new InterleavedBuffer( new TypedArray( arrayLength ), stride );
+    		var offset = 0;
+    		var res = [];
+    		var getters = [ 'getX', 'getY', 'getZ', 'getW' ];
+    		var setters = [ 'setX', 'setY', 'setZ', 'setW' ];
+
+    		for ( var j = 0, l = attributes.length; j < l; j ++ ) {
+
+    			var attribute = attributes[ j ];
+    			var itemSize = attribute.itemSize;
+    			var count = attribute.count;
+    			var iba = new InterleavedBufferAttribute( interleavedBuffer, itemSize, offset, attribute.normalized );
+    			res.push( iba );
+
+    			offset += itemSize;
+
+    			// Move the data for each attribute into the new interleavedBuffer
+    			// at the appropriate offset
+    			for ( var c = 0; c < count; c ++ ) {
+
+    				for ( var k = 0; k < itemSize; k ++ ) {
+
+    					iba[ setters[ k ] ]( c, attribute[ getters[ k ] ]( c ) );
+
+    				}
+
+    			}
+
+    		}
+
+    		return res;
+
+    	},
+
+    	/**
+    	 * @param {Array<BufferGeometry>} geometry
+    	 * @return {number}
+    	 */
+    	estimateBytesUsed: function ( geometry ) {
+
+    		// Return the estimated memory used by this geometry in bytes
+    		// Calculate using itemSize, count, and BYTES_PER_ELEMENT to account
+    		// for InterleavedBufferAttributes.
+    		var mem = 0;
+    		for ( var name in geometry.attributes ) {
+
+    			var attr = geometry.getAttribute( name );
+    			mem += attr.count * attr.itemSize * attr.array.BYTES_PER_ELEMENT;
+
+    		}
+
+    		var indices = geometry.getIndex();
+    		mem += indices ? indices.count * indices.itemSize * indices.array.BYTES_PER_ELEMENT : 0;
+    		return mem;
+
+    	},
+
+    	/**
+    	 * @param {BufferGeometry} geometry
+    	 * @param {number} tolerance
+    	 * @return {BufferGeometry>}
+    	 */
+    	mergeVertices: function ( geometry, tolerance = 1e-4 ) {
+
+    		tolerance = Math.max( tolerance, Number.EPSILON );
+
+    		// Generate an index buffer if the geometry doesn't have one, or optimize it
+    		// if it's already available.
+    		var hashToIndex = {};
+    		var indices = geometry.getIndex();
+    		var positions = geometry.getAttribute( 'position' );
+    		var vertexCount = indices ? indices.count : positions.count;
+
+    		// next value for triangle indices
+    		var nextIndex = 0;
+
+    		// attributes and new attribute arrays
+    		var attributeNames = Object.keys( geometry.attributes );
+    		var attrArrays = {};
+    		var morphAttrsArrays = {};
+    		var newIndices = [];
+    		var getters = [ 'getX', 'getY', 'getZ', 'getW' ];
+
+    		// initialize the arrays
+    		for ( var i = 0, l = attributeNames.length; i < l; i ++ ) {
+
+    			var name = attributeNames[ i ];
+
+    			attrArrays[ name ] = [];
+
+    			var morphAttr = geometry.morphAttributes[ name ];
+    			if ( morphAttr ) {
+
+    				morphAttrsArrays[ name ] = new Array( morphAttr.length ).fill().map( () => [] );
+
+    			}
+
+    		}
+
+    		// convert the error tolerance to an amount of decimal places to truncate to
+    		var decimalShift = Math.log10( 1 / tolerance );
+    		var shiftMultiplier = Math.pow( 10, decimalShift );
+    		for ( var i = 0; i < vertexCount; i ++ ) {
+
+    			var index = indices ? indices.getX( i ) : i;
+
+    			// Generate a hash for the vertex attributes at the current index 'i'
+    			var hash = '';
+    			for ( var j = 0, l = attributeNames.length; j < l; j ++ ) {
+
+    				var name = attributeNames[ j ];
+    				var attribute = geometry.getAttribute( name );
+    				var itemSize = attribute.itemSize;
+
+    				for ( var k = 0; k < itemSize; k ++ ) {
+
+    					// double tilde truncates the decimal value
+    					hash += `${ ~ ~ ( attribute[ getters[ k ] ]( index ) * shiftMultiplier ) },`;
+
+    				}
+
+    			}
+
+    			// Add another reference to the vertex if it's already
+    			// used by another index
+    			if ( hash in hashToIndex ) {
+
+    				newIndices.push( hashToIndex[ hash ] );
+
+    			} else {
+
+    				// copy data to the new index in the attribute arrays
+    				for ( var j = 0, l = attributeNames.length; j < l; j ++ ) {
+
+    					var name = attributeNames[ j ];
+    					var attribute = geometry.getAttribute( name );
+    					var morphAttr = geometry.morphAttributes[ name ];
+    					var itemSize = attribute.itemSize;
+    					var newarray = attrArrays[ name ];
+    					var newMorphArrays = morphAttrsArrays[ name ];
+
+    					for ( var k = 0; k < itemSize; k ++ ) {
+
+    						var getterFunc = getters[ k ];
+    						newarray.push( attribute[ getterFunc ]( index ) );
+
+    						if ( morphAttr ) {
+
+    							for ( var m = 0, ml = morphAttr.length; m < ml; m ++ ) {
+
+    								newMorphArrays[ m ].push( morphAttr[ m ][ getterFunc ]( index ) );
+
+    							}
+
+    						}
+
+    					}
+
+    				}
+
+    				hashToIndex[ hash ] = nextIndex;
+    				newIndices.push( nextIndex );
+    				nextIndex ++;
+
+    			}
+
+    		}
+
+    		// Generate typed arrays from new attribute arrays and update
+    		// the attributeBuffers
+    		const result = geometry.clone();
+    		for ( var i = 0, l = attributeNames.length; i < l; i ++ ) {
+
+    			var name = attributeNames[ i ];
+    			var oldAttribute = geometry.getAttribute( name );
+
+    			var buffer = new oldAttribute.array.constructor( attrArrays[ name ] );
+    			var attribute = new BufferAttribute( buffer, oldAttribute.itemSize, oldAttribute.normalized );
+
+    			result.setAttribute( name, attribute );
+
+    			// Update the attribute arrays
+    			if ( name in morphAttrsArrays ) {
+
+    				for ( var j = 0; j < morphAttrsArrays[ name ].length; j ++ ) {
+
+    					var oldMorphAttribute = geometry.morphAttributes[ name ][ j ];
+
+    					var buffer = new oldMorphAttribute.array.constructor( morphAttrsArrays[ name ][ j ] );
+    					var morphAttribute = new BufferAttribute( buffer, oldMorphAttribute.itemSize, oldMorphAttribute.normalized );
+    					result.morphAttributes[ name ][ j ] = morphAttribute;
+
+    				}
+
+    			}
+
+    		}
+
+    		// indices
+
+    		result.setIndex( newIndices );
+
+    		return result;
+
+    	},
+
+    	/**
+    	 * @param {BufferGeometry} geometry
+    	 * @param {number} drawMode
+    	 * @return {BufferGeometry>}
+    	 */
+    	toTrianglesDrawMode: function ( geometry, drawMode ) {
+
+    		if ( drawMode === TrianglesDrawMode ) {
+
+    			console.warn( 'THREE.BufferGeometryUtils.toTrianglesDrawMode(): Geometry already defined as triangles.' );
+    			return geometry;
+
+    		}
+
+    		if ( drawMode === TriangleFanDrawMode || drawMode === TriangleStripDrawMode ) {
+
+    			var index = geometry.getIndex();
+
+    			// generate index if not present
+
+    			if ( index === null ) {
+
+    				var indices = [];
+
+    				var position = geometry.getAttribute( 'position' );
+
+    				if ( position !== undefined ) {
+
+    					for ( var i = 0; i < position.count; i ++ ) {
+
+    						indices.push( i );
+
+    					}
+
+    					geometry.setIndex( indices );
+    					index = geometry.getIndex();
+
+    				} else {
+
+    					console.error( 'THREE.BufferGeometryUtils.toTrianglesDrawMode(): Undefined position attribute. Processing not possible.' );
+    					return geometry;
+
+    				}
+
+    			}
+
+    			//
+
+    			var numberOfTriangles = index.count - 2;
+    			var newIndices = [];
+
+    			if ( drawMode === TriangleFanDrawMode ) {
+
+    				// gl.TRIANGLE_FAN
+
+    				for ( var i = 1; i <= numberOfTriangles; i ++ ) {
+
+    					newIndices.push( index.getX( 0 ) );
+    					newIndices.push( index.getX( i ) );
+    					newIndices.push( index.getX( i + 1 ) );
+
+    				}
+
+    			} else {
+
+    				// gl.TRIANGLE_STRIP
+
+    				for ( var i = 0; i < numberOfTriangles; i ++ ) {
+
+    					if ( i % 2 === 0 ) {
+
+    						newIndices.push( index.getX( i ) );
+    						newIndices.push( index.getX( i + 1 ) );
+    						newIndices.push( index.getX( i + 2 ) );
+
+
+    					} else {
+
+    						newIndices.push( index.getX( i + 2 ) );
+    						newIndices.push( index.getX( i + 1 ) );
+    						newIndices.push( index.getX( i ) );
+
+    					}
+
+    				}
+
+    			}
+
+    			if ( ( newIndices.length / 3 ) !== numberOfTriangles ) {
+
+    				console.error( 'THREE.BufferGeometryUtils.toTrianglesDrawMode(): Unable to generate correct amount of triangles.' );
+
+    			}
+
+    			// build final geometry
+
+    			var newGeometry = geometry.clone();
+    			newGeometry.setIndex( newIndices );
+    			newGeometry.clearGroups();
+
+    			return newGeometry;
+
+    		} else {
+
+    			console.error( 'THREE.BufferGeometryUtils.toTrianglesDrawMode(): Unknown draw mode:', drawMode );
+    			return geometry;
+
+    		}
+
+    	}
+
+    };
+
     var GLTFLoader = ( function () {
 
     	function GLTFLoader( manager ) {
@@ -61784,1691 +63469,6 @@
 
     } )();
 
-    var OBJLoader = ( function () {
-
-    	// o object_name | g group_name
-    	var object_pattern = /^[og]\s*(.+)?/;
-    	// mtllib file_reference
-    	var material_library_pattern = /^mtllib /;
-    	// usemtl material_name
-    	var material_use_pattern = /^usemtl /;
-    	// usemap map_name
-    	var map_use_pattern = /^usemap /;
-
-    	var vA = new Vector3$1();
-    	var vB = new Vector3$1();
-    	var vC = new Vector3$1();
-
-    	var ab = new Vector3$1();
-    	var cb = new Vector3$1();
-
-    	function ParserState() {
-
-    		var state = {
-    			objects: [],
-    			object: {},
-
-    			vertices: [],
-    			normals: [],
-    			colors: [],
-    			uvs: [],
-
-    			materials: {},
-    			materialLibraries: [],
-
-    			startObject: function ( name, fromDeclaration ) {
-
-    				// If the current object (initial from reset) is not from a g/o declaration in the parsed
-    				// file. We need to use it for the first parsed g/o to keep things in sync.
-    				if ( this.object && this.object.fromDeclaration === false ) {
-
-    					this.object.name = name;
-    					this.object.fromDeclaration = ( fromDeclaration !== false );
-    					return;
-
-    				}
-
-    				var previousMaterial = ( this.object && typeof this.object.currentMaterial === 'function' ? this.object.currentMaterial() : undefined );
-
-    				if ( this.object && typeof this.object._finalize === 'function' ) {
-
-    					this.object._finalize( true );
-
-    				}
-
-    				this.object = {
-    					name: name || '',
-    					fromDeclaration: ( fromDeclaration !== false ),
-
-    					geometry: {
-    						vertices: [],
-    						normals: [],
-    						colors: [],
-    						uvs: [],
-    						hasUVIndices: false
-    					},
-    					materials: [],
-    					smooth: true,
-
-    					startMaterial: function ( name, libraries ) {
-
-    						var previous = this._finalize( false );
-
-    						// New usemtl declaration overwrites an inherited material, except if faces were declared
-    						// after the material, then it must be preserved for proper MultiMaterial continuation.
-    						if ( previous && ( previous.inherited || previous.groupCount <= 0 ) ) {
-
-    							this.materials.splice( previous.index, 1 );
-
-    						}
-
-    						var material = {
-    							index: this.materials.length,
-    							name: name || '',
-    							mtllib: ( Array.isArray( libraries ) && libraries.length > 0 ? libraries[ libraries.length - 1 ] : '' ),
-    							smooth: ( previous !== undefined ? previous.smooth : this.smooth ),
-    							groupStart: ( previous !== undefined ? previous.groupEnd : 0 ),
-    							groupEnd: - 1,
-    							groupCount: - 1,
-    							inherited: false,
-
-    							clone: function ( index ) {
-
-    								var cloned = {
-    									index: ( typeof index === 'number' ? index : this.index ),
-    									name: this.name,
-    									mtllib: this.mtllib,
-    									smooth: this.smooth,
-    									groupStart: 0,
-    									groupEnd: - 1,
-    									groupCount: - 1,
-    									inherited: false
-    								};
-    								cloned.clone = this.clone.bind( cloned );
-    								return cloned;
-
-    							}
-    						};
-
-    						this.materials.push( material );
-
-    						return material;
-
-    					},
-
-    					currentMaterial: function () {
-
-    						if ( this.materials.length > 0 ) {
-
-    							return this.materials[ this.materials.length - 1 ];
-
-    						}
-
-    						return undefined;
-
-    					},
-
-    					_finalize: function ( end ) {
-
-    						var lastMultiMaterial = this.currentMaterial();
-    						if ( lastMultiMaterial && lastMultiMaterial.groupEnd === - 1 ) {
-
-    							lastMultiMaterial.groupEnd = this.geometry.vertices.length / 3;
-    							lastMultiMaterial.groupCount = lastMultiMaterial.groupEnd - lastMultiMaterial.groupStart;
-    							lastMultiMaterial.inherited = false;
-
-    						}
-
-    						// Ignore objects tail materials if no face declarations followed them before a new o/g started.
-    						if ( end && this.materials.length > 1 ) {
-
-    							for ( var mi = this.materials.length - 1; mi >= 0; mi -- ) {
-
-    								if ( this.materials[ mi ].groupCount <= 0 ) {
-
-    									this.materials.splice( mi, 1 );
-
-    								}
-
-    							}
-
-    						}
-
-    						// Guarantee at least one empty material, this makes the creation later more straight forward.
-    						if ( end && this.materials.length === 0 ) {
-
-    							this.materials.push( {
-    								name: '',
-    								smooth: this.smooth
-    							} );
-
-    						}
-
-    						return lastMultiMaterial;
-
-    					}
-    				};
-
-    				// Inherit previous objects material.
-    				// Spec tells us that a declared material must be set to all objects until a new material is declared.
-    				// If a usemtl declaration is encountered while this new object is being parsed, it will
-    				// overwrite the inherited material. Exception being that there was already face declarations
-    				// to the inherited material, then it will be preserved for proper MultiMaterial continuation.
-
-    				if ( previousMaterial && previousMaterial.name && typeof previousMaterial.clone === 'function' ) {
-
-    					var declared = previousMaterial.clone( 0 );
-    					declared.inherited = true;
-    					this.object.materials.push( declared );
-
-    				}
-
-    				this.objects.push( this.object );
-
-    			},
-
-    			finalize: function () {
-
-    				if ( this.object && typeof this.object._finalize === 'function' ) {
-
-    					this.object._finalize( true );
-
-    				}
-
-    			},
-
-    			parseVertexIndex: function ( value, len ) {
-
-    				var index = parseInt( value, 10 );
-    				return ( index >= 0 ? index - 1 : index + len / 3 ) * 3;
-
-    			},
-
-    			parseNormalIndex: function ( value, len ) {
-
-    				var index = parseInt( value, 10 );
-    				return ( index >= 0 ? index - 1 : index + len / 3 ) * 3;
-
-    			},
-
-    			parseUVIndex: function ( value, len ) {
-
-    				var index = parseInt( value, 10 );
-    				return ( index >= 0 ? index - 1 : index + len / 2 ) * 2;
-
-    			},
-
-    			addVertex: function ( a, b, c ) {
-
-    				var src = this.vertices;
-    				var dst = this.object.geometry.vertices;
-
-    				dst.push( src[ a + 0 ], src[ a + 1 ], src[ a + 2 ] );
-    				dst.push( src[ b + 0 ], src[ b + 1 ], src[ b + 2 ] );
-    				dst.push( src[ c + 0 ], src[ c + 1 ], src[ c + 2 ] );
-
-    			},
-
-    			addVertexPoint: function ( a ) {
-
-    				var src = this.vertices;
-    				var dst = this.object.geometry.vertices;
-
-    				dst.push( src[ a + 0 ], src[ a + 1 ], src[ a + 2 ] );
-
-    			},
-
-    			addVertexLine: function ( a ) {
-
-    				var src = this.vertices;
-    				var dst = this.object.geometry.vertices;
-
-    				dst.push( src[ a + 0 ], src[ a + 1 ], src[ a + 2 ] );
-
-    			},
-
-    			addNormal: function ( a, b, c ) {
-
-    				var src = this.normals;
-    				var dst = this.object.geometry.normals;
-
-    				dst.push( src[ a + 0 ], src[ a + 1 ], src[ a + 2 ] );
-    				dst.push( src[ b + 0 ], src[ b + 1 ], src[ b + 2 ] );
-    				dst.push( src[ c + 0 ], src[ c + 1 ], src[ c + 2 ] );
-
-    			},
-
-    			addFaceNormal: function ( a, b, c ) {
-
-    				var src = this.vertices;
-    				var dst = this.object.geometry.normals;
-
-    				vA.fromArray( src, a );
-    				vB.fromArray( src, b );
-    				vC.fromArray( src, c );
-
-    				cb.subVectors( vC, vB );
-    				ab.subVectors( vA, vB );
-    				cb.cross( ab );
-
-    				cb.normalize();
-
-    				dst.push( cb.x, cb.y, cb.z );
-    				dst.push( cb.x, cb.y, cb.z );
-    				dst.push( cb.x, cb.y, cb.z );
-
-    			},
-
-    			addColor: function ( a, b, c ) {
-
-    				var src = this.colors;
-    				var dst = this.object.geometry.colors;
-
-    				if ( src[ a ] !== undefined ) dst.push( src[ a + 0 ], src[ a + 1 ], src[ a + 2 ] );
-    				if ( src[ b ] !== undefined ) dst.push( src[ b + 0 ], src[ b + 1 ], src[ b + 2 ] );
-    				if ( src[ c ] !== undefined ) dst.push( src[ c + 0 ], src[ c + 1 ], src[ c + 2 ] );
-
-    			},
-
-    			addUV: function ( a, b, c ) {
-
-    				var src = this.uvs;
-    				var dst = this.object.geometry.uvs;
-
-    				dst.push( src[ a + 0 ], src[ a + 1 ] );
-    				dst.push( src[ b + 0 ], src[ b + 1 ] );
-    				dst.push( src[ c + 0 ], src[ c + 1 ] );
-
-    			},
-
-    			addDefaultUV: function () {
-
-    				var dst = this.object.geometry.uvs;
-
-    				dst.push( 0, 0 );
-    				dst.push( 0, 0 );
-    				dst.push( 0, 0 );
-
-    			},
-
-    			addUVLine: function ( a ) {
-
-    				var src = this.uvs;
-    				var dst = this.object.geometry.uvs;
-
-    				dst.push( src[ a + 0 ], src[ a + 1 ] );
-
-    			},
-
-    			addFace: function ( a, b, c, ua, ub, uc, na, nb, nc ) {
-
-    				var vLen = this.vertices.length;
-
-    				var ia = this.parseVertexIndex( a, vLen );
-    				var ib = this.parseVertexIndex( b, vLen );
-    				var ic = this.parseVertexIndex( c, vLen );
-
-    				this.addVertex( ia, ib, ic );
-    				this.addColor( ia, ib, ic );
-
-    				// normals
-
-    				if ( na !== undefined && na !== '' ) {
-
-    					var nLen = this.normals.length;
-
-    					ia = this.parseNormalIndex( na, nLen );
-    					ib = this.parseNormalIndex( nb, nLen );
-    					ic = this.parseNormalIndex( nc, nLen );
-
-    					this.addNormal( ia, ib, ic );
-
-    				} else {
-
-    					this.addFaceNormal( ia, ib, ic );
-
-    				}
-
-    				// uvs
-
-    				if ( ua !== undefined && ua !== '' ) {
-
-    					var uvLen = this.uvs.length;
-
-    					ia = this.parseUVIndex( ua, uvLen );
-    					ib = this.parseUVIndex( ub, uvLen );
-    					ic = this.parseUVIndex( uc, uvLen );
-
-    					this.addUV( ia, ib, ic );
-
-    					this.object.geometry.hasUVIndices = true;
-
-    				} else {
-
-    					// add placeholder values (for inconsistent face definitions)
-
-    					this.addDefaultUV();
-
-    				}
-
-    			},
-
-    			addPointGeometry: function ( vertices ) {
-
-    				this.object.geometry.type = 'Points';
-
-    				var vLen = this.vertices.length;
-
-    				for ( var vi = 0, l = vertices.length; vi < l; vi ++ ) {
-
-    					var index = this.parseVertexIndex( vertices[ vi ], vLen );
-
-    					this.addVertexPoint( index );
-    					this.addColor( index );
-
-    				}
-
-    			},
-
-    			addLineGeometry: function ( vertices, uvs ) {
-
-    				this.object.geometry.type = 'Line';
-
-    				var vLen = this.vertices.length;
-    				var uvLen = this.uvs.length;
-
-    				for ( var vi = 0, l = vertices.length; vi < l; vi ++ ) {
-
-    					this.addVertexLine( this.parseVertexIndex( vertices[ vi ], vLen ) );
-
-    				}
-
-    				for ( var uvi = 0, l = uvs.length; uvi < l; uvi ++ ) {
-
-    					this.addUVLine( this.parseUVIndex( uvs[ uvi ], uvLen ) );
-
-    				}
-
-    			}
-
-    		};
-
-    		state.startObject( '', false );
-
-    		return state;
-
-    	}
-
-    	//
-
-    	function OBJLoader( manager ) {
-
-    		Loader.call( this, manager );
-
-    		this.materials = null;
-
-    	}
-
-    	OBJLoader.prototype = Object.assign( Object.create( Loader.prototype ), {
-
-    		constructor: OBJLoader,
-
-    		load: function ( url, onLoad, onProgress, onError ) {
-
-    			var scope = this;
-
-    			var loader = new FileLoader( this.manager );
-    			loader.setPath( this.path );
-    			loader.setRequestHeader( this.requestHeader );
-    			loader.setWithCredentials( this.withCredentials );
-    			loader.load( url, function ( text ) {
-
-    				try {
-
-    					onLoad( scope.parse( text ) );
-
-    				} catch ( e ) {
-
-    					if ( onError ) {
-
-    						onError( e );
-
-    					} else {
-
-    						console.error( e );
-
-    					}
-
-    					scope.manager.itemError( url );
-
-    				}
-
-    			}, onProgress, onError );
-
-    		},
-
-    		setMaterials: function ( materials ) {
-
-    			this.materials = materials;
-
-    			return this;
-
-    		},
-
-    		parse: function ( text ) {
-
-    			var state = new ParserState();
-
-    			if ( text.indexOf( '\r\n' ) !== - 1 ) {
-
-    				// This is faster than String.split with regex that splits on both
-    				text = text.replace( /\r\n/g, '\n' );
-
-    			}
-
-    			if ( text.indexOf( '\\\n' ) !== - 1 ) {
-
-    				// join lines separated by a line continuation character (\)
-    				text = text.replace( /\\\n/g, '' );
-
-    			}
-
-    			var lines = text.split( '\n' );
-    			var line = '', lineFirstChar = '';
-    			var lineLength = 0;
-    			var result = [];
-
-    			// Faster to just trim left side of the line. Use if available.
-    			var trimLeft = ( typeof ''.trimLeft === 'function' );
-
-    			for ( var i = 0, l = lines.length; i < l; i ++ ) {
-
-    				line = lines[ i ];
-
-    				line = trimLeft ? line.trimLeft() : line.trim();
-
-    				lineLength = line.length;
-
-    				if ( lineLength === 0 ) continue;
-
-    				lineFirstChar = line.charAt( 0 );
-
-    				// @todo invoke passed in handler if any
-    				if ( lineFirstChar === '#' ) continue;
-
-    				if ( lineFirstChar === 'v' ) {
-
-    					var data = line.split( /\s+/ );
-
-    					switch ( data[ 0 ] ) {
-
-    						case 'v':
-    							state.vertices.push(
-    								parseFloat( data[ 1 ] ),
-    								parseFloat( data[ 2 ] ),
-    								parseFloat( data[ 3 ] )
-    							);
-    							if ( data.length >= 7 ) {
-
-    								state.colors.push(
-    									parseFloat( data[ 4 ] ),
-    									parseFloat( data[ 5 ] ),
-    									parseFloat( data[ 6 ] )
-
-    								);
-
-    							} else {
-
-    								// if no colors are defined, add placeholders so color and vertex indices match
-
-    								state.colors.push( undefined, undefined, undefined );
-
-    							}
-
-    							break;
-    						case 'vn':
-    							state.normals.push(
-    								parseFloat( data[ 1 ] ),
-    								parseFloat( data[ 2 ] ),
-    								parseFloat( data[ 3 ] )
-    							);
-    							break;
-    						case 'vt':
-    							state.uvs.push(
-    								parseFloat( data[ 1 ] ),
-    								parseFloat( data[ 2 ] )
-    							);
-    							break;
-
-    					}
-
-    				} else if ( lineFirstChar === 'f' ) {
-
-    					var lineData = line.substr( 1 ).trim();
-    					var vertexData = lineData.split( /\s+/ );
-    					var faceVertices = [];
-
-    					// Parse the face vertex data into an easy to work with format
-
-    					for ( var j = 0, jl = vertexData.length; j < jl; j ++ ) {
-
-    						var vertex = vertexData[ j ];
-
-    						if ( vertex.length > 0 ) {
-
-    							var vertexParts = vertex.split( '/' );
-    							faceVertices.push( vertexParts );
-
-    						}
-
-    					}
-
-    					// Draw an edge between the first vertex and all subsequent vertices to form an n-gon
-
-    					var v1 = faceVertices[ 0 ];
-
-    					for ( var j = 1, jl = faceVertices.length - 1; j < jl; j ++ ) {
-
-    						var v2 = faceVertices[ j ];
-    						var v3 = faceVertices[ j + 1 ];
-
-    						state.addFace(
-    							v1[ 0 ], v2[ 0 ], v3[ 0 ],
-    							v1[ 1 ], v2[ 1 ], v3[ 1 ],
-    							v1[ 2 ], v2[ 2 ], v3[ 2 ]
-    						);
-
-    					}
-
-    				} else if ( lineFirstChar === 'l' ) {
-
-    					var lineParts = line.substring( 1 ).trim().split( ' ' );
-    					var lineVertices = [], lineUVs = [];
-
-    					if ( line.indexOf( '/' ) === - 1 ) {
-
-    						lineVertices = lineParts;
-
-    					} else {
-
-    						for ( var li = 0, llen = lineParts.length; li < llen; li ++ ) {
-
-    							var parts = lineParts[ li ].split( '/' );
-
-    							if ( parts[ 0 ] !== '' ) lineVertices.push( parts[ 0 ] );
-    							if ( parts[ 1 ] !== '' ) lineUVs.push( parts[ 1 ] );
-
-    						}
-
-    					}
-
-    					state.addLineGeometry( lineVertices, lineUVs );
-
-    				} else if ( lineFirstChar === 'p' ) {
-
-    					var lineData = line.substr( 1 ).trim();
-    					var pointData = lineData.split( ' ' );
-
-    					state.addPointGeometry( pointData );
-
-    				} else if ( ( result = object_pattern.exec( line ) ) !== null ) {
-
-    					// o object_name
-    					// or
-    					// g group_name
-
-    					// WORKAROUND: https://bugs.chromium.org/p/v8/issues/detail?id=2869
-    					// var name = result[ 0 ].substr( 1 ).trim();
-    					var name = ( ' ' + result[ 0 ].substr( 1 ).trim() ).substr( 1 );
-
-    					state.startObject( name );
-
-    				} else if ( material_use_pattern.test( line ) ) {
-
-    					// material
-
-    					state.object.startMaterial( line.substring( 7 ).trim(), state.materialLibraries );
-
-    				} else if ( material_library_pattern.test( line ) ) {
-
-    					// mtl file
-
-    					state.materialLibraries.push( line.substring( 7 ).trim() );
-
-    				} else if ( map_use_pattern.test( line ) ) {
-
-    					// the line is parsed but ignored since the loader assumes textures are defined MTL files
-    					// (according to https://www.okino.com/conv/imp_wave.htm, 'usemap' is the old-style Wavefront texture reference method)
-
-    					console.warn( 'THREE.OBJLoader: Rendering identifier "usemap" not supported. Textures must be defined in MTL files.' );
-
-    				} else if ( lineFirstChar === 's' ) {
-
-    					result = line.split( ' ' );
-
-    					// smooth shading
-
-    					// @todo Handle files that have varying smooth values for a set of faces inside one geometry,
-    					// but does not define a usemtl for each face set.
-    					// This should be detected and a dummy material created (later MultiMaterial and geometry groups).
-    					// This requires some care to not create extra material on each smooth value for "normal" obj files.
-    					// where explicit usemtl defines geometry groups.
-    					// Example asset: examples/models/obj/cerberus/Cerberus.obj
-
-    					/*
-    					 * http://paulbourke.net/dataformats/obj/
-    					 * or
-    					 * http://www.cs.utah.edu/~boulos/cs3505/obj_spec.pdf
-    					 *
-    					 * From chapter "Grouping" Syntax explanation "s group_number":
-    					 * "group_number is the smoothing group number. To turn off smoothing groups, use a value of 0 or off.
-    					 * Polygonal elements use group numbers to put elements in different smoothing groups. For free-form
-    					 * surfaces, smoothing groups are either turned on or off; there is no difference between values greater
-    					 * than 0."
-    					 */
-    					if ( result.length > 1 ) {
-
-    						var value = result[ 1 ].trim().toLowerCase();
-    						state.object.smooth = ( value !== '0' && value !== 'off' );
-
-    					} else {
-
-    						// ZBrush can produce "s" lines #11707
-    						state.object.smooth = true;
-
-    					}
-
-    					var material = state.object.currentMaterial();
-    					if ( material ) material.smooth = state.object.smooth;
-
-    				} else {
-
-    					// Handle null terminated files without exception
-    					if ( line === '\0' ) continue;
-
-    					console.warn( 'THREE.OBJLoader: Unexpected line: "' + line + '"' );
-
-    				}
-
-    			}
-
-    			state.finalize();
-
-    			var container = new Group();
-    			container.materialLibraries = [].concat( state.materialLibraries );
-
-    			var hasPrimitives = ! ( state.objects.length === 1 && state.objects[ 0 ].geometry.vertices.length === 0 );
-
-    			if ( hasPrimitives === true ) {
-
-    				for ( var i = 0, l = state.objects.length; i < l; i ++ ) {
-
-    					var object = state.objects[ i ];
-    					var geometry = object.geometry;
-    					var materials = object.materials;
-    					var isLine = ( geometry.type === 'Line' );
-    					var isPoints = ( geometry.type === 'Points' );
-    					var hasVertexColors = false;
-
-    					// Skip o/g line declarations that did not follow with any faces
-    					if ( geometry.vertices.length === 0 ) continue;
-
-    					var buffergeometry = new BufferGeometry();
-
-    					buffergeometry.setAttribute( 'position', new Float32BufferAttribute( geometry.vertices, 3 ) );
-
-    					if ( geometry.normals.length > 0 ) {
-
-    						buffergeometry.setAttribute( 'normal', new Float32BufferAttribute( geometry.normals, 3 ) );
-
-    					}
-
-    					if ( geometry.colors.length > 0 ) {
-
-    						hasVertexColors = true;
-    						buffergeometry.setAttribute( 'color', new Float32BufferAttribute( geometry.colors, 3 ) );
-
-    					}
-
-    					if ( geometry.hasUVIndices === true ) {
-
-    						buffergeometry.setAttribute( 'uv', new Float32BufferAttribute( geometry.uvs, 2 ) );
-
-    					}
-
-    					// Create materials
-
-    					var createdMaterials = [];
-
-    					for ( var mi = 0, miLen = materials.length; mi < miLen; mi ++ ) {
-
-    						var sourceMaterial = materials[ mi ];
-    						var materialHash = sourceMaterial.name + '_' + sourceMaterial.smooth + '_' + hasVertexColors;
-    						var material = state.materials[ materialHash ];
-
-    						if ( this.materials !== null ) {
-
-    							material = this.materials.create( sourceMaterial.name );
-
-    							// mtl etc. loaders probably can't create line materials correctly, copy properties to a line material.
-    							if ( isLine && material && ! ( material instanceof LineBasicMaterial ) ) {
-
-    								var materialLine = new LineBasicMaterial();
-    								Material.prototype.copy.call( materialLine, material );
-    								materialLine.color.copy( material.color );
-    								material = materialLine;
-
-    							} else if ( isPoints && material && ! ( material instanceof PointsMaterial ) ) {
-
-    								var materialPoints = new PointsMaterial( { size: 10, sizeAttenuation: false } );
-    								Material.prototype.copy.call( materialPoints, material );
-    								materialPoints.color.copy( material.color );
-    								materialPoints.map = material.map;
-    								material = materialPoints;
-
-    							}
-
-    						}
-
-    						if ( material === undefined ) {
-
-    							if ( isLine ) {
-
-    								material = new LineBasicMaterial();
-
-    							} else if ( isPoints ) {
-
-    								material = new PointsMaterial( { size: 1, sizeAttenuation: false } );
-
-    							} else {
-
-    								material = new MeshPhongMaterial();
-
-    							}
-
-    							material.name = sourceMaterial.name;
-    							material.flatShading = sourceMaterial.smooth ? false : true;
-    							material.vertexColors = hasVertexColors;
-
-    							state.materials[ materialHash ] = material;
-
-    						}
-
-    						createdMaterials.push( material );
-
-    					}
-
-    					// Create mesh
-
-    					var mesh;
-
-    					if ( createdMaterials.length > 1 ) {
-
-    						for ( var mi = 0, miLen = materials.length; mi < miLen; mi ++ ) {
-
-    							var sourceMaterial = materials[ mi ];
-    							buffergeometry.addGroup( sourceMaterial.groupStart, sourceMaterial.groupCount, mi );
-
-    						}
-
-    						if ( isLine ) {
-
-    							mesh = new LineSegments( buffergeometry, createdMaterials );
-
-    						} else if ( isPoints ) {
-
-    							mesh = new Points( buffergeometry, createdMaterials );
-
-    						} else {
-
-    							mesh = new Mesh( buffergeometry, createdMaterials );
-
-    						}
-
-    					} else {
-
-    						if ( isLine ) {
-
-    							mesh = new LineSegments( buffergeometry, createdMaterials[ 0 ] );
-
-    						} else if ( isPoints ) {
-
-    							mesh = new Points( buffergeometry, createdMaterials[ 0 ] );
-
-    						} else {
-
-    							mesh = new Mesh( buffergeometry, createdMaterials[ 0 ] );
-
-    						}
-
-    					}
-
-    					mesh.name = object.name;
-
-    					container.add( mesh );
-
-    				}
-
-    			} else {
-
-    				// if there is only the default parser state object with no geometry data, interpret data as point cloud
-
-    				if ( state.vertices.length > 0 ) {
-
-    					var material = new PointsMaterial( { size: 1, sizeAttenuation: false } );
-
-    					var buffergeometry = new BufferGeometry();
-
-    					buffergeometry.setAttribute( 'position', new Float32BufferAttribute( state.vertices, 3 ) );
-
-    					if ( state.colors.length > 0 && state.colors[ 0 ] !== undefined ) {
-
-    						buffergeometry.setAttribute( 'color', new Float32BufferAttribute( state.colors, 3 ) );
-    						material.vertexColors = true;
-
-    					}
-
-    					var points = new Points( buffergeometry, material );
-    					container.add( points );
-
-    				}
-
-    			}
-
-    			return container;
-
-    		}
-
-    	} );
-
-    	return OBJLoader;
-
-    } )();
-
-    var BufferGeometryUtils = {
-
-    	computeTangents: function ( geometry ) {
-
-    		var index = geometry.index;
-    		var attributes = geometry.attributes;
-
-    		// based on http://www.terathon.com/code/tangent.html
-    		// (per vertex tangents)
-
-    		if ( index === null ||
-    			 attributes.position === undefined ||
-    			 attributes.normal === undefined ||
-    			 attributes.uv === undefined ) {
-
-    			console.error( 'THREE.BufferGeometryUtils: .computeTangents() failed. Missing required attributes (index, position, normal or uv)' );
-    			return;
-
-    		}
-
-    		var indices = index.array;
-    		var positions = attributes.position.array;
-    		var normals = attributes.normal.array;
-    		var uvs = attributes.uv.array;
-
-    		var nVertices = positions.length / 3;
-
-    		if ( attributes.tangent === undefined ) {
-
-    			geometry.setAttribute( 'tangent', new BufferAttribute( new Float32Array( 4 * nVertices ), 4 ) );
-
-    		}
-
-    		var tangents = attributes.tangent.array;
-
-    		var tan1 = [], tan2 = [];
-
-    		for ( var i = 0; i < nVertices; i ++ ) {
-
-    			tan1[ i ] = new Vector3$1();
-    			tan2[ i ] = new Vector3$1();
-
-    		}
-
-    		var vA = new Vector3$1(),
-    			vB = new Vector3$1(),
-    			vC = new Vector3$1(),
-
-    			uvA = new Vector2(),
-    			uvB = new Vector2(),
-    			uvC = new Vector2(),
-
-    			sdir = new Vector3$1(),
-    			tdir = new Vector3$1();
-
-    		function handleTriangle( a, b, c ) {
-
-    			vA.fromArray( positions, a * 3 );
-    			vB.fromArray( positions, b * 3 );
-    			vC.fromArray( positions, c * 3 );
-
-    			uvA.fromArray( uvs, a * 2 );
-    			uvB.fromArray( uvs, b * 2 );
-    			uvC.fromArray( uvs, c * 2 );
-
-    			vB.sub( vA );
-    			vC.sub( vA );
-
-    			uvB.sub( uvA );
-    			uvC.sub( uvA );
-
-    			var r = 1.0 / ( uvB.x * uvC.y - uvC.x * uvB.y );
-
-    			// silently ignore degenerate uv triangles having coincident or colinear vertices
-
-    			if ( ! isFinite( r ) ) return;
-
-    			sdir.copy( vB ).multiplyScalar( uvC.y ).addScaledVector( vC, - uvB.y ).multiplyScalar( r );
-    			tdir.copy( vC ).multiplyScalar( uvB.x ).addScaledVector( vB, - uvC.x ).multiplyScalar( r );
-
-    			tan1[ a ].add( sdir );
-    			tan1[ b ].add( sdir );
-    			tan1[ c ].add( sdir );
-
-    			tan2[ a ].add( tdir );
-    			tan2[ b ].add( tdir );
-    			tan2[ c ].add( tdir );
-
-    		}
-
-    		var groups = geometry.groups;
-
-    		if ( groups.length === 0 ) {
-
-    			groups = [ {
-    				start: 0,
-    				count: indices.length
-    			} ];
-
-    		}
-
-    		for ( var i = 0, il = groups.length; i < il; ++ i ) {
-
-    			var group = groups[ i ];
-
-    			var start = group.start;
-    			var count = group.count;
-
-    			for ( var j = start, jl = start + count; j < jl; j += 3 ) {
-
-    				handleTriangle(
-    					indices[ j + 0 ],
-    					indices[ j + 1 ],
-    					indices[ j + 2 ]
-    				);
-
-    			}
-
-    		}
-
-    		var tmp = new Vector3$1(), tmp2 = new Vector3$1();
-    		var n = new Vector3$1(), n2 = new Vector3$1();
-    		var w, t, test;
-
-    		function handleVertex( v ) {
-
-    			n.fromArray( normals, v * 3 );
-    			n2.copy( n );
-
-    			t = tan1[ v ];
-
-    			// Gram-Schmidt orthogonalize
-
-    			tmp.copy( t );
-    			tmp.sub( n.multiplyScalar( n.dot( t ) ) ).normalize();
-
-    			// Calculate handedness
-
-    			tmp2.crossVectors( n2, t );
-    			test = tmp2.dot( tan2[ v ] );
-    			w = ( test < 0.0 ) ? - 1.0 : 1.0;
-
-    			tangents[ v * 4 ] = tmp.x;
-    			tangents[ v * 4 + 1 ] = tmp.y;
-    			tangents[ v * 4 + 2 ] = tmp.z;
-    			tangents[ v * 4 + 3 ] = w;
-
-    		}
-
-    		for ( var i = 0, il = groups.length; i < il; ++ i ) {
-
-    			var group = groups[ i ];
-
-    			var start = group.start;
-    			var count = group.count;
-
-    			for ( var j = start, jl = start + count; j < jl; j += 3 ) {
-
-    				handleVertex( indices[ j + 0 ] );
-    				handleVertex( indices[ j + 1 ] );
-    				handleVertex( indices[ j + 2 ] );
-
-    			}
-
-    		}
-
-    	},
-
-    	/**
-    	 * @param  {Array<BufferGeometry>} geometries
-    	 * @param  {Boolean} useGroups
-    	 * @return {BufferGeometry}
-    	 */
-    	mergeBufferGeometries: function ( geometries, useGroups ) {
-
-    		var isIndexed = geometries[ 0 ].index !== null;
-
-    		var attributesUsed = new Set( Object.keys( geometries[ 0 ].attributes ) );
-    		var morphAttributesUsed = new Set( Object.keys( geometries[ 0 ].morphAttributes ) );
-
-    		var attributes = {};
-    		var morphAttributes = {};
-
-    		var morphTargetsRelative = geometries[ 0 ].morphTargetsRelative;
-
-    		var mergedGeometry = new BufferGeometry();
-
-    		var offset = 0;
-
-    		for ( var i = 0; i < geometries.length; ++ i ) {
-
-    			var geometry = geometries[ i ];
-    			var attributesCount = 0;
-
-    			// ensure that all geometries are indexed, or none
-
-    			if ( isIndexed !== ( geometry.index !== null ) ) {
-
-    				console.error( 'THREE.BufferGeometryUtils: .mergeBufferGeometries() failed with geometry at index ' + i + '. All geometries must have compatible attributes; make sure index attribute exists among all geometries, or in none of them.' );
-    				return null;
-
-    			}
-
-    			// gather attributes, exit early if they're different
-
-    			for ( var name in geometry.attributes ) {
-
-    				if ( ! attributesUsed.has( name ) ) {
-
-    					console.error( 'THREE.BufferGeometryUtils: .mergeBufferGeometries() failed with geometry at index ' + i + '. All geometries must have compatible attributes; make sure "' + name + '" attribute exists among all geometries, or in none of them.' );
-    					return null;
-
-    				}
-
-    				if ( attributes[ name ] === undefined ) attributes[ name ] = [];
-
-    				attributes[ name ].push( geometry.attributes[ name ] );
-
-    				attributesCount ++;
-
-    			}
-
-    			// ensure geometries have the same number of attributes
-
-    			if ( attributesCount !== attributesUsed.size ) {
-
-    				console.error( 'THREE.BufferGeometryUtils: .mergeBufferGeometries() failed with geometry at index ' + i + '. Make sure all geometries have the same number of attributes.' );
-    				return null;
-
-    			}
-
-    			// gather morph attributes, exit early if they're different
-
-    			if ( morphTargetsRelative !== geometry.morphTargetsRelative ) {
-
-    				console.error( 'THREE.BufferGeometryUtils: .mergeBufferGeometries() failed with geometry at index ' + i + '. .morphTargetsRelative must be consistent throughout all geometries.' );
-    				return null;
-
-    			}
-
-    			for ( var name in geometry.morphAttributes ) {
-
-    				if ( ! morphAttributesUsed.has( name ) ) {
-
-    					console.error( 'THREE.BufferGeometryUtils: .mergeBufferGeometries() failed with geometry at index ' + i + '.  .morphAttributes must be consistent throughout all geometries.' );
-    					return null;
-
-    				}
-
-    				if ( morphAttributes[ name ] === undefined ) morphAttributes[ name ] = [];
-
-    				morphAttributes[ name ].push( geometry.morphAttributes[ name ] );
-
-    			}
-
-    			// gather .userData
-
-    			mergedGeometry.userData.mergedUserData = mergedGeometry.userData.mergedUserData || [];
-    			mergedGeometry.userData.mergedUserData.push( geometry.userData );
-
-    			if ( useGroups ) {
-
-    				var count;
-
-    				if ( isIndexed ) {
-
-    					count = geometry.index.count;
-
-    				} else if ( geometry.attributes.position !== undefined ) {
-
-    					count = geometry.attributes.position.count;
-
-    				} else {
-
-    					console.error( 'THREE.BufferGeometryUtils: .mergeBufferGeometries() failed with geometry at index ' + i + '. The geometry must have either an index or a position attribute' );
-    					return null;
-
-    				}
-
-    				mergedGeometry.addGroup( offset, count, i );
-
-    				offset += count;
-
-    			}
-
-    		}
-
-    		// merge indices
-
-    		if ( isIndexed ) {
-
-    			var indexOffset = 0;
-    			var mergedIndex = [];
-
-    			for ( var i = 0; i < geometries.length; ++ i ) {
-
-    				var index = geometries[ i ].index;
-
-    				for ( var j = 0; j < index.count; ++ j ) {
-
-    					mergedIndex.push( index.getX( j ) + indexOffset );
-
-    				}
-
-    				indexOffset += geometries[ i ].attributes.position.count;
-
-    			}
-
-    			mergedGeometry.setIndex( mergedIndex );
-
-    		}
-
-    		// merge attributes
-
-    		for ( var name in attributes ) {
-
-    			var mergedAttribute = this.mergeBufferAttributes( attributes[ name ] );
-
-    			if ( ! mergedAttribute ) {
-
-    				console.error( 'THREE.BufferGeometryUtils: .mergeBufferGeometries() failed while trying to merge the ' + name + ' attribute.' );
-    				return null;
-
-    			}
-
-    			mergedGeometry.setAttribute( name, mergedAttribute );
-
-    		}
-
-    		// merge morph attributes
-
-    		for ( var name in morphAttributes ) {
-
-    			var numMorphTargets = morphAttributes[ name ][ 0 ].length;
-
-    			if ( numMorphTargets === 0 ) break;
-
-    			mergedGeometry.morphAttributes = mergedGeometry.morphAttributes || {};
-    			mergedGeometry.morphAttributes[ name ] = [];
-
-    			for ( var i = 0; i < numMorphTargets; ++ i ) {
-
-    				var morphAttributesToMerge = [];
-
-    				for ( var j = 0; j < morphAttributes[ name ].length; ++ j ) {
-
-    					morphAttributesToMerge.push( morphAttributes[ name ][ j ][ i ] );
-
-    				}
-
-    				var mergedMorphAttribute = this.mergeBufferAttributes( morphAttributesToMerge );
-
-    				if ( ! mergedMorphAttribute ) {
-
-    					console.error( 'THREE.BufferGeometryUtils: .mergeBufferGeometries() failed while trying to merge the ' + name + ' morphAttribute.' );
-    					return null;
-
-    				}
-
-    				mergedGeometry.morphAttributes[ name ].push( mergedMorphAttribute );
-
-    			}
-
-    		}
-
-    		return mergedGeometry;
-
-    	},
-
-    	/**
-    	 * @param {Array<BufferAttribute>} attributes
-    	 * @return {BufferAttribute}
-    	 */
-    	mergeBufferAttributes: function ( attributes ) {
-
-    		var TypedArray;
-    		var itemSize;
-    		var normalized;
-    		var arrayLength = 0;
-
-    		for ( var i = 0; i < attributes.length; ++ i ) {
-
-    			var attribute = attributes[ i ];
-
-    			if ( attribute.isInterleavedBufferAttribute ) {
-
-    				console.error( 'THREE.BufferGeometryUtils: .mergeBufferAttributes() failed. InterleavedBufferAttributes are not supported.' );
-    				return null;
-
-    			}
-
-    			if ( TypedArray === undefined ) TypedArray = attribute.array.constructor;
-    			if ( TypedArray !== attribute.array.constructor ) {
-
-    				console.error( 'THREE.BufferGeometryUtils: .mergeBufferAttributes() failed. BufferAttribute.array must be of consistent array types across matching attributes.' );
-    				return null;
-
-    			}
-
-    			if ( itemSize === undefined ) itemSize = attribute.itemSize;
-    			if ( itemSize !== attribute.itemSize ) {
-
-    				console.error( 'THREE.BufferGeometryUtils: .mergeBufferAttributes() failed. BufferAttribute.itemSize must be consistent across matching attributes.' );
-    				return null;
-
-    			}
-
-    			if ( normalized === undefined ) normalized = attribute.normalized;
-    			if ( normalized !== attribute.normalized ) {
-
-    				console.error( 'THREE.BufferGeometryUtils: .mergeBufferAttributes() failed. BufferAttribute.normalized must be consistent across matching attributes.' );
-    				return null;
-
-    			}
-
-    			arrayLength += attribute.array.length;
-
-    		}
-
-    		var array = new TypedArray( arrayLength );
-    		var offset = 0;
-
-    		for ( var i = 0; i < attributes.length; ++ i ) {
-
-    			array.set( attributes[ i ].array, offset );
-
-    			offset += attributes[ i ].array.length;
-
-    		}
-
-    		return new BufferAttribute( array, itemSize, normalized );
-
-    	},
-
-    	/**
-    	 * @param {Array<BufferAttribute>} attributes
-    	 * @return {Array<InterleavedBufferAttribute>}
-    	 */
-    	interleaveAttributes: function ( attributes ) {
-
-    		// Interleaves the provided attributes into an InterleavedBuffer and returns
-    		// a set of InterleavedBufferAttributes for each attribute
-    		var TypedArray;
-    		var arrayLength = 0;
-    		var stride = 0;
-
-    		// calculate the the length and type of the interleavedBuffer
-    		for ( var i = 0, l = attributes.length; i < l; ++ i ) {
-
-    			var attribute = attributes[ i ];
-
-    			if ( TypedArray === undefined ) TypedArray = attribute.array.constructor;
-    			if ( TypedArray !== attribute.array.constructor ) {
-
-    				console.error( 'AttributeBuffers of different types cannot be interleaved' );
-    				return null;
-
-    			}
-
-    			arrayLength += attribute.array.length;
-    			stride += attribute.itemSize;
-
-    		}
-
-    		// Create the set of buffer attributes
-    		var interleavedBuffer = new InterleavedBuffer( new TypedArray( arrayLength ), stride );
-    		var offset = 0;
-    		var res = [];
-    		var getters = [ 'getX', 'getY', 'getZ', 'getW' ];
-    		var setters = [ 'setX', 'setY', 'setZ', 'setW' ];
-
-    		for ( var j = 0, l = attributes.length; j < l; j ++ ) {
-
-    			var attribute = attributes[ j ];
-    			var itemSize = attribute.itemSize;
-    			var count = attribute.count;
-    			var iba = new InterleavedBufferAttribute( interleavedBuffer, itemSize, offset, attribute.normalized );
-    			res.push( iba );
-
-    			offset += itemSize;
-
-    			// Move the data for each attribute into the new interleavedBuffer
-    			// at the appropriate offset
-    			for ( var c = 0; c < count; c ++ ) {
-
-    				for ( var k = 0; k < itemSize; k ++ ) {
-
-    					iba[ setters[ k ] ]( c, attribute[ getters[ k ] ]( c ) );
-
-    				}
-
-    			}
-
-    		}
-
-    		return res;
-
-    	},
-
-    	/**
-    	 * @param {Array<BufferGeometry>} geometry
-    	 * @return {number}
-    	 */
-    	estimateBytesUsed: function ( geometry ) {
-
-    		// Return the estimated memory used by this geometry in bytes
-    		// Calculate using itemSize, count, and BYTES_PER_ELEMENT to account
-    		// for InterleavedBufferAttributes.
-    		var mem = 0;
-    		for ( var name in geometry.attributes ) {
-
-    			var attr = geometry.getAttribute( name );
-    			mem += attr.count * attr.itemSize * attr.array.BYTES_PER_ELEMENT;
-
-    		}
-
-    		var indices = geometry.getIndex();
-    		mem += indices ? indices.count * indices.itemSize * indices.array.BYTES_PER_ELEMENT : 0;
-    		return mem;
-
-    	},
-
-    	/**
-    	 * @param {BufferGeometry} geometry
-    	 * @param {number} tolerance
-    	 * @return {BufferGeometry>}
-    	 */
-    	mergeVertices: function ( geometry, tolerance = 1e-4 ) {
-
-    		tolerance = Math.max( tolerance, Number.EPSILON );
-
-    		// Generate an index buffer if the geometry doesn't have one, or optimize it
-    		// if it's already available.
-    		var hashToIndex = {};
-    		var indices = geometry.getIndex();
-    		var positions = geometry.getAttribute( 'position' );
-    		var vertexCount = indices ? indices.count : positions.count;
-
-    		// next value for triangle indices
-    		var nextIndex = 0;
-
-    		// attributes and new attribute arrays
-    		var attributeNames = Object.keys( geometry.attributes );
-    		var attrArrays = {};
-    		var morphAttrsArrays = {};
-    		var newIndices = [];
-    		var getters = [ 'getX', 'getY', 'getZ', 'getW' ];
-
-    		// initialize the arrays
-    		for ( var i = 0, l = attributeNames.length; i < l; i ++ ) {
-
-    			var name = attributeNames[ i ];
-
-    			attrArrays[ name ] = [];
-
-    			var morphAttr = geometry.morphAttributes[ name ];
-    			if ( morphAttr ) {
-
-    				morphAttrsArrays[ name ] = new Array( morphAttr.length ).fill().map( () => [] );
-
-    			}
-
-    		}
-
-    		// convert the error tolerance to an amount of decimal places to truncate to
-    		var decimalShift = Math.log10( 1 / tolerance );
-    		var shiftMultiplier = Math.pow( 10, decimalShift );
-    		for ( var i = 0; i < vertexCount; i ++ ) {
-
-    			var index = indices ? indices.getX( i ) : i;
-
-    			// Generate a hash for the vertex attributes at the current index 'i'
-    			var hash = '';
-    			for ( var j = 0, l = attributeNames.length; j < l; j ++ ) {
-
-    				var name = attributeNames[ j ];
-    				var attribute = geometry.getAttribute( name );
-    				var itemSize = attribute.itemSize;
-
-    				for ( var k = 0; k < itemSize; k ++ ) {
-
-    					// double tilde truncates the decimal value
-    					hash += `${ ~ ~ ( attribute[ getters[ k ] ]( index ) * shiftMultiplier ) },`;
-
-    				}
-
-    			}
-
-    			// Add another reference to the vertex if it's already
-    			// used by another index
-    			if ( hash in hashToIndex ) {
-
-    				newIndices.push( hashToIndex[ hash ] );
-
-    			} else {
-
-    				// copy data to the new index in the attribute arrays
-    				for ( var j = 0, l = attributeNames.length; j < l; j ++ ) {
-
-    					var name = attributeNames[ j ];
-    					var attribute = geometry.getAttribute( name );
-    					var morphAttr = geometry.morphAttributes[ name ];
-    					var itemSize = attribute.itemSize;
-    					var newarray = attrArrays[ name ];
-    					var newMorphArrays = morphAttrsArrays[ name ];
-
-    					for ( var k = 0; k < itemSize; k ++ ) {
-
-    						var getterFunc = getters[ k ];
-    						newarray.push( attribute[ getterFunc ]( index ) );
-
-    						if ( morphAttr ) {
-
-    							for ( var m = 0, ml = morphAttr.length; m < ml; m ++ ) {
-
-    								newMorphArrays[ m ].push( morphAttr[ m ][ getterFunc ]( index ) );
-
-    							}
-
-    						}
-
-    					}
-
-    				}
-
-    				hashToIndex[ hash ] = nextIndex;
-    				newIndices.push( nextIndex );
-    				nextIndex ++;
-
-    			}
-
-    		}
-
-    		// Generate typed arrays from new attribute arrays and update
-    		// the attributeBuffers
-    		const result = geometry.clone();
-    		for ( var i = 0, l = attributeNames.length; i < l; i ++ ) {
-
-    			var name = attributeNames[ i ];
-    			var oldAttribute = geometry.getAttribute( name );
-
-    			var buffer = new oldAttribute.array.constructor( attrArrays[ name ] );
-    			var attribute = new BufferAttribute( buffer, oldAttribute.itemSize, oldAttribute.normalized );
-
-    			result.setAttribute( name, attribute );
-
-    			// Update the attribute arrays
-    			if ( name in morphAttrsArrays ) {
-
-    				for ( var j = 0; j < morphAttrsArrays[ name ].length; j ++ ) {
-
-    					var oldMorphAttribute = geometry.morphAttributes[ name ][ j ];
-
-    					var buffer = new oldMorphAttribute.array.constructor( morphAttrsArrays[ name ][ j ] );
-    					var morphAttribute = new BufferAttribute( buffer, oldMorphAttribute.itemSize, oldMorphAttribute.normalized );
-    					result.morphAttributes[ name ][ j ] = morphAttribute;
-
-    				}
-
-    			}
-
-    		}
-
-    		// indices
-
-    		result.setIndex( newIndices );
-
-    		return result;
-
-    	},
-
-    	/**
-    	 * @param {BufferGeometry} geometry
-    	 * @param {number} drawMode
-    	 * @return {BufferGeometry>}
-    	 */
-    	toTrianglesDrawMode: function ( geometry, drawMode ) {
-
-    		if ( drawMode === TrianglesDrawMode ) {
-
-    			console.warn( 'THREE.BufferGeometryUtils.toTrianglesDrawMode(): Geometry already defined as triangles.' );
-    			return geometry;
-
-    		}
-
-    		if ( drawMode === TriangleFanDrawMode || drawMode === TriangleStripDrawMode ) {
-
-    			var index = geometry.getIndex();
-
-    			// generate index if not present
-
-    			if ( index === null ) {
-
-    				var indices = [];
-
-    				var position = geometry.getAttribute( 'position' );
-
-    				if ( position !== undefined ) {
-
-    					for ( var i = 0; i < position.count; i ++ ) {
-
-    						indices.push( i );
-
-    					}
-
-    					geometry.setIndex( indices );
-    					index = geometry.getIndex();
-
-    				} else {
-
-    					console.error( 'THREE.BufferGeometryUtils.toTrianglesDrawMode(): Undefined position attribute. Processing not possible.' );
-    					return geometry;
-
-    				}
-
-    			}
-
-    			//
-
-    			var numberOfTriangles = index.count - 2;
-    			var newIndices = [];
-
-    			if ( drawMode === TriangleFanDrawMode ) {
-
-    				// gl.TRIANGLE_FAN
-
-    				for ( var i = 1; i <= numberOfTriangles; i ++ ) {
-
-    					newIndices.push( index.getX( 0 ) );
-    					newIndices.push( index.getX( i ) );
-    					newIndices.push( index.getX( i + 1 ) );
-
-    				}
-
-    			} else {
-
-    				// gl.TRIANGLE_STRIP
-
-    				for ( var i = 0; i < numberOfTriangles; i ++ ) {
-
-    					if ( i % 2 === 0 ) {
-
-    						newIndices.push( index.getX( i ) );
-    						newIndices.push( index.getX( i + 1 ) );
-    						newIndices.push( index.getX( i + 2 ) );
-
-
-    					} else {
-
-    						newIndices.push( index.getX( i + 2 ) );
-    						newIndices.push( index.getX( i + 1 ) );
-    						newIndices.push( index.getX( i ) );
-
-    					}
-
-    				}
-
-    			}
-
-    			if ( ( newIndices.length / 3 ) !== numberOfTriangles ) {
-
-    				console.error( 'THREE.BufferGeometryUtils.toTrianglesDrawMode(): Unable to generate correct amount of triangles.' );
-
-    			}
-
-    			// build final geometry
-
-    			var newGeometry = geometry.clone();
-    			newGeometry.setIndex( newIndices );
-    			newGeometry.clearGroups();
-
-    			return newGeometry;
-
-    		} else {
-
-    			console.error( 'THREE.BufferGeometryUtils.toTrianglesDrawMode(): Unknown draw mode:', drawMode );
-    			return geometry;
-
-    		}
-
-    	}
-
-    };
-
     /**
      * @author MicMetzger /
      */
@@ -63495,17 +63495,6 @@
       HEAVY: 'heavy_guard',
       ASSAULT: 'assault_guard'
     };
-    function dumpObject(obj, lines = [], isLast = true, prefix = '') {
-      const localPrefix = isLast ? '└─' : '├─';
-      lines.push(`${prefix}${prefix ? localPrefix : ''}${obj.name || '*no-name*'} [${obj.type}]`);
-      const newPrefix = prefix + (isLast ? '  ' : '│ ');
-      const lastNdx = obj.children.length - 1;
-      obj.children.forEach((child, ndx) => {
-        const isLast = ndx === lastNdx;
-        dumpObject(child, lines, isLast, newPrefix);
-      });
-      return lines;
-    }
 
     class AssetManager {
       /**
@@ -64186,21 +64175,21 @@
         const gltfLoader = this.gltfLoader;
         const items = this.items;
 
-        // Pickup Health
+        // Collectible Health
         gltfLoader.load('./models/pickups/PickupHealth.glb', gltf => {
           const healthpackMesh = gltf.scene;
           healthpackMesh.matrixAutoUpdate = false;
           items.set('pickupHealth', healthpackMesh);
         });
 
-        // Pickup Heart
+        // Collectible Heart
         gltfLoader.load('./models/pickups/PickupHeart.glb', gltf => {
           const heartMesh = gltf.scene;
           heartMesh.matrixAutoUpdate = false;
           items.set('pickupHeart', heartMesh);
         });
 
-        // Pickup Tank
+        // Collectible Tank
         gltfLoader.load('./models/pickups/PickupTank.glb', gltf => {
           const tankMesh = gltf.scene;
           tankMesh.matrixAutoUpdate = false;
@@ -66399,6 +66388,281 @@
       }
     }
 
+    class EnvironmentManager {
+      constructor(world) {
+        this.world = world;
+        this.props = [];
+        this.environmentmap = new Map();
+        this.floorMesh = new Group();
+        this.wallsMeshes = new Group();
+        this.width = 0;
+        this.depth = 0;
+        this.height = 0;
+        this.rooms = new Group();
+        this.ship = null;
+        this.stargeometry = new Geometry();
+        this.stars = new Points();
+        this._options = {
+          type: 'default',
+          constraints: {
+            minX: 0,
+            maxX: 0,
+            x: 0,
+            minZ: 0,
+            maxZ: 0,
+            z: 0
+          }
+        };
+      }
+      init() {
+        this.width = this.world.field.x;
+        this.depth = this.world.depth;
+        this.generateBackground(0x030303, true);
+        this.generateLights(null, true);
+        this.generateFloor();
+        this.generateWalls();
+      }
+      generateShell() {}
+      generateWalls() {
+        let wallMaterial = new MeshLambertMaterial({
+          color: 0x8e8e8e
+        });
+        this.wallsMeshes.clear();
+        let x = Math.floor(-this.width / 2);
+        let z = Math.floor(-this.depth / 2);
+        let wallGeometry = new BoxBufferGeometry(0.5, this.height, 0.5);
+        var cornerWallMesh = new Mesh(wallGeometry, wallMaterial);
+        var oppoCornerWallMesh = new Mesh(wallGeometry, wallMaterial);
+        cornerWallMesh.matrixAutoUpdate = false;
+        oppoCornerWallMesh.matrixAutoUpdate = false;
+        cornerWallMesh.position.set(x, 1, z);
+        oppoCornerWallMesh.position.set(Math.abs(x), 1, Math.abs(z));
+        cornerWallMesh.updateMatrix();
+        oppoCornerWallMesh.updateMatrix();
+        cornerWallMesh.castShadow = true;
+        oppoCornerWallMesh.castShadow = true;
+        cornerWallMesh.receiveShadow = true;
+        oppoCornerWallMesh.receiveShadow = true;
+        this.wallsMeshes.add(cornerWallMesh);
+        this.wallsMeshes.add(oppoCornerWallMesh);
+        cornerWallMesh = new Mesh(wallGeometry, wallMaterial);
+        oppoCornerWallMesh = new Mesh(wallGeometry, wallMaterial);
+        cornerWallMesh.matrixAutoUpdate = false;
+        oppoCornerWallMesh.matrixAutoUpdate = false;
+        cornerWallMesh.position.set(x, 1, Math.abs(z));
+        oppoCornerWallMesh.position.set(Math.abs(x), 1, z);
+        cornerWallMesh.updateMatrix();
+        oppoCornerWallMesh.updateMatrix();
+        cornerWallMesh.castShadow = true;
+        oppoCornerWallMesh.castShadow = true;
+        cornerWallMesh.receiveShadow = true;
+        oppoCornerWallMesh.receiveShadow = true;
+        this.wallsMeshes.add(cornerWallMesh);
+        this.wallsMeshes.add(oppoCornerWallMesh);
+        for (let i = Math.ceil(-this.depth / 2); i < Math.ceil(this.depth / 2); i++) {
+          wallGeometry = new BoxBufferGeometry(0.5, 1, 1);
+          if (i === Math.floor(this.depth / 2) || i === Math.ceil(-this.depth / 2)) {
+            wallGeometry = new BoxBufferGeometry(0.5, 1, 1.5);
+          }
+          let wallMesh = new Mesh(wallGeometry, wallMaterial);
+          let oppoWallMesh = new Mesh(wallGeometry, wallMaterial);
+          wallMesh.matrixAutoUpdate = false;
+          oppoWallMesh.matrixAutoUpdate = false;
+          wallMesh.position.set(x, 1, i);
+          oppoWallMesh.position.set(Math.abs(x), 1, i);
+          wallMesh.updateMatrix();
+          oppoWallMesh.updateMatrix();
+          wallMesh.castShadow = true;
+          oppoWallMesh.castShadow = true;
+          wallMesh.receiveShadow = true;
+          oppoWallMesh.receiveShadow = true;
+          this.wallsMeshes.add(wallMesh);
+          this.wallsMeshes.add(oppoWallMesh);
+        }
+        for (let i = Math.ceil(-this.width / 2); i < Math.ceil(this.width / 2); i++) {
+          wallGeometry = new BoxBufferGeometry(1, 1, 0.5);
+          if (i === Math.floor(this.width / 2) || i === Math.ceil(-this.width / 2)) {
+            wallGeometry = new BoxBufferGeometry(1.5, 1, 0.5);
+          }
+          let wallMesh = new Mesh(wallGeometry, wallMaterial);
+          let oppoWallMesh = new Mesh(wallGeometry, wallMaterial);
+          wallMesh.matrixAutoUpdate = false;
+          oppoWallMesh.matrixAutoUpdate = false;
+          wallMesh.position.set(i, 1, z);
+          oppoWallMesh.position.set(i, 1, Math.abs(z));
+          wallMesh.updateMatrix();
+          oppoWallMesh.updateMatrix();
+          wallMesh.castShadow = true;
+          oppoWallMesh.castShadow = true;
+          wallMesh.receiveShadow = true;
+          oppoWallMesh.receiveShadow = true;
+          this.wallsMeshes.add(wallMesh);
+          this.wallsMeshes.add(oppoWallMesh);
+        }
+        this.world.scene.add(this.wallsMeshes);
+      }
+      generateRooms(count, options = null) {}
+      generateBackground(newColor, stars = true, options = null) {
+        if (options === null) {
+          for (var i = 0; i < 8000; i++) {
+            var star = new Object3D();
+            star.x = MathUtils$1.randFloat(-200, 200);
+            star.y = MathUtils$1.randFloat(-75, -50);
+            star.z = MathUtils$1.randFloat(-200, 200);
+            star.scale.set(1, 1, 1).multiplyScalar(Math.random());
+            star.updateMatrixWorld();
+            star.velocity = 0;
+            star.acceleration = 0.002;
+            this.stargeometry.vertices.push(star);
+          }
+          let sprite = this.world.assetManager.textures.get('star');
+          let starMaterial = new PointsMaterial({
+            color: 0xaaaaaa,
+            size: 0.7,
+            map: sprite
+          });
+          this.stars = new Points(this.stargeometry, starMaterial);
+          let color;
+          if (newColor) {
+            color = new Color(newColor);
+          } else {
+            color = new Color(0x030303);
+          }
+          this.world.scene.background = new Color(color);
+          if (stars) {
+            this.world.scene.add(this.stars);
+          } else {
+            this.world.scene.remove(this.stars);
+          }
+        }
+      }
+      _updateBackground(delta) {
+        this.stargeometry.vertices.forEach(vertex => {
+          vertex.velocity += vertex.acceleration * (delta * 0.01);
+          vertex.y -= vertex.velocity;
+          if (vertex.y <= -80) {
+            vertex.y = -45;
+            vertex.velocity = 0;
+          }
+        });
+        this.stargeometry.verticesNeedUpdate = true;
+      }
+      generateFloor() {
+        this.width * this.depth;
+        const floorGeometry = new BoxBufferGeometry(1, 0.5, 1);
+        const floorMaterial = new MeshLambertMaterial({
+          color: 0x9da4b0
+        });
+        this.floorMesh.clear();
+        for (let x = -this.width / 2; x <= this.width / 2; x++) {
+          for (let z = -this.depth / 2; z <= this.depth / 2; z++) {
+            const floorMesh = new Mesh(floorGeometry, floorMaterial);
+            floorMesh.matrixAutoUpdate = false;
+            floorMesh.position.set(x, 0, z);
+            floorMesh.updateMatrix();
+            floorMesh.castShadow = true;
+            floorMesh.receiveShadow = true;
+            this.floorMesh.add(floorMesh);
+          }
+        }
+        this.world.scene.add(this.floorMesh);
+      }
+      generateLights(options = null, DEBUG = false) {
+        const dirLight = new DirectionalLight(0xffffff, 0.6);
+        const ambientLight = new AmbientLight(0xcccccc, 0.4);
+        if (options === null) {
+          ambientLight.matrixAutoUpdate = false;
+          this.world.scene.add(ambientLight);
+          dirLight.position.set(1, 10, -1);
+          dirLight.matrixAutoUpdate = false;
+          dirLight.updateMatrix();
+          dirLight.castShadow = true;
+          dirLight.shadow.camera.top = 15;
+          dirLight.shadow.camera.bottom = -15;
+          dirLight.shadow.camera.left = -15;
+          dirLight.shadow.camera.right = 15;
+          dirLight.shadow.camera.near = 1;
+          dirLight.shadow.camera.far = 20;
+          dirLight.shadow.mapSize.x = 2048;
+          dirLight.shadow.mapSize.y = 2048;
+          dirLight.shadow.bias = 0.01;
+          this.world.scene.add(dirLight);
+        }
+
+        /* TODO: DEBUG */
+        if (DEBUG) {
+          this.world.scene.add(new CameraHelper(dirLight.shadow.camera));
+        }
+      }
+      update(x, y, z) {
+        this.width = x;
+        this.depth = z;
+        this.height = y;
+        this.generateFloor();
+        this.generateWalls();
+      }
+    }
+
+    class MapManager {
+      /**
+       *
+       * @param {World} world
+       *
+       * @param map
+       */
+      constructor(world, map = null) {
+        this._world = world;
+        this._map = map ? map : null;
+        this._miniMap = document.getElementById("minimap").getContext("2d");
+        this._visible = true;
+        this._fullScreen = false;
+        this.connect();
+        this.generatePlacemark();
+        this.generateEnvironment();
+      }
+      update() {
+        this._miniMap.clearRect(0, 0, this._miniMap.width, this._miniMap.height);
+        this.generatePlacemark();
+      }
+      generatePlacemark() {
+        this._miniMap.fillStyle = "#fff700";
+        this._miniMap.save();
+        this._miniMap.beginPath();
+        // this._miniMap.arc(this._world.player.position.x, this._world.player.position.z, 5, 0, 2 * Math.PI);
+        this._miniMap.fill();
+        this._miniMap.closePath();
+        this._miniMap.restore();
+      }
+      generateEnvironment() {}
+      connect() {
+        document.addEventListener('keydown', this.toggle);
+      }
+      disconnect() {
+        document.removeEventListener('keydown', this.toggle);
+      }
+      toggle(event) {
+        switch (event.keyCode) {
+          case 77:
+            // m
+            this.Full = !this._fullScreen;
+            break;
+        }
+      }
+      set Full(bool) {
+        this._fullScreen = bool;
+        if (this._fullScreen) {
+          this.fullScreen();
+        } else {
+          this.minimize();
+        }
+      }
+      fullScreen() {}
+      minimize() {}
+      hide() {}
+      show() {}
+      getPercentDiscovered() {}
+    }
+
     class InterfaceManager {
       /**
        * Constructs a new UI manager.
@@ -66407,6 +66671,7 @@
        */
       constructor(world) {
         this.world = world;
+        this.mapHandler = new MapManager(this.world, this.world.fieldMesh);
         this.currentTime = 0;
         this.outDamageIndicatorTime = CONFIG.UI.CROSSHAIR.HIT_OUT_TIME;
         this.endTimeOutDamageIndication = Infinity;
@@ -66414,7 +66679,7 @@
         this.endTimeInDamageIndication = Infinity;
         this.ui = {
           userInterface: document.getElementById("user-interface"),
-          uiMinimap: document.getElementById("uiMinimap").getContext("2d"),
+          uiMinimap: document.getElementById("uiMinimap"),
           uiTimer: document.getElementById("uiTimer"),
           uiHealth: document.getElementById("uiHealth"),
           uiAmmo: document.getElementById("uiAmmo"),
@@ -66442,6 +66707,7 @@
         this._updateHealthStatus();
         this._updateAmmoStatus();
         this._updateTimerStatus();
+        this._updateMapStatus();
         if (this.currentTime >= this.endTimeOutDamageIndication) {
           this._hideOutDamageIndication();
         }
@@ -66484,7 +66750,9 @@
         return this;
       }
       _updateLevelStatus() {}
-      _updateMapStatus() {}
+      _updateMapStatus() {
+        this.mapHandler.update();
+      }
       _updateTimerStatus() {
         var min = Math.floor(this.currentTime / 60);
         var seconds = Math.floor(this.currentTime % 60);
@@ -66745,6 +67013,7 @@
       load(id) {
         switch (id) {
           case 1:
+            // this._loadStage11();
             this._loadStage01();
             break;
           case 2:
@@ -66794,7 +67063,7 @@
         const world = this.world;
 
         // field
-        world.updateField(15, 1, 15);
+        world.environmentManager.update(15, 1, 15);
 
         // controls
         world.controls.setPosition(0, 0.5, 5);
@@ -66802,7 +67071,7 @@
 
         // enemies
         const guard = world._createGuard(GUARDTYPE.ASSAULT);
-        console.log(dumpObject(guard));
+        // console.log(dumpObject(guard));
         // console.log(guard);
         guard.position.set(0, 0.5, -4);
         guard.setCombatPattern(new DefaultCombatPattern());
@@ -66814,8 +67083,8 @@
 
         // field
 
-        // world.updateField(15, 1, 15);
-        world.updateField(30, 1, 30);
+        // world.environmentManager.update(15, 1, 15);
+        world.environmentManager.update(30, 1, 30);
 
         // controls
 
@@ -66837,7 +67106,7 @@
 
         // field
 
-        world.updateField(15, 1, 15);
+        world.environmentManager.update(15, 1, 15);
 
         // controls
 
@@ -66857,7 +67126,7 @@
 
         // field
 
-        world.updateField(15, 1, 15);
+        world.environmentManager.update(15, 1, 15);
 
         // controls
 
@@ -66880,7 +67149,7 @@
 
         // field
 
-        world.updateField(15, 1, 15);
+        world.environmentManager.update(15, 1, 15);
 
         // controls
 
@@ -66924,7 +67193,7 @@
 
         // field
 
-        world.updateField(15, 1, 15);
+        world.environmentManager.update(15, 1, 15);
 
         // controls
 
@@ -66962,7 +67231,7 @@
 
         // field
 
-        world.updateField(15, 1, 15);
+        world.environmentManager.update(15, 1, 15);
 
         // controls
 
@@ -67002,7 +67271,7 @@
 
         // field
 
-        world.updateField(15, 1, 15);
+        world.environmentManager.update(15, 1, 15);
 
         // controls
 
@@ -67040,7 +67309,7 @@
 
         // field
 
-        world.updateField(25, 1, 25);
+        world.environmentManager.update(25, 1, 25);
 
         // controls
 
@@ -67089,7 +67358,7 @@
 
         // field
 
-        world.updateField(25, 1, 25);
+        world.environmentManager.update(25, 1, 25);
 
         // controls
 
@@ -67197,7 +67466,7 @@
 
         // field
 
-        world.updateField(20, 1, 20);
+        world.environmentManager.update(20, 1, 20);
 
         // controls
 
@@ -67277,7 +67546,7 @@
 
         // field
 
-        world.updateField(20, 1, 20);
+        world.environmentManager.update(20, 1, 20);
 
         // controls
 
@@ -67359,7 +67628,7 @@
 
         // field
 
-        world.updateField(20, 1, 20);
+        world.environmentManager.update(20, 1, 20);
 
         // controls
 
@@ -67513,7 +67782,7 @@
     }
     const toVector = new Vector3();
     const displacement = new Vector3();
-    const _DEBUG_ = process.env.NODE_ENV === 'development' ? true : false;
+    process.env.NODE_ENV === 'development' ? true : false;
     class World {
       constructor() {
         this.active = false;
@@ -67522,10 +67791,10 @@
         this.time = new Time();
         this.currentStage = 1;
         this.maxStage = 14;
+        this.environmentManager = new EnvironmentManager(this);
         this.stargeometry = new Geometry();
         this.stars = new Points();
         this.field = new Vector3(16, 1, 16);
-        this.fieldMesh = null;
         this.wall = new Vector3(0.5, 1, 0.5);
         this.wallsMeshes = new Group();
         this.camera = null;
@@ -67586,7 +67855,7 @@
       init() {
         this.assetManager = new AssetManager();
         this.assetManager.init().then(() => {
-          this._initScene();
+          this._initEnvironment();
           this._initBackground();
           this._initPlayer();
           this._initControls();
@@ -67608,7 +67877,6 @@
           this._checkGameStatus();
           this._updateObstaclesMeshes();
           this._updateProjectileMeshes();
-          this._updateBackground(delta);
           this.stars.rotation.y += 0.01;
           this.renderer.render(this.scene, this.camera);
         }
@@ -67686,85 +67954,18 @@
         if (audio.isPlaying === true) audio.stop();
         audio.play();
       }
-      _initUI() {
+      #_initUI() {
         const loadingScreen = this.ui.loadingScreen;
         loadingScreen.classList.add('fade-out');
         loadingScreen.addEventListener('transitionend', onTransitionEnd);
       }
-      _initScene(callback) {
+      _initEnvironment(callback) {
         // camera
         this.camera = new PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 200);
         this.camera.add(this.assetManager.listener);
 
         // scene
         this.scene = new Scene();
-
-        // lights
-        const ambientLight = new AmbientLight(0xcccccc, 0.4);
-        ambientLight.matrixAutoUpdate = false;
-        this.scene.add(ambientLight);
-        const dirLight = new DirectionalLight(0xffffff, 0.6);
-        dirLight.position.set(1, 10, -1);
-        dirLight.matrixAutoUpdate = false;
-        dirLight.updateMatrix();
-        dirLight.castShadow = true;
-        dirLight.shadow.camera.top = 15;
-        dirLight.shadow.camera.bottom = -15;
-        dirLight.shadow.camera.left = -15;
-        dirLight.shadow.camera.right = 15;
-        dirLight.shadow.camera.near = 1;
-        dirLight.shadow.camera.far = 20;
-        dirLight.shadow.mapSize.x = 2048;
-        dirLight.shadow.mapSize.y = 2048;
-        dirLight.shadow.bias = 0.01;
-        this.scene.add(dirLight);
-
-        /* TODO: DEBUG */
-        if (_DEBUG_) {
-          this.scene.add(new CameraHelper(dirLight.shadow.camera));
-        }
-
-        // field
-        const fieldGeometry = new BoxBufferGeometry(this.field.x, this.field.y, this.field.z);
-        const fieldMaterial = new MeshLambertMaterial({
-          color: 0x9da4b0
-        });
-        this.fieldMesh = new Mesh(fieldGeometry, fieldMaterial);
-        this.fieldMesh.matrixAutoUpdate = false;
-        this.fieldMesh.position.set(0, -0.5, 0);
-        this.fieldMesh.updateMatrix();
-        this.fieldMesh.receiveShadow = true;
-        this.scene.add(this.fieldMesh);
-        const wallGeometry = new BoxBufferGeometry(1, 1, 1);
-        const wallMaterial = new MeshLambertMaterial({
-          color: 0x8e8e8e
-        });
-        for (let x = -this.field.x / 2; x <= this.field.x / 2; x++) {
-          if (x === -this.field.x / 2 || x === this.field.x / 2) {
-            for (let z = -this.field.z / 2; z <= this.field.z / 2; z++) {
-              if (z === -this.field.z / 2 || z === this.field.z / 2) {
-                for (let i = -this.field.x / 2; i <= this.field.x / 2; i++) {
-                  const wallMesh = new Mesh(wallGeometry, wallMaterial);
-                  wallMesh.matrixAutoUpdate = false;
-                  wallMesh.position.set(i, 0.5, z);
-                  wallMesh.updateMatrix();
-                  wallMesh.castShadow = true;
-                  wallMesh.receiveShadow = true;
-                  this.wallsMeshes.add(wallMesh);
-                }
-              } else {
-                const wallMesh = new Mesh(wallGeometry, wallMaterial);
-                wallMesh.matrixAutoUpdate = false;
-                wallMesh.position.set(x, 0.5, z);
-                wallMesh.updateMatrix();
-                wallMesh.castShadow = true;
-                wallMesh.receiveShadow = true;
-                this.wallsMeshes.add(wallMesh);
-              }
-            }
-          }
-        }
-        this.scene.add(this.wallsMeshes);
 
         // player
         this.playerMesh = this.assetManager.characterModels.get('Android');
@@ -67872,34 +68073,12 @@
         this.ui.quitButtonMenu.addEventListener('click', this._onQuit, false);
         this.ui.quitButtonComplete.addEventListener('click', this._onQuit, false);
         this.ui.quitButtonGameOver.addEventListener('click', this._onQuit, false);
+        this.environmentManager.init();
         this.userInterface = new InterfaceManager(this);
       }
-      _initBackground() {
-        this.scene.background = new Color(0x030303);
-        for (var i = 0; i < 8000; i++) {
-          var star = new Object3D();
-          star.x = MathUtils$1.randFloat(-200, 200);
-          star.y = MathUtils$1.randFloat(-75, -50);
-          star.z = MathUtils$1.randFloat(-200, 200);
-          // star.x   = THREE.Math.randFloat(-200, 200);
-          // star.y   = THREE.Math.randFloat(-75, -50);
-          // star.z   = THREE.Math.randFloat(-200, 200);
-
-          star.scale.set(1, 1, 1).multiplyScalar(Math.random());
-          // star.updateMatrix();
-          star.updateMatrixWorld();
-          star.velocity = 0;
-          star.acceleration = 0.002;
-          this.stargeometry.vertices.push(star);
-        }
-        let sprite = this.assetManager.textures.get('star');
-        let starMaterial = new PointsMaterial({
-          color: 0xaaaaaa,
-          size: 0.7,
-          map: sprite
-        });
-        this.stars = new Points(this.stargeometry, starMaterial);
-        this.scene.add(this.stars);
+      _initBackground(params) {
+        const background_color = new Color(0x030303);
+        this.environmentManager.generateBackground(background_color, true);
       }
       _initPlayer() {
         const protectionMesh = this.protectionMesh.clone();
@@ -68255,20 +68434,7 @@
       }
       updateField(x, y, z) {
         this.field.set(x, y, z);
-        this.fieldMesh.geometry.dispose();
-        this.fieldMesh.geometry = new BoxBufferGeometry(x, y, z);
-        this._updateWalls();
-      }
-      _updateBackground(delta) {
-        this.stargeometry.vertices.forEach(vertex => {
-          vertex.velocity += vertex.acceleration * (delta * 0.01);
-          vertex.y -= vertex.velocity;
-          if (vertex.y <= -80) {
-            vertex.y = -45;
-            vertex.velocity = 0;
-          }
-        });
-        this.stargeometry.verticesNeedUpdate = true;
+        this.environmentManager.update(x, y, z);
       }
       _updateWalls() {
         const wallGeometry = new BoxBufferGeometry(1, 1, 1);
@@ -68276,9 +68442,9 @@
           color: 0x8e8e8e
         });
         this.wallsMeshes.clear();
-        for (let x = -this.field.x / 2; x <= this.field.x / 2; x++) {
+        for (let x = -this.field.x; x <= this.field.x; x++) {
           if (x === -this.field.x / 2 || x === this.field.x / 2) {
-            for (let z = -this.field.z / 2; z <= this.field.z / 2; z++) {
+            for (let z = -this.field.z; z <= this.field.z; z++) {
               if (z === -this.field.z / 2 || z === this.field.z / 2) {
                 for (let i = -this.field.x / 2; i <= this.field.x / 2; i++) {
                   const wallMesh = new Mesh(wallGeometry, wallMaterial);

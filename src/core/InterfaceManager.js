@@ -5,6 +5,7 @@
 import {Scene}           from "three";
 import {EventDispatcher} from "yuka";
 import {CONFIG}          from "../etc/Utilities";
+import MapManager        from "./MapManager.js";
 
 
 
@@ -16,7 +17,9 @@ class InterfaceManager {
     */
    constructor(world) {
 
-      this.world       = world;
+      this.world      = world;
+      this.mapHandler = new MapManager(this.world, this.world.fieldMesh);
+
       this.currentTime = 0;
 
       this.outDamageIndicatorTime     = CONFIG.UI.CROSSHAIR.HIT_OUT_TIME;
@@ -27,7 +30,7 @@ class InterfaceManager {
 
       this.ui = {
          userInterface: document.getElementById("user-interface"),
-         uiMinimap    : document.getElementById("uiMinimap").getContext("2d"),
+         uiMinimap    : document.getElementById("uiMinimap"),
          uiTimer      : document.getElementById("uiTimer"),
          uiHealth     : document.getElementById("uiHealth"),
          uiAmmo       : document.getElementById("uiAmmo"),
@@ -62,6 +65,7 @@ class InterfaceManager {
       this._updateHealthStatus();
       this._updateAmmoStatus();
       this._updateTimerStatus();
+      this._updateMapStatus();
 
       if (this.currentTime >= this.endTimeOutDamageIndication) {
 
@@ -152,7 +156,7 @@ class InterfaceManager {
 
 
    _updateMapStatus() {
-
+      this.mapHandler.update();
    }
 
 
