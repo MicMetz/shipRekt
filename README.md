@@ -43,10 +43,13 @@ You must fight your way through the ship to expropriate your enemy's ship and es
 ## Recordings
 
 
-https://user-images.githubusercontent.com/47361643/210134323-b2275114-da36-4dab-ba12-d4346d2f487c.mp4
+https://user-images.githubusercontent.com/47361643/210446906-7c970a2d-c7a9-40c0-a280-8cf7e383fe6c.mp4
 
 <br>
 
+https://user-images.githubusercontent.com/47361643/210134323-b2275114-da36-4dab-ba12-d4346d2f487c.mp4
+
+<br>
 
 https://user-images.githubusercontent.com/47361643/210134509-16319d9f-43b6-46dc-a287-744cc43e14bb.mp4
 
