@@ -618,86 +618,86 @@ class World {
       const pursuers = this.pursuers;
       const towers   = this.towers;
 
-      // perform intersection test with guards
-      for (let i = 0, l = guards.length; i < l; i++) {
+      if (player._GOD_MODE_ === false) {
 
-         const guard = guards[i];
+         // perform intersection test with guards
+         for (let i = 0, l = guards.length; i < l; i++) {
 
-         const squaredDistance = player.position.squaredDistanceTo(guard.position);
-         const range           = player.boundingRadius + guard.boundingRadius;
+            const guard = guards[i];
 
-         if (squaredDistance <= (range * range)) {
+            const squaredDistance = player.position.squaredDistanceTo(guard.position);
+            const range           = player.boundingRadius + guard.boundingRadius;
 
-            if (player.obb.intersectsBoundingSphere(guard.boundingSphere) === true) {
+            if (squaredDistance <= (range * range)) {
 
-               // dead
-               if (player._GOD_MODE_ === false) {
+               if (player.obb.intersectsBoundingSphere(guard.boundingSphere) === true) {
+
+                  // dead
 
                   player.healthPoints--;
                   const audio = player.audios.get('playerHit');
                   this.playAudio(audio);
 
+
+
+                  return;
+
                }
 
+            }
 
-               return;
+         }
+
+         // perform intersection test with pursuers
+         for (let i = 0, l = pursuers.length; i < l; i++) {
+
+            const pursuer = pursuers[i];
+
+            const squaredDistance = player.position.squaredDistanceTo(pursuer.position);
+            const range           = player.boundingRadius + pursuer.boundingRadius;
+
+            if (squaredDistance <= (range * range)) {
+
+               if (player.obb.intersectsBoundingSphere(pursuer.boundingSphere) === true) {
+
+                  // dead
+
+                  player.healthPoints = 0;
+
+                  const audio = player.audios.get('playerExplode');
+                  this.playAudio(audio);
+                  return;
+
+               }
 
             }
 
          }
 
-      }
+         // perform intersection test with towers
+         for (let i = 0, l = towers.length; i < l; i++) {
 
-      // perform intersection test with pursuers
-      for (let i = 0, l = pursuers.length; i < l; i++) {
+            const tower = towers[i];
 
-         const pursuer = pursuers[i];
+            const squaredDistance = player.position.squaredDistanceTo(tower.position);
+            const range           = player.boundingRadius + tower.boundingRadius;
 
-         const squaredDistance = player.position.squaredDistanceTo(pursuer.position);
-         const range           = player.boundingRadius + pursuer.boundingRadius;
+            if (squaredDistance <= (range * range)) {
 
-         if (squaredDistance <= (range * range)) {
+               if (player.obb.intersectsBoundingSphere(tower.boundingSphere) === true) {
 
-            if (player.obb.intersectsBoundingSphere(pursuer.boundingSphere) === true) {
+                  // dead
 
-               // dead
+                  player.healthPoints = 0;
 
-               player.healthPoints = 0;
+                  const audio = player.audios.get('playerExplode');
+                  this.playAudio(audio);
+                  return;
 
-               const audio = player.audios.get('playerExplode');
-               this.playAudio(audio);
-               return;
-
-            }
-
-         }
-
-      }
-
-      // perform intersection test with towers
-      for (let i = 0, l = towers.length; i < l; i++) {
-
-         const tower = towers[i];
-
-         const squaredDistance = player.position.squaredDistanceTo(tower.position);
-         const range           = player.boundingRadius + tower.boundingRadius;
-
-         if (squaredDistance <= (range * range)) {
-
-            if (player.obb.intersectsBoundingSphere(tower.boundingSphere) === true) {
-
-               // dead
-
-               player.healthPoints = 0;
-
-               const audio = player.audios.get('playerExplode');
-               this.playAudio(audio);
-               return;
+               }
 
             }
-
          }
-
       }
 
    }

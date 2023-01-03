@@ -488,8 +488,8 @@ body .cybr-btn + .cybr-btn {
     right    : 4%;
     z-index: 1;
     filter: blur(0.4px);
-    fill: #000;
-    background: #ffffff0d;
+    fill: #ffffff0d;
+    background: #000;
     border-radius: 5px;
 }
 
