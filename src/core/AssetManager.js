@@ -3,6 +3,7 @@
  */
 
 import * as THREE            from 'three';
+import {FBXLoader}           from "three/examples/jsm/loaders/FBXLoader.js";
 import {OBJLoader}           from "three/examples/jsm/loaders/OBJLoader.js";
 import {BufferGeometryUtils} from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import {GLTFLoader}          from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -15,12 +16,14 @@ class AssetManager {
     *
     *
     */
-   constructor() {
+   constructor(world) {
 
+      this.world          = world;
       this.loadingManager = new THREE.LoadingManager();
 
       this.objectLoader  = new OBJLoader(this.loadingManager);
       this.gltfLoader    = new GLTFLoader(this.loadingManager);
+      this.fbxLoader     = new FBXLoader(this.loadingManager);
       this.jsonLoader    = new THREE.FileLoader(this.loadingManager);
       this.audioLoader   = new THREE.AudioLoader(this.loadingManager);
       this.fontLoader    = new THREE.FontLoader(this.loadingManager);
@@ -34,10 +37,13 @@ class AssetManager {
       this.fonts      = new Map();
 
       this.characterModels = new Map();
-      this.items           = new Map();
-      this.weapons         = new Map();
-      this.props           = new Map();
-      this.interiors       = new Map();
+      this.enemyModels     = new Map();
+      this.npcModels       = new Map();
+
+      this.items     = new Map();
+      this.weapons   = new Map();
+      this.props     = new Map();
+      this.interiors = new Map();
 
       this.descriptors = new Map();
 
@@ -49,7 +55,9 @@ class AssetManager {
       this._loadAudios();
       this._loadFonts();
       this._loadCharacterModels();
+      this._loadEnemyModels();
       this._loadItemModels();
+      this._loadTextures();
       this._loadWeaponModels();
       this._loadPropModels();
       this._loadInteriorModels();
@@ -134,11 +142,70 @@ class AssetManager {
    _loadTextures() {
 
       const textureLoader = this.textureLoader;
+      const textures      = this.textures;
 
-      const textures = this.textures;
+      textureLoader.load('./textures/star.png', (texture) => {
+         texture.wrapS = THREE.RepeatWrapping;
+         texture.wrapT = THREE.RepeatWrapping;
+         textures.set('star', texture);
+      });
 
-      textures.set('star', textureLoader.load('assets/textures/star.png'));
-      textures.set('quad', textureLoader.load('assets/textures/quad.png'));
+      textureLoader.load('./textures/quad.png', (texture) => {
+         texture.wrapS = THREE.RepeatWrapping;
+         texture.wrapT = THREE.RepeatWrapping;
+         textures.set('quad', texture);
+      });
+
+      textureLoader.load('./textures/WoodFloor.png', (texture) => {
+         texture.wrapS = THREE.RepeatWrapping;
+         texture.wrapT = THREE.RepeatWrapping;
+         textures.set('woodFloor', texture);
+      });
+
+      textureLoader.load('./textures/Grass.png', (texture) => {
+         texture.wrapS = THREE.RepeatWrapping;
+         texture.wrapT = THREE.RepeatWrapping;
+         texture.repeat.set(100, 100);
+         textures.set('grass', texture);
+      });
+
+      textureLoader.load('./textures/Grass_1.png', (texture) => {
+         texture.wrapS = THREE.RepeatWrapping;
+         texture.wrapT = THREE.RepeatWrapping;
+         texture.repeat.set(100, 100);
+         textures.set('grass1', texture);
+      });
+
+      textureLoader.load('./textures/Bush_Leaves.png', (texture) => {
+         texture.wrapS = THREE.RepeatWrapping;
+         texture.wrapT = THREE.RepeatWrapping;
+         texture.repeat.set(100, 100);
+         textures.set('bushLeaves', texture);
+      });
+
+      textureLoader.load('./textures/Rocks.png', (texture) => {
+         texture.wrapS = THREE.RepeatWrapping;
+         texture.wrapT = THREE.RepeatWrapping;
+         texture.repeat.set(100, 100);
+         textures.set('rocks', texture);
+      });
+
+      // Tree Bark
+      textureLoader.load('./textures/NormalTree_Bark.png', (texture) => {
+         textureLoader.load('./textures/NormalTree_Bark_Normal.png', (normalMap) => {
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(100, 100);
+            normalMap.wrapS = THREE.RepeatWrapping;
+            normalMap.wrapT = THREE.RepeatWrapping;
+            normalMap.repeat.set(100, 100);
+            textures.set('treeBark', {
+               map      : texture,
+               normalMap: normalMap
+            });
+         });
+      });
+
 
    }
 
@@ -226,16 +293,93 @@ class AssetManager {
    }
 
 
-   _loadCharacterModels() {
-
+   _loadEnemyModels() {
       const gltfLoader    = this.gltfLoader;
       const textureLoader = this.textureLoader;
-      const models        = this.characterModels;
+      const models        = this.enemyModels;
       const animations    = this.animations;
+
+      // Zombie
+      gltfLoader.load('./models/enemies/Zombie.glb', (gltf) => {
+         const clone = {
+            animations: gltf.animations,
+            scene     : gltf.scene.clone(true)
+         }
+
+         clone.scene.scale.set(0.3, 0.3, 0.3);
+         const cloneBones         = {};
+         const cloneSkinnedMeshes = {};
+
+         clone.scene.traverse(node => {
+            if (node.isBone) {
+               cloneBones[node.name] = node;
+            }
+
+            if (node.isSkinnedMesh) {
+               cloneSkinnedMeshes[node.name] = node;
+            }
+         });
+
+         for (let name in cloneSkinnedMeshes) {
+            const cloneSMesh = cloneSkinnedMeshes[name];
+            const skeleton   = cloneSMesh.skeleton;
+
+            const orderedCloneBone = [];
+
+            for (let i = 0; i < skeleton.bones.length; i++) {
+               const cloneBone = cloneBones[skeleton.bones[i].name];
+               orderedCloneBone.push(cloneBone);
+            }
+
+            cloneSMesh.bind(
+              new THREE.Skeleton(orderedCloneBone, skeleton.boneInverses),
+              cloneSMesh.matrixWorld
+            );
+         }
+
+         const mixer      = new THREE.AnimationMixer(clone.scene);
+         const animations = new Map();
+
+         const biteClip   = clone.animations[0];
+         const biteAction = mixer.clipAction(biteClip);
+         biteAction.play();
+         biteAction.enabled = false;
+
+         const crawlClip   = clone.animations[1];
+         const crawlAction = mixer.clipAction(crawlClip);
+         crawlAction.play();
+         crawlAction.enabled = false;
+
+         const idleClip   = clone.animations[2];
+         const idleAction = mixer.clipAction(idleClip);
+         idleAction.play();
+         idleAction.enabled = false;
+
+         const runClip   = clone.animations[3];
+         const runAction = mixer.clipAction(runClip);
+         runAction.play();
+         runAction.enabled = false;
+
+         const walkClip   = clone.animations[4];
+         const walkAction = mixer.clipAction(walkClip);
+         walkAction.play();
+         walkAction.enabled = false;
+
+         animations.set('bite', {clip: biteClip, action: biteAction});
+         animations.set('crawl', {clip: crawlClip, action: crawlAction});
+         animations.set('idle', {clip: idleClip, action: idleAction});
+         animations.set('run', {clip: runClip, action: runAction});
+         animations.set('walk', {clip: walkClip, action: walkAction});
+
+         clone.name = 'Zombie';
+         this.animations.set('Zombie', animations);
+         this.mixers.set('Zombie', mixer);
+         this.enemyModels.set('Zombie', clone.scene);
+      });
 
 
       // Swat Officer model
-      gltfLoader.load('./models/npc/swat.glb', (gltf) => {
+      gltfLoader.load('./models/enemies/swat.glb', (gltf) => {
          const clone = {
             animations: gltf.animations,
             scene     : gltf.scene.clone(true)
@@ -377,214 +521,18 @@ class AssetManager {
          clone.name = 'assault_guard';
          this.animations.set('assault_guard', animations);
          this.mixers.set('assault_guard', mixer);
-         this.characterModels.set('assault_guard', clone.scene);
+         this.enemyModels.set('assault_guard', clone.scene);
 
       });
 
 
-      // Alien model
-      gltfLoader.load('./models/npc/alien.glb', (gltf) => {
-         const model   = gltf.scene;
-         var geometry  = new THREE.Mesh();
-         let geoms     = [];
-         let meshes    = [];
-         let materials = [];
+   }
 
 
-         model.updateMatrixWorld();
-         model.traverse(e => e.isMesh && meshes.push(e) && (geoms.push((e.geometry.index) ? e.geometry.toNonIndexed() : e.geometry().clone())));
-         geoms.forEach((g, i) => g.applyMatrix4(meshes[i].matrixWorld));
+   _loadCharacterModels() {
 
-         let alien = BufferGeometryUtils.mergeBufferGeometries(geoms);
-         alien.computeVertexNormals();
-         alien.applyMatrix4(model.matrix.clone().invert());
-         alien.userData.materials = meshes.map(m => m.material);
-
-         const alienMesh = new THREE.Mesh(alien, new THREE.MeshStandardMaterial({color: 0x000000}));
-         alienMesh.name  = 'BlubAlien';
-
-         let alienAnimations = null
-         if (model.animations.length > 0) {
-            alienAnimations = model.animations;
-         }
-
-         models.set('BlubAlien', alienMesh);
-         animations.set('BlubAlien', alienAnimations);
-      });
-
-
-      // Astronaut model
-      gltfLoader.load('./models/player/astronaut.glb', (gltf) => {
-         const model   = gltf.scene;
-         var geometry  = new THREE.Mesh();
-         let geoms     = [];
-         let meshes    = [];
-         let materials = [];
-
-
-         model.updateMatrixWorld();
-         model.traverse(e => e.isMesh && meshes.push(e) && (geoms.push((e.geometry.index) ? e.geometry.toNonIndexed() : e.geometry().clone())));
-         geoms.forEach((g, i) => g.applyMatrix4(meshes[i].matrixWorld));
-
-         let astronaut = BufferGeometryUtils.mergeBufferGeometries(geoms);
-         astronaut.computeVertexNormals();
-         astronaut.applyMatrix4(model.matrix.clone().invert());
-         astronaut.userData.materials = meshes.map(m => m.material);
-
-         const astronautMesh = new THREE.Mesh(astronaut, new THREE.MeshStandardMaterial({color: 0x000000}));
-         astronautMesh.name  = 'FighterPilotRed';
-
-         let astronautAnimations = null
-         if (model.animations.length > 0) {
-            astronautAnimations = model.animations;
-         }
-
-         models.set('FighterPilotRed', astronautMesh);
-         animations.set('FighterPilotRed', astronautAnimations);
-      });
-
-
-
-      // Wanderer Player model
-      gltfLoader.load('./models/player/wanderer.glb', (gltf) => {
-         const skinnedMeshes = {};
-         const clone         = {
-            animations: gltf.animations,
-            scene     : gltf.scene.clone(true)
-         }
-         gltf.scene.traverse(node => {
-            if (node.isSkinnedMesh) {
-               skinnedMeshes[node.name] = node;
-            }
-         })
-
-         const cloneBones         = {};
-         const cloneSkinnedMeshes = {};
-
-         clone.scene.traverse(node => {
-            if (node.isBone) {
-               cloneBones[node.name] = node;
-            }
-
-            if (node.isSkinnedMesh) {
-               cloneSkinnedMeshes[node.name] = node;
-            }
-         });
-
-         for (let name in skinnedMeshes) {
-            const SMesh      = skinnedMeshes[name];
-            const skeleton   = SMesh.skeleton;
-            const cloneSMesh = cloneSkinnedMeshes[name];
-
-            const orderedCloneBone = [];
-
-            for (let i = 0; i < skeleton.bones.length; i++) {
-               const cloneBone = cloneBones[skeleton.bones[i].name];
-               orderedCloneBone.push(cloneBone);
-            }
-
-            cloneSMesh.bind(
-              new THREE.Skeleton(orderedCloneBone, skeleton.boneInverses),
-              cloneSMesh.matrixWorld
-            );
-         }
-
-         const mixer      = new THREE.AnimationMixer(clone.scene);
-         const animations = new Map();
-
-         const deathAction = mixer.clipAction(clone.animations[0]);
-         deathAction.play();
-         deathAction.enabled = false;
-
-         const shootAction = mixer.clipAction(clone.animations[1]);
-         shootAction.play();
-         shootAction.enabled = false;
-
-         const hitAction = mixer.clipAction(clone.animations[2]);
-         hitAction.play();
-         hitAction.enabled = false;
-
-         const idleAction = mixer.clipAction(clone.animations[4]);
-         idleAction.play();
-         idleAction.enabled = false;
-
-         const idleGunAction = mixer.clipAction(clone.animations[5]);
-         idleGunAction.play();
-         idleGunAction.enabled = false;
-
-         const idleGunPointAction = mixer.clipAction(clone.animations[6]);
-         idleGunPointAction.play();
-         idleGunPointAction.enabled = false;
-
-         const idleGunShootAction = mixer.clipAction(clone.animations[7]);
-         idleGunShootAction.play();
-         idleGunShootAction.enabled = false;
-
-         const idleNeutralAction = mixer.clipAction(clone.animations[8]);
-         idleNeutralAction.play();
-         idleNeutralAction.enabled = false;
-
-         const idleMeleeAction = mixer.clipAction(clone.animations[9]);
-         idleMeleeAction.play();
-         idleMeleeAction.enabled = false;
-
-         const interactAction = mixer.clipAction(clone.animations[10]);
-         interactAction.play();
-         interactAction.enabled = false;
-
-         const rollAction = mixer.clipAction(clone.animations[15]);
-         rollAction.play();
-         rollAction.enabled = false;
-
-         const runAction = mixer.clipAction(clone.animations[16]);
-         runAction.play();
-         runAction.enabled = false;
-
-         const runBackAction = mixer.clipAction(clone.animations[17]);
-         runBackAction.play();
-         runBackAction.enabled = false;
-
-         const runLeftAction = mixer.clipAction(clone.animations[18]);
-         runLeftAction.play();
-         runLeftAction.enabled = false;
-
-         const runRightAction = mixer.clipAction(clone.animations[19]);
-         runRightAction.play();
-         runRightAction.enabled = false;
-
-         const runShootAction = mixer.clipAction(clone.animations[20]);
-         runShootAction.play();
-         runShootAction.enabled = false;
-
-         const runSlashAction = mixer.clipAction(clone.animations[21]);
-         runSlashAction.play();
-         runSlashAction.enabled = false;
-
-         const walkAction = mixer.clipAction(clone.animations[22]);
-         walkAction.play();
-         walkAction.enabled = false;
-
-         animations.set('idle', idleAction);
-         animations.set('idleGun', idleGunAction);
-         animations.set('idleGunPoint', idleGunPointAction);
-         animations.set('idleGunShoot', idleGunShootAction);
-         animations.set('idleNeutral', idleNeutralAction);
-         animations.set('idleMelee', idleMeleeAction);
-         animations.set('interact', interactAction);
-         animations.set('roll', rollAction);
-         animations.set('run', runAction);
-         animations.set('runBack', runBackAction);
-         animations.set('runLeft', runLeftAction);
-         animations.set('runRight', runRightAction);
-         animations.set('runShoot', runShootAction);
-         animations.set('runSlash', runSlashAction);
-         animations.set('walk', walkAction);
-
-         this.animations.set('Wanderer', animations);
-         this.mixers.set('Wanderer', mixer);
-         this.characterModels.set('Wanderer', clone.scene);
-
-      });
+      const gltfLoader    = this.gltfLoader;
+      const textureLoader = this.textureLoader;
 
 
       // Android Player model
@@ -593,6 +541,11 @@ class AssetManager {
             animations: gltf.animations,
             scene     : gltf.scene.clone(true)
          }
+
+         // clone.scene.scale.set(0.2, 0.2, 0.2);
+
+         const mixer      = new THREE.AnimationMixer(clone.scene);
+         const animations = new Map();
 
          const cloneBones         = {};
          const cloneSkinnedMeshes = {};
@@ -624,88 +577,62 @@ class AssetManager {
             );
          }
 
-         const mixer      = new THREE.AnimationMixer(clone.scene);
-         const animations = new Map();
+         clone.scene.traverse(child => {
+            if (child.isMesh) {
+               child.castShadow        = true
+               child.receiveShadow     = true
+               child.material.skinning = true
+               child.frustumCulled     = false;
+            }
+         });
 
          const deathClip   = clone.animations[0];
          const deathAction = mixer.clipAction(deathClip);
-         deathAction.play();
-         deathAction.enabled = false;
 
          const shootClip   = clone.animations[1];
          const shootAction = mixer.clipAction(shootClip);
-         shootAction.play();
-         shootAction.enabled = false;
 
          const hitClip   = clone.animations[2];
          const hitAction = mixer.clipAction(hitClip);
-         hitAction.play();
-         hitAction.enabled = false;
 
          const idleClip   = clone.animations[6];
          const idleAction = mixer.clipAction(idleClip);
-         idleAction.play();
-         idleAction.enabled = false;
 
          const idleGunPointClip   = clone.animations[4];
          const idleGunPointAction = mixer.clipAction(idleGunPointClip);
-         idleGunPointAction.play();
-         idleGunPointAction.enabled = false;
 
          const idleGunShootClip   = clone.animations[5];
          const idleGunShootAction = mixer.clipAction(idleGunShootClip);
-         idleGunShootAction.play();
-         idleGunShootAction.enabled = false;
 
          const idleMeleeClip   = clone.animations[7];
          const idleMeleeAction = mixer.clipAction(idleMeleeClip);
-         idleMeleeAction.play();
-         idleMeleeAction.enabled = false;
 
          const interactClip   = clone.animations[8];
          const interactAction = mixer.clipAction(interactClip);
-         interactAction.play();
-         interactAction.enabled = false;
 
          const rollClip   = clone.animations[13];
          const rollAction = mixer.clipAction(rollClip);
-         rollAction.play();
-         rollAction.enabled = false;
 
          const runClip   = clone.animations[14];
          const runAction = mixer.clipAction(runClip);
-         runAction.play();
-         runAction.enabled = false;
 
          const runBackClip   = clone.animations[15];
          const runBackAction = mixer.clipAction(runBackClip);
-         runBackAction.play();
-         runBackAction.enabled = false;
 
          const runLeftClip   = clone.animations[16];
          const runLeftAction = mixer.clipAction(runLeftClip);
-         runLeftAction.play();
-         runLeftAction.enabled = false;
 
          const runRightClip   = clone.animations[17];
          const runRightAction = mixer.clipAction(runRightClip);
-         runRightAction.play();
-         runRightAction.enabled = false;
 
          const runShootClip   = clone.animations[18];
          const runShootAction = mixer.clipAction(runShootClip);
-         runShootAction.play();
-         runShootAction.enabled = false;
 
-         const slashClip   = clone.animations[19];
-         const slashAction = mixer.clipAction(slashClip);
-         slashAction.play();
-         slashAction.enabled = false;
+         const meleeClip   = clone.animations[19];
+         const meleeAction = mixer.clipAction(meleeClip);
 
          const walkClip   = clone.animations[20];
          const walkAction = mixer.clipAction(walkClip);
-         walkAction.play();
-         walkAction.enabled = false;
 
          animations.set('idle', {clip: idleClip, action: idleAction});
          animations.set('shoot', {clip: shootClip, action: shootAction});
@@ -721,7 +648,7 @@ class AssetManager {
          animations.set('runLeft', {clip: runLeftClip, action: runLeftAction});
          animations.set('runRight', {clip: runRightClip, action: runRightAction});
          animations.set('runShoot', {clip: runShootClip, action: runShootAction});
-         animations.set('slash', {clip: slashClip, action: slashAction});
+         animations.set('melee', {clip: meleeClip, action: meleeAction});
          animations.set('walk', {clip: walkClip, action: walkAction});
 
          clone.name = 'Android';
@@ -731,34 +658,6 @@ class AssetManager {
       })
 
 
-      // Droid model
-      gltfLoader.load('./models/npc/droid.glb', (gltf) => {
-         const model   = gltf.scene;
-         var geometry  = new THREE.Mesh();
-         let geoms     = [];
-         let meshes    = [];
-         let materials = [];
-
-         model.updateMatrixWorld();
-         model.traverse(e => e.isMesh && meshes.push(e) && (geoms.push((e.geometry.index) ? e.geometry.toNonIndexed() : e.geometry().clone())));
-         geoms.forEach((g, i) => g.applyMatrix4(meshes[i].matrixWorld));
-
-         let droid = BufferGeometryUtils.mergeBufferGeometries(geoms);
-         droid.computeVertexNormals();
-         droid.applyMatrix4(model.matrix.clone().invert());
-         droid.userData.materials = meshes.map(m => m.material);
-
-         const droidMesh = new THREE.Mesh(droid, new THREE.MeshStandardMaterial({color: 0x000000}));
-         droidMesh.name  = 'Boom Droid';
-
-         let droidAnimations = null
-         if (model.animations.length > 0) {
-            droidAnimations = model.animations;
-         }
-
-         models.set('droid', droidMesh);
-         animations.set('droid', droidAnimations);
-      });
 
    }
 
@@ -823,53 +722,11 @@ class AssetManager {
       const gltfLoader = this.gltfLoader;
       const props      = this.props;
 
-      // Cockpit
-      gltfLoader.load('./models/environment/Cockpit.glb', (gltf) => {
-         const cockpitMesh            = gltf.scene;
-         cockpitMesh.matrixAutoUpdate = false;
-         props.set('cockpit', cockpitMesh);
-      });
-
-      // Platform
-      gltfLoader.load('./models/environment/Platform.glb', (gltf) => {
-         const platformMesh            = gltf.scene;
-         platformMesh.matrixAutoUpdate = false;
-         props.set('platform', platformMesh);
-      });
-
-      // Platform Mega
-      gltfLoader.load('./models/environment/Platform_mega.glb', (gltf) => {
-         const platformMegaMesh            = gltf.scene;
-         platformMegaMesh.matrixAutoUpdate = false;
-         props.set('platformMega', platformMegaMesh);
-      });
-
-      // Platform Mini
-      gltfLoader.load('./models/environment/Platform_mini.glb', (gltf) => {
-         const platformMiniMesh            = gltf.scene;
-         platformMiniMesh.matrixAutoUpdate = false;
-         props.set('platformMini', platformMiniMesh);
-      });
-
-      // Workstation
-      gltfLoader.load('./models/environment/Workstation.glb', (gltf) => {
-         const workstationMesh            = gltf.scene;
-         workstationMesh.matrixAutoUpdate = false;
-         props.set('workstation', workstationMesh);
-      });
-
-      // Gondola
-      gltfLoader.load('./models/environment/Gondola.glb', (gltf) => {
-         const gondolaMesh            = gltf.scene;
-         gondolaMesh.matrixAutoUpdate = false;
-         props.set('gondola', gondolaMesh);
-      });
-
       // Space Station
-      gltfLoader.load('./models/environment/SpaceStation.glb', (gltf) => {
-         const spaceStationMesh            = gltf.scene;
-         spaceStationMesh.matrixAutoUpdate = false;
-         props.set('spaceStation', spaceStationMesh);
+      gltfLoader.load('./models/environment/Apartment.glb', (gltf) => {
+         const apartment            = gltf.scene;
+         apartment.matrixAutoUpdate = false;
+         props.set('Apartment', apartment);
       });
 
 

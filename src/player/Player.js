@@ -2,15 +2,16 @@
  * @author MicMetzger /
  */
 
+
 import {AABB, MathUtils, MovingEntity, OBB, Ray, Vector3} from 'yuka';
-import {Particle, ParticleSystem} from '../core/ParticleSystem.js';
-import {WeaponSystem}             from "../weapons/WeaponSystem.js";
-import {Weapon}                   from "../weapons/Weapon.js";
-import PlayerStateMachine           from "./PlayerStateMachine.js";
-import PlayerControllerProxy        from "./PlayerControllerProxy.js";
-import {PlayerProjectile}           from './PlayerProjectile.js';
-import PlayerProxy                  from "./PlayerProxy.js";
-import {EventDispatcher, Raycaster} from 'three';
+import {Particle, ParticleSystem}                         from '../core/ParticleSystem.js';
+import {WeaponSystem}                                     from "../weapons/WeaponSystem.js";
+import {Weapon}                                           from "../weapons/Weapon.js";
+import StateMachine                                       from "./StateMachine.js";
+import PlayerControllerProxy                              from "./PlayerControllerProxy.js";
+import {PlayerProjectile}                                 from './PlayerProjectile.js';
+import {EventDispatcher, Object3D, Raycaster}             from 'three';
+import {PlayerProxy}                                      from "./PlayerStates.js";
 
 
 
@@ -26,15 +27,13 @@ const offset             = new Vector3();
 
 class Player extends MovingEntity {
    /**
-    *
-    *
     * @param world
     * @param body
+    * @param weaponMesh
     * @param mixer
     * @param animations
-    * @param weapon
     */
-   constructor(world, body, mixer, animations, weapon) {
+   constructor(world, body, weaponMesh, mixer, animations) {
       super();
 
       console.log(process.env.NODE_ENV);
@@ -45,6 +44,9 @@ class Player extends MovingEntity {
       this.mixer      = mixer;
       this.animations = animations;
       this.controls   = world.controls;
+
+      this.attacking = false;
+      this.resting   = false;
 
       this.protected      = false;
       this.protection     = 0;
@@ -60,24 +62,40 @@ class Player extends MovingEntity {
 
       // TODO: pospone attack until roll animation is finished
       this.attackPosponeTime = 0.5;
-
       // TODO: Get this data from the weapon
-      this.swipesPerSecond = 2;
-      this.lastswipeTime   = 0;
-      this.shotsPerSecond  = 10;
-      this.lastShotTime    = 0;
+      this.swipesPerSecond   = 2;
+      this.lastswipeTime     = 0;
+      this.shotsPerSecond    = 10;
+      this.lastShotTime      = 0;
 
       this.obb = new OBB();
       this.obb.halfSizes.set(0.1, 0.1, 0.5);
 
       this.audios = new Map();
 
-      this.hand    = this.bodyMesh.getObjectByName('HandR');
-      this.offHand = this.bodyMesh.getObjectByName('HandL');
+      this.mainHand = this.bodyMesh.getObjectByName('PTR');
+      this.offHand  = this.bodyMesh.getObjectByName('PTL');
+      console.log(this.bodyMesh);
+      console.log(this.mainHand);
+      console.log(this.offHand);
 
-      this.weaponSystem               = new WeaponSystem();
-      this.weapon                     = new Weapon(this);
-      this.weaponSystem.currentWeapon = this.weapon;
+      this.weaponState = "idle";
+
+      this.weaponDelegateTip            = new Object3D();
+      this.weaponDelegate               = new Object3D();
+      this.weaponDelegate.position.x    = this.mainHand.x;
+      this.weaponDelegate.position.y    = this.mainHand.y;
+      this.weaponDelegate.position.z    = this.mainHand.z;
+      this.weaponDelegate.rotation.x    = this.mainHand.rotation.x;
+      this.weaponDelegate.rotation.y    = this.mainHand.rotation.y;
+      this.weaponDelegate.rotation.z    = this.mainHand.rotation.z;
+      this.weaponDelegateTip.position.z = 1.5;
+      this.weaponDelegate.add(this.weaponDelegateTip);
+      this.mainHand.add(this.weaponDelegate);
+
+      // this.weaponSystem               = new WeaponSystem(this);
+      // this.weapon                     = new Weapon(this, weaponMesh);
+      // this.weaponSystem.currentWeapon = this.weapon;
 
       // this.offWeapon = this.offHand.children[0];
       this.strategy = 'melee';
@@ -162,7 +180,7 @@ class Player extends MovingEntity {
 
    slash() {
 
-      if (!this.stateMachine.currentState.name.includes('roll')) {
+      if (!this.stateMachine.currentState.Name.includes('roll')) {
 
          const world       = this.world;
          const elapsedTime = world.time.getElapsed();
@@ -173,33 +191,11 @@ class Player extends MovingEntity {
 
             this.getDirection(direction);
 
-            this.stateMachine.changeTo('meleeAttack');
-
-            // this.weapon.trigger = function () {}
+            this.stateMachine.changeTo('melee');
 
             const swipe = new PlayerProjectile(this, direction);
 
-            // this.weapon.collisionDetected = function (nextPos) {
-            //    var vect             = nextPos.clone().sub(this.getPosition());
-            //    //check for collisions at foot level
-            //    var origin           = this.weapon.getPosition();
-            //    var ray              = new Raycaster(origin, vect.clone().normalize(), 0, vect.length());
-            //    var collisionResults = ray.intersectObjects(this.world.en, true);
-            //    if (collisionResults.length > 0) {
-            //       let t = collisionResults[0].object
-            //       if (t.trigger) t.trigger()
-            //    }
-            //    collisionResults = ray.intersectObjects(this.world.getEnemies([origin, nextPos]), true);
-            //    if (collisionResults.length > 0) {
-            //       return true;
-            //    }
-            //    return false;
-            // };
-
             world.addProjectile(swipe);
-
-            // const audio = this.audios.get('playerSwing');
-            // world.playAudio(audio);
 
          }
       }
@@ -220,7 +216,7 @@ class Player extends MovingEntity {
 
          this.getDirection(direction);
 
-         this.stateMachine.changeTo('shootAttack');
+         this.stateMachine.changeTo('shoot');
 
          const projectile = new PlayerProjectile(this, direction);
 
@@ -247,13 +243,17 @@ class Player extends MovingEntity {
 
    update(delta) {
 
-      // console.log(this.velocity);
+      if (!this.stateMachine) {
+         console.log(this + ': no state machine');
+         return;
+      }
 
       const world = this.world;
       this.currentTime += delta;
+      const input = world.controls.input;
 
-      this.stateMachine.update(delta, this.world.controls.input, this._isMoving());
-      this.mixer.update(delta);
+      this.stateMachine.update(delta, this.world.controls.input);
+      if (this.mixer) this.mixer.update(delta);
 
       this.obb.center.copy(this.position);
       this.obb.rotation.fromQuaternion(this.rotation);
@@ -270,6 +270,7 @@ class Player extends MovingEntity {
       }
 
       this.updateParticles(delta);
+
 
       return this;
 
@@ -359,50 +360,6 @@ class Player extends MovingEntity {
    _evaluateActions(event) {
       switch (event.keyCode) {
          case 32: {
-            /* if (this.stateMachine.currentState.name !== 'roll') {
-             if (this.stateMachine.currentState.name.includes('run') || this.stateMachine.currentState.name.includes('walk') || this.stateMachine.currentState.name.includes('idle')) {
-
-             // TODO
-             let currentpos = new Vector3();
-             let nextpos    = new Vector3();
-             switch (this.stateMachine.currentState.name) {
-             case 'idle':
-             break;
-             case 'walk': {
-
-             // new TWEEN.Tween(this.position).to( , ).start();
-
-             break;
-             }
-             case 'runRight': {
-
-             // new TWEEN.Tween(this.position).to( , ).start();
-
-             break;
-             }
-             case 'runLeft': {
-
-             // new TWEEN.Tween(this.position).to( , ).start();
-
-             break;
-             }
-             case 'runBack': {
-
-             // new TWEEN.Tween(this.position).to( , ).start();
-
-             break;
-             }
-
-             case 'run': {
-
-             // new TWEEN.Tween(this.position).to( , ).start();
-
-             break;
-             }
-
-             }
-
-             } */
 
             this.stateMachine.changeTo('roll');
             // }

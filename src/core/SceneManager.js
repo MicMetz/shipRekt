@@ -26,8 +26,8 @@ class SceneManager {
       switch (id) {
 
          case 1:
-            this._loadStage11();
-            // this._loadStage01();
+            // this._loadStage11();
+            this._loadStage01();
             break;
 
          case 2:

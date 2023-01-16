@@ -139,13 +139,13 @@ class InterfaceManager {
 
    _updateAmmoStatus() {
 
-      const player = this.world.player;
-      const weapon = player.weaponSystem.currentWeapon;
-
-      this.ui.uiAmmo.textContent = weapon.ammoRemaining;
-      this.ui.ammo.textContent   = weapon.ammo;
-
-      return this;
+      // const player = this.world.player;
+      // const weapon = player.weaponSystem.currentWeapon;
+      //
+      // this.ui.uiAmmo.textContent = weapon.ammoRemaining;
+      // this.ui.ammo.textContent   = weapon.ammo;
+      //
+      // return this;
 
    }
 

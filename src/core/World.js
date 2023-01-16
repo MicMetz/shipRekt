@@ -463,8 +463,10 @@ class World {
       protectionMesh.material = this.protectionMesh.material.clone(); // cloning a mesh does not clone its material (but we need unique uniforms!)
 
       this.playerMesh.add(protectionMesh)
-      // this.player                = new Player(this, this.playerMesh, this.assetManager.mixers.get('Wanderer'), this.assetManager.animations.get('Wanderer'));
-      this.player                = new Player(this, this.playerMesh, this.assetManager.mixers.get('Android'),
+      // this.player                = new Player(this, this.playerMesh, this.assetManager.mixers.get('Android'), this.assetManager.animations.get('Android'));
+      // this.player                = new Player(this, this.playerMesh, this.assetManager.mixers.get('Android'),
+      //   this.assetManager.animations.get('Android'));
+      this.player                = new Player(this, this.playerMesh, null, this.assetManager.mixers.get('Android'),
         this.assetManager.animations.get('Android'));
       this.player.protectionMesh = protectionMesh
 
@@ -526,10 +528,10 @@ class World {
          type = GUARDTYPE.ASSAULT;
       }
 
-      const guardMesh = this.assetManager.characterModels.get(type);
+      const guardMesh = this.assetManager.enemyModels.get(type);
       const mixer     = this.assetManager.animations.get(type);
       const guard     = new Guard(this, type, guardMesh);
-      console.log(guardMesh);
+      // console.log(guardMesh);
 
       const protectionMesh    = this.protectionMesh.clone();
       protectionMesh.material = this.protectionMesh.material.clone(); // cloning a mesh does not clone its material (but we need unique uniforms!)
@@ -543,7 +545,7 @@ class World {
       guard.bodyMesh       = guardMesh;
       guard.protectionMesh = protectionMesh;
       guard.hitMesh        = hitMesh;
-      console.log('guard', guard);
+      // console.log('guard', guard);
 
       const enemyShot           = this.assetManager.cloneAudio('enemyShot');
       const enemyHit            = this.assetManager.cloneAudio('enemyHit');

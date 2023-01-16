@@ -1,5 +1,5 @@
-import {Color, Geometry, Group, Object3D, Points, PointsMaterial, MathUtils, BoxBufferGeometry, MeshLambertMaterial, Mesh, AmbientLight, DirectionalLight, CameraHelper} from "three";
-import * as YUKA                                                                                                                                                         from "yuka";
+import {Color, Geometry, Group, Object3D, Points, PointsMaterial, MathUtils, BoxBufferGeometry, MeshLambertMaterial, Mesh, AmbientLight, DirectionalLight, CameraHelper, MeshBasicMaterial} from "three";
+import * as YUKA                                                                                                                                                                            from "yuka";
 
 
 
@@ -248,7 +248,7 @@ class EnvironmentManager {
    generateFloor() {
       const totalcells    = this.width * this.depth;
       const floorGeometry = new BoxBufferGeometry(1, 0.5, 1);
-      const floorMaterial = new MeshLambertMaterial({color: 0x9da4b0});
+      const floorMaterial = new MeshBasicMaterial({map: this.world.assetManager.textures.get('grass1')});
       this.floorMesh.clear();
       for (let x = -this.width / 2; x <= this.width / 2; x++) {
          for (let z = -this.depth / 2; z <= this.depth / 2; z++) {
